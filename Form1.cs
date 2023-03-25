@@ -25,7 +25,7 @@ namespace Group_choice_algos_fuzzy
 
 			numericUpDown_n.Maximum = max_number_for_spinbox;
 			numericUpDown_m.Maximum = max_number_for_spinbox;
-			dataGridView_input_profiles.EnableHeadersVisualStyles = false;
+			//dataGridView_input_profiles.EnableHeadersVisualStyles = false;
 			button_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
 
@@ -1427,8 +1427,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				dataGridView_input_profiles.Rows.Clear();
-				dataGridView_input_profiles.Columns.Clear();
+				foreach(DataGridView dgv in flowLayoutPanel2.Controls)
+				{
+					//((DataGridView)dgv).Clear remove
+					dgv.Rows.Clear();
+					dgv.Columns.Clear();
+				}
 			}
 			catch (Exception ex) { }
 		}
@@ -1437,9 +1441,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				dataGridView_input_profiles.ReadOnly = false;
-				foreach (DataGridViewColumn column in dataGridView_input_profiles.Columns)
-					column.DefaultCellStyle.BackColor = input_bg_color;
+				foreach (DataGridView dgv in flowLayoutPanel2.Controls)
+				{
+					dgv.ReadOnly = false;
+					foreach (DataGridViewColumn column in dgv.Columns)
+						column.DefaultCellStyle.BackColor = input_bg_color;
+				}
 			}
 			catch (Exception ex) { }
 		}
@@ -1448,9 +1455,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				dataGridView_input_profiles.ReadOnly = true;
-				foreach (DataGridViewColumn column in dataGridView_input_profiles.Columns)
-					column.DefaultCellStyle.BackColor = disabled_input_bg_color;
+				foreach (DataGridView dgv in flowLayoutPanel2.Controls)
+				{
+					dgv.ReadOnly = true;
+					foreach (DataGridViewColumn column in dgv.Columns)
+						column.DefaultCellStyle.BackColor = disabled_input_bg_color;
+				}
 			}
 			catch (Exception ex) { }
 		}
@@ -1525,7 +1535,7 @@ namespace Group_choice_algos_fuzzy
 					throw new ArgumentException("Неверное обозначение альтернативы");
 				m = list_of_profiles.Count;
 				n = nn;
-				set_profiles_input_table(list_of_profiles);
+				set_input_datagrids_matrices(list_of_profiles);
 			}
 			catch (FileNotFoundException ex)
 			{
@@ -1570,7 +1580,7 @@ namespace Group_choice_algos_fuzzy
 							$"m максимальное = {max_number_for_spinbox}\n" +
 							$"n*m максимальное = {max_number_for_cells}");
 					else
-						set_profiles_input_table(null);
+						set_input_datagrids_matrices(null);
 				}
 			}
 			catch (Exception ex)
@@ -1582,7 +1592,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// размещение таблицы для ввода профилей
 		/// </summary>
-		private void set_profiles_input_table(List<int[]> list_of_profiles)
+		private void set_input_datagrids_matrices(List<int[]> list_of_profiles)
 		{
 			clear_output();
 			clear_input();
@@ -1591,6 +1601,9 @@ namespace Group_choice_algos_fuzzy
 				used_alternatives[i] = index2symbol(i, n - 1);
 			for (int j = 0; j < m; j++)
 			{
+				DataGridView dgv = new DataGridView();
+				flowLayoutPanel2.Controls.Add(dgv);
+				/*
 				DataGridViewComboBoxColumn column = new DataGridViewComboBoxColumn();
 				column.DataSource = used_alternatives;
 				column.HeaderText = $"Эксперт {j + 1}";
@@ -1599,11 +1612,12 @@ namespace Group_choice_algos_fuzzy
 				column.FlatStyle = FlatStyle.Popup;
 				column.DefaultCellStyle.BackColor = input_bg_color;
 				dataGridView_input_profiles.Columns.Add(column);
+				*/
 			}
 			for (int i = 0; i < n; i++)
 			{
-				dataGridView_input_profiles.Rows.Add();
-				dataGridView_input_profiles.Rows[i].HeaderCell.Value = $"Место {i + 1}";
+				//dataGridView_input_profiles.Rows.Add();
+				//dataGridView_input_profiles.Rows[i].HeaderCell.Value = $"Место {i + 1}";
 			}
 			string[][] fill_values = Enumerable.Repeat(used_alternatives, m).ToArray();
 			if (list_of_profiles != null && list_of_profiles.Count != 0)
@@ -1616,6 +1630,7 @@ namespace Group_choice_algos_fuzzy
 						.ToArray();
 				}
 			}
+			/*
 			for (int i = 0; i < dataGridView_input_profiles.Rows.Count; i++)
 			{
 				for (int j = 0; j < dataGridView_input_profiles.Columns.Count; j++)
@@ -1624,6 +1639,7 @@ namespace Group_choice_algos_fuzzy
 					dataGridView_input_profiles[j, i].Value = fill_values[j][i];
 				}
 			}
+			*/
 			activate_input();
 		}
 
@@ -1641,19 +1657,22 @@ namespace Group_choice_algos_fuzzy
 				if (n > max_count_of_alternatives)
 					throw new ArgumentException(
 						"Количество альтернатив n слишком велико\nПрограмма может зависнуть");
-				void profile_j_accepted(int j)
+				void profile_j_accepted(int j, DataGridView dgv)
 				{
-					dataGridView_input_profiles.Columns[j].HeaderCell.Style.BackColor = window_background;
+					dgv.Columns[j].HeaderCell.Style.BackColor = window_background;
 				}
-				void profile_j_incorrect(int j)
+				void profile_j_incorrect(int j, DataGridView dgv)
 				{
-					dataGridView_input_profiles.Columns[j].HeaderCell.Style.BackColor = error_color;
+					dgv.Columns[j].HeaderCell.Style.BackColor = error_color;
 				}
 				profiles = new int[m, n];
+				/*
 				for (int j = 0; j < dataGridView_input_profiles.Columns.Count; j++)
 					for (int i = 0; i < dataGridView_input_profiles.Rows.Count; i++)
 						profiles[j, i] = symbol2index((string)dataGridView_input_profiles[j, i].Value);
+				*/
 				int number_of_accepted_profiles = 0;
+				/*
 				for (int j = 0; j < m; j++)
 				{
 					bool[] used_alternatives = Enumerable.Repeat(false, n).ToArray();
@@ -1669,6 +1688,7 @@ namespace Group_choice_algos_fuzzy
 						profile_j_incorrect(j);
 					}
 				}
+				*/
 				if (number_of_accepted_profiles != m)
 					throw new ArgumentException("Не все профили корректны");
 
