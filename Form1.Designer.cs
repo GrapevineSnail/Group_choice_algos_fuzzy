@@ -35,7 +35,7 @@ namespace Group_choice_algos_fuzzy
 			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
 			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-			this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+			this.flowLayoutPanel_output = new System.Windows.Forms.FlowLayoutPanel();
 			this.groupBox_HP_max_length = new System.Windows.Forms.GroupBox();
 			this.dg_HP_max_length = new System.Windows.Forms.DataGridView();
 			this.groupBox_HP_max_strength = new System.Windows.Forms.GroupBox();
@@ -53,6 +53,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_HP_max_strength = new System.Windows.Forms.CheckBox();
 			this.cb_HP_max_length = new System.Windows.Forms.CheckBox();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
+			this.flowLayoutPanel_input = new System.Windows.Forms.FlowLayoutPanel();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.textBox_file = new System.Windows.Forms.TextBox();
 			this.button_file = new System.Windows.Forms.Button();
@@ -64,9 +65,8 @@ namespace Group_choice_algos_fuzzy
 			this.numericUpDown_n = new System.Windows.Forms.NumericUpDown();
 			this.button_start = new System.Windows.Forms.Button();
 			this.label_info = new System.Windows.Forms.Label();
-			this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
 			this.tableLayoutPanel1.SuspendLayout();
-			this.flowLayoutPanel1.SuspendLayout();
+			this.flowLayoutPanel_output.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_length)).BeginInit();
 			this.groupBox_HP_max_strength.SuspendLayout();
@@ -93,7 +93,7 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F));
 			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 50F));
 			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F));
-			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel1, 3, 0);
+			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output, 3, 0);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox4, 1, 1);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 2);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox2, 0, 0);
@@ -113,23 +113,23 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.Size = new System.Drawing.Size(914, 491);
 			this.tableLayoutPanel1.TabIndex = 2;
 			// 
-			// flowLayoutPanel1
+			// flowLayoutPanel_output
 			// 
-			this.flowLayoutPanel1.AutoScroll = true;
-			this.flowLayoutPanel1.Controls.Add(this.groupBox_HP_max_length);
-			this.flowLayoutPanel1.Controls.Add(this.groupBox_HP_max_strength);
-			this.flowLayoutPanel1.Controls.Add(this.groupBox_Schulze_method);
-			this.flowLayoutPanel1.Controls.Add(this.groupBox_Linear_medians);
-			this.flowLayoutPanel1.Controls.Add(this.groupBox_All_rankings);
-			this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-			this.flowLayoutPanel1.Location = new System.Drawing.Point(438, 3);
-			this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel1, 4);
-			this.flowLayoutPanel1.Size = new System.Drawing.Size(473, 485);
-			this.flowLayoutPanel1.TabIndex = 24;
-			this.flowLayoutPanel1.WrapContents = false;
-			this.flowLayoutPanel1.MouseEnter += new System.EventHandler(this.flowLayoutPanel1_MouseEnter);
+			this.flowLayoutPanel_output.AutoScroll = true;
+			this.flowLayoutPanel_output.Controls.Add(this.groupBox_HP_max_length);
+			this.flowLayoutPanel_output.Controls.Add(this.groupBox_HP_max_strength);
+			this.flowLayoutPanel_output.Controls.Add(this.groupBox_Schulze_method);
+			this.flowLayoutPanel_output.Controls.Add(this.groupBox_Linear_medians);
+			this.flowLayoutPanel_output.Controls.Add(this.groupBox_All_rankings);
+			this.flowLayoutPanel_output.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.flowLayoutPanel_output.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+			this.flowLayoutPanel_output.Location = new System.Drawing.Point(438, 3);
+			this.flowLayoutPanel_output.Name = "flowLayoutPanel_output";
+			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output, 4);
+			this.flowLayoutPanel_output.Size = new System.Drawing.Size(473, 485);
+			this.flowLayoutPanel_output.TabIndex = 24;
+			this.flowLayoutPanel_output.WrapContents = false;
+			this.flowLayoutPanel_output.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_MouseEnter);
 			// 
 			// groupBox_HP_max_length
 			// 
@@ -398,13 +398,25 @@ namespace Group_choice_algos_fuzzy
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.tableLayoutPanel1.SetColumnSpan(this.groupBox3, 3);
-			this.groupBox3.Controls.Add(this.flowLayoutPanel2);
+			this.groupBox3.Controls.Add(this.flowLayoutPanel_input);
 			this.groupBox3.Location = new System.Drawing.Point(3, 168);
 			this.groupBox3.Name = "groupBox3";
 			this.groupBox3.Size = new System.Drawing.Size(429, 271);
 			this.groupBox3.TabIndex = 3;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Ввод матриц предпочтений экспертов";
+			// 
+			// flowLayoutPanel_input
+			// 
+			this.flowLayoutPanel_input.AutoScroll = true;
+			this.flowLayoutPanel_input.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.flowLayoutPanel_input.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+			this.flowLayoutPanel_input.Location = new System.Drawing.Point(3, 16);
+			this.flowLayoutPanel_input.Name = "flowLayoutPanel_input";
+			this.flowLayoutPanel_input.Size = new System.Drawing.Size(423, 252);
+			this.flowLayoutPanel_input.TabIndex = 25;
+			this.flowLayoutPanel_input.WrapContents = false;
+			this.flowLayoutPanel_input.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_MouseEnter);
 			// 
 			// groupBox2
 			// 
@@ -536,17 +548,6 @@ namespace Group_choice_algos_fuzzy
 			this.label_info.TabIndex = 7;
 			this.label_info.Text = "Минимальное суммарное расстояние Хэмминга для мажоритарного графа: 0";
 			// 
-			// flowLayoutPanel2
-			// 
-			this.flowLayoutPanel2.AutoScroll = true;
-			this.flowLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.flowLayoutPanel2.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-			this.flowLayoutPanel2.Location = new System.Drawing.Point(3, 16);
-			this.flowLayoutPanel2.Name = "flowLayoutPanel2";
-			this.flowLayoutPanel2.Size = new System.Drawing.Size(423, 252);
-			this.flowLayoutPanel2.TabIndex = 25;
-			this.flowLayoutPanel2.WrapContents = false;
-			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -560,7 +561,7 @@ namespace Group_choice_algos_fuzzy
 			this.SizeChanged += new System.EventHandler(this.Form1_SizeChanged);
 			this.tableLayoutPanel1.ResumeLayout(false);
 			this.tableLayoutPanel1.PerformLayout();
-			this.flowLayoutPanel1.ResumeLayout(false);
+			this.flowLayoutPanel_output.ResumeLayout(false);
 			this.groupBox_HP_max_length.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_length)).EndInit();
 			this.groupBox_HP_max_strength.ResumeLayout(false);
@@ -604,7 +605,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.CheckBox cb_HP_max_length;
 		private System.Windows.Forms.TextBox textBox_file;
 		private System.Windows.Forms.Label label_info;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output;
 		private System.Windows.Forms.GroupBox groupBox_HP_max_length;
 		private System.Windows.Forms.DataGridView dg_HP_max_length;
 		private System.Windows.Forms.GroupBox groupBox_HP_max_strength;
@@ -615,7 +616,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.DataGridView dg_Linear_medians;
 		private System.Windows.Forms.GroupBox groupBox_All_rankings;
 		private System.Windows.Forms.DataGridView dg_All_rankings;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2;
+		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input;
 	}
 }
 

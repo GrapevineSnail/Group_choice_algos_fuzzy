@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Group_choice_algos_fuzzy
@@ -28,6 +26,14 @@ namespace Group_choice_algos_fuzzy
 			//dataGridView_input_profiles.EnableHeadersVisualStyles = false;
 			button_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
+			foreach(Control c in flowLayoutPanel_output.Controls)
+			{
+				c.MouseEnter += flowLayoutPanel_output_MouseEnter;
+			}
+			foreach (Control c in flowLayoutPanel_input.Controls)
+			{
+				c.MouseEnter += flowLayoutPanel_input_MouseEnter;
+			}
 
 			void interface_coloring(Control o)
 			{
@@ -72,8 +78,7 @@ namespace Group_choice_algos_fuzzy
 		const string font_mono = "Courier New";
 		const float font_size = 10;
 
-		static int[,] profiles;//список профилей - индексы
-		static List<Matrix> R_list; //список матриц профилей (матрицы смежности)
+		static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
 		static Matrix P;//суммарная матрица матриц профилей
 		static Matrix C;//общая матрица весов
 		static Matrix R;//общая матрица смежности
@@ -1198,20 +1203,6 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
-		/// создание необходимых матриц по информации из профилей экспертов
-		/// </summary>
-		/// <param name="list_of_profiles"></param>
-		/// <returns></returns>
-		void Make_used_matrices(List<int[]> list_of_profiles)
-		{//аргумент: матрицы n*n, их m штук
-			foreach (int[] p in list_of_profiles)
-				R_list.Add(make_single_R_profile_matrix(p));
-			P = Matrix.Sum(R_list);
-			C = make_weight_C_matrix(P);
-			R = make_sum_R_profile_matrix(C);
-		}
-
-		/// <summary>
 		/// нахождение Гамильтоновых путей
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
@@ -1418,7 +1409,7 @@ namespace Group_choice_algos_fuzzy
 				label_info.Visible = true;
 				foreach (var m in Methods.GetMethods())
 					m.ShowMethodOutput();
-				flowLayoutPanel1.Focus();
+				flowLayoutPanel_output.Focus();
 			}
 			catch (Exception ex) { }
 		}
@@ -1427,11 +1418,11 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				foreach(DataGridView dgv in flowLayoutPanel2.Controls)
+				foreach (Control dgv in flowLayoutPanel_input.Controls)
 				{
-					//((DataGridView)dgv).Clear remove
-					dgv.Rows.Clear();
-					dgv.Columns.Clear();
+					//dgv.Rows.Clear();
+					//dgv.Columns.Clear();
+					dgv.Dispose();
 				}
 			}
 			catch (Exception ex) { }
@@ -1441,7 +1432,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				foreach (DataGridView dgv in flowLayoutPanel2.Controls)
+				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 				{
 					dgv.ReadOnly = false;
 					foreach (DataGridViewColumn column in dgv.Columns)
@@ -1455,7 +1446,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				foreach (DataGridView dgv in flowLayoutPanel2.Controls)
+				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 				{
 					dgv.ReadOnly = true;
 					foreach (DataGridViewColumn column in dgv.Columns)
@@ -1517,25 +1508,30 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				string s = textBox_file.Text;
-				List<int[]> list_of_profiles = new List<int[]>();
-				string[] lines = File.ReadAllLines(s);
-				foreach (string line in lines)
-					if (line.Length != 0 && !string.IsNullOrWhiteSpace(line))
-						list_of_profiles
-							.Add(line.Split(' ')
-							.Select(x => symbol2index(x))
-							.ToArray());
-				if (list_of_profiles.Count == 0)
+				List<Matrix> matrices = new List<Matrix>();
+				string[] lines = File.ReadAllLines(s).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				var nn = lines.First().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Count();
+				Matrix cur_matrix = new Matrix(nn, nn);
+				for (int l = 0; l < lines.Length; l++)
+				{
+					if (lines[l].Length != 0)
+					{
+						double res;
+						double[] numbers = lines[l].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
+						if (numbers.Any(x => x == INF) || numbers.Length != nn)
+							throw new ArgumentException("Неверное количество альтернатив профиля");
+						for (int j = 0; j < numbers.Length; j++)
+							cur_matrix[l % nn, j] = numbers[j];
+					}
+					if (l % nn == nn - 1)
+						matrices.Add(new Matrix(cur_matrix));
+				}
+				if (matrices.Count == 0)
 					throw new ArgumentException("Пустой файл");
-				int nn = list_of_profiles.First().Length;
-				foreach (int[] l in list_of_profiles)
-					if (l.Length != nn)
-						throw new ArgumentException("Неверное количество альтернатив профиля");
-				if (list_of_profiles.Select(x => x.Max()).Max() >= nn)
-					throw new ArgumentException("Неверное обозначение альтернативы");
-				m = list_of_profiles.Count;
+				m = matrices.Count;
 				n = nn;
-				set_input_datagrids_matrices(list_of_profiles);
+				set_input_datagrids_matrices(sender, e, matrices);
 			}
 			catch (FileNotFoundException ex)
 			{
@@ -1543,7 +1539,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (Exception ex)
 			{
-				throw new Exception($"Файл некорректен\n{ex.Message}");
+				MessageBox.Show($"Файл некорректен\n{ex.Message}");
 			}
 			finally
 			{
@@ -1580,7 +1576,7 @@ namespace Group_choice_algos_fuzzy
 							$"m максимальное = {max_number_for_spinbox}\n" +
 							$"n*m максимальное = {max_number_for_cells}");
 					else
-						set_input_datagrids_matrices(null);
+						set_input_datagrids_matrices(sender, e, null);
 				}
 			}
 			catch (Exception ex)
@@ -1592,54 +1588,72 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// размещение таблицы для ввода профилей
 		/// </summary>
-		private void set_input_datagrids_matrices(List<int[]> list_of_profiles)
+		private void set_input_datagrids_matrices(object sender, EventArgs e, List<Matrix> list_of_matrices)
 		{
-			clear_output();
 			clear_input();
+			clear_output();
 			string[] used_alternatives = new string[n];
 			for (int i = 0; i < n; i++)
 				used_alternatives[i] = index2symbol(i, n - 1);
-			for (int j = 0; j < m; j++)
+			for (int expert = 0; expert < m; expert++)
 			{
 				DataGridView dgv = new DataGridView();
-				flowLayoutPanel2.Controls.Add(dgv);
-				/*
-				DataGridViewComboBoxColumn column = new DataGridViewComboBoxColumn();
-				column.DataSource = used_alternatives;
-				column.HeaderText = $"Эксперт {j + 1}";
-				column.Name = j.ToString();
-				column.HeaderCell.Style.BackColor = window_background;
-				column.FlatStyle = FlatStyle.Popup;
-				column.DefaultCellStyle.BackColor = input_bg_color;
-				dataGridView_input_profiles.Columns.Add(column);
-				*/
-			}
-			for (int i = 0; i < n; i++)
-			{
-				//dataGridView_input_profiles.Rows.Add();
-				//dataGridView_input_profiles.Rows[i].HeaderCell.Value = $"Место {i + 1}";
-			}
-			string[][] fill_values = Enumerable.Repeat(used_alternatives, m).ToArray();
-			if (list_of_profiles != null && list_of_profiles.Count != 0)
-			{
-				fill_values = new string[m][];
-				for (int j = 0; j < list_of_profiles.Count; j++)
+				dgv.AllowUserToAddRows = false;
+				dgv.AllowUserToDeleteRows = false;
+				dgv.AllowUserToResizeRows = false;
+				dgv.AllowUserToResizeColumns = false;
+				dgv.AllowUserToOrderColumns = false;
+				dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+				dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+				dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+				dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+				dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+				dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+				dgv.ShowEditingIcon = false;
+				dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
+				dgv.CellEndEdit += (object ss, DataGridViewCellEventArgs ee) =>
 				{
-					fill_values[j] = list_of_profiles[j]
-						.Select(x => index2symbol(x, n - 1))
-						.ToArray();
-				}
-			}
-			/*
-			for (int i = 0; i < dataGridView_input_profiles.Rows.Count; i++)
-			{
-				for (int j = 0; j < dataGridView_input_profiles.Columns.Count; j++)
+					var cell = ((DataGridView)ss).CurrentCell;
+					double res;
+					if (!double.TryParse(cell.Value.ToString(), out res)
+					|| res > 1 || res < 0)
+						cell.Value = 0.0;
+				};
+				flowLayoutPanel_input.Controls.Add(dgv);
+
+				for (int j = 0; j < n; j++)
 				{
-					dataGridView_input_profiles[j, i].ReadOnly = false;
-					dataGridView_input_profiles[j, i].Value = fill_values[j][i];
+					DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
+					column.Name = j.ToString();
+					column.HeaderText = $"{index2symbol(j, n - 1)}";
+					column.SortMode = DataGridViewColumnSortMode.NotSortable;
+					dgv.Columns.Add(column);
 				}
+				for (int i = 0; i < n; i++)
+				{
+					dgv.Rows.Add();
+					dgv.Rows[i].HeaderCell.Value = $"{index2symbol(i, n - 1)}";
+				}
+
+				double[,] fill_values = new double[n, n];
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < n; j++)
+						fill_values[i, j] = 0.0;
+				if (list_of_matrices != null && list_of_matrices.Count != 0)
+				{
+					for (int i = 0; i < list_of_matrices[expert].n; i++)
+						for (int j = 0; j < list_of_matrices[expert].m; j++)
+							fill_values[i, j] = list_of_matrices[expert][i, j];
+				}
+				for (int i = 0; i < dgv.Rows.Count; i++)
+					for (int j = 0; j < dgv.Columns.Count; j++)
+					{
+						dgv[j, i].ReadOnly = false;
+						dgv[j, i].Value = fill_values[i,j];
+						dgv[j, i].ValueType = typeof(double);
+					}
 			}
-			*/
+			Form1_SizeChanged(sender, e);
 			activate_input();
 		}
 
@@ -1657,50 +1671,16 @@ namespace Group_choice_algos_fuzzy
 				if (n > max_count_of_alternatives)
 					throw new ArgumentException(
 						"Количество альтернатив n слишком велико\nПрограмма может зависнуть");
-				void profile_j_accepted(int j, DataGridView dgv)
+				R_list = new List<Matrix>() { };
+				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 				{
-					dgv.Columns[j].HeaderCell.Style.BackColor = window_background;
+					Matrix input_matrix = new Matrix(n, n);
+					for (int i = 0; i < dgv.Rows.Count; i++)
+						for (int j = 0; j < dgv.Columns.Count; j++)						
+							input_matrix[i, j] = (double)dgv[j, i].Value;
+					R_list.Add(new Matrix(input_matrix));
 				}
-				void profile_j_incorrect(int j, DataGridView dgv)
-				{
-					dgv.Columns[j].HeaderCell.Style.BackColor = error_color;
-				}
-				profiles = new int[m, n];
-				/*
-				for (int j = 0; j < dataGridView_input_profiles.Columns.Count; j++)
-					for (int i = 0; i < dataGridView_input_profiles.Rows.Count; i++)
-						profiles[j, i] = symbol2index((string)dataGridView_input_profiles[j, i].Value);
-				*/
-				int number_of_accepted_profiles = 0;
-				/*
-				for (int j = 0; j < m; j++)
-				{
-					bool[] used_alternatives = Enumerable.Repeat(false, n).ToArray();
-					for (int i = 0; i < n; i++)
-						used_alternatives[profiles[j, i]] = true;
-					if (Enumerable.All(used_alternatives, x => x == true))
-					{
-						profile_j_accepted(j);
-						number_of_accepted_profiles += 1;
-					}
-					else
-					{
-						profile_j_incorrect(j);
-					}
-				}
-				*/
-				if (number_of_accepted_profiles != m)
-					throw new ArgumentException("Не все профили корректны");
-
-				List<int[]> p = new List<int[]>(m);
-				for (int i = 0; i < m; i++)
-				{
-					int[] pp = new int[n];
-					for (int j = 0; j < n; j++)
-						pp[j] = profiles[i, j];
-					p.Add(pp);
-				}
-				execute_algorythms(p);
+				execute_algorythms(R_list);
 				Form1_SizeChanged(sender, e);
 			}
 			catch (ArgumentException ex)
@@ -1713,7 +1693,7 @@ namespace Group_choice_algos_fuzzy
 		/// запускает выполнение выбранных алгоритмов
 		/// </summary>
 		/// <param name="list_of_profiles"></param>
-		private void execute_algorythms(List<int[]> list_of_profiles)
+		private void execute_algorythms(List<Matrix> Relations_list)
 		{
 			try
 			{
@@ -1723,7 +1703,10 @@ namespace Group_choice_algos_fuzzy
 				if (Enumerable.All(checkbuttons, x => x == false))
 					throw new Exception("Выберите метод");
 
-				Make_used_matrices(list_of_profiles);
+				R_list = Relations_list;
+				P = Matrix.Sum(R_list);
+				C = make_weight_C_matrix(P);
+				R = make_sum_R_profile_matrix(C);
 				Methods.Set_Linear_medians();
 				if (Methods.All_various_rankings.IsExecute && Methods.All_various_rankings.Rankings.Count == 0)
 					Methods.Set_All_various_rankings();
@@ -1866,13 +1849,24 @@ namespace Group_choice_algos_fuzzy
 			foreach (Method m in Methods.GetMethods())
 			{
 				if (m.connectedFrame?.Parent != null)
-					m.connectedFrame.Parent.Width = flowLayoutPanel1.Width - 30;
+					m.connectedFrame.Parent.Width = flowLayoutPanel_output.Width - 30;
+			}
+			foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
+			{
+				dgv.Width = flowLayoutPanel_input.Width
+					- flowLayoutPanel_input.Padding.Right - flowLayoutPanel_input.Padding.Left
+					- dgv.Margin.Right - dgv.Margin.Left;
 			}
 		}
 
-		private void flowLayoutPanel1_MouseEnter(object sender, EventArgs e)
+		private void flowLayoutPanel_output_MouseEnter(object sender, EventArgs e)
 		{
-			((FlowLayoutPanel)sender).Focus();
+			flowLayoutPanel_output.Focus();
+		}
+
+		private void flowLayoutPanel_input_MouseEnter(object sender, EventArgs e)
+		{
+			flowLayoutPanel_input.Focus();
 		}
 	}
 }
