@@ -144,7 +144,6 @@ namespace Group_choice_algos_fuzzy
 			return Enumerable.Min(wp);
 		}
 
-
 		/// <summary>
 		/// создаёт матрицу смежности
 		/// </summary>
@@ -152,6 +151,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static Matrix make_sum_R_profile_matrix(Matrix weight_C_matrix)
 		{  // adjacency_matrix	
+			var n = weight_C_matrix.n;
 			Matrix R = new Matrix(n, n);
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < n; j++)
@@ -171,6 +171,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static Matrix make_weight_C_matrix(Matrix summarized_P_matrix)
 		{
+			var n = summarized_P_matrix.n;
 			Matrix C = new Matrix(n, n);
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < n; j++)

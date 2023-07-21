@@ -23,6 +23,7 @@ namespace Group_choice_algos_fuzzy
 		public const int max_count_of_alternatives = 9;
 		public const int max_number_for_spinbox = 300;
 		public const int max_number_for_cells = 3000;
+		public const double INF = double.PositiveInfinity;
 		public const string ZER = "0";
 		public const string ONE = "1";
 		public const char PLS = '+';
@@ -33,10 +34,19 @@ namespace Group_choice_algos_fuzzy
 		public const int HP_MAX_LENGTH = 3;
 		public const int HP_MAX_STRENGTH = 4;
 		public const int SCHULZE_METHOD = 5;
-		public static int n;//количество альтернатив
-		public static int m;//количество экспертов
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
-		public static double INF = double.PositiveInfinity;
+		/// <summary>
+		/// задание констант (при инициализации формы)
+		/// </summary>
+		/// <param name="n">количество альтернатив (размерность квадратной матрицы предпочтений)</param>
+		public static void SetConstants(int n)
+		{
+			for (int i = 0; i < n; i++)
+			{
+				sym2ind[$"{mark}{i}"] = i;
+				ind2sym[i] = $"{mark}{i}";
+			}
+		}
 	}
 }

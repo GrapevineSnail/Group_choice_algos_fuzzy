@@ -23,7 +23,8 @@ namespace Group_choice_algos_fuzzy
 					matrix[i, j] = M[i, j];
 		}
 		public Matrix(Matrix M) { this.matrix = (double[,])M.matrix.Clone(); }
-		private double[,] matrix = new double[,] { };
+
+		private double[,] matrix = new double[,] { }; //"основа" матрицы - двумерный массив
 		public double this[int i, int j]
 		{
 			get { return matrix[i, j]; }
@@ -90,15 +91,17 @@ namespace Group_choice_algos_fuzzy
 		{
 			return matrix.GetLength(dimension);
 		}
+		/// <summary>
+		/// возвращает транспонированую матрицу
+		/// </summary>
+		/// <returns></returns>
 		public Matrix Transpose()
 		{
 			var R = new Matrix(this.n, this.m);
 			for (int i = 0; i < R.n; i++)
-				for (int j = i + 1; j < R.m; j++)
+				for (int j = 0; j < R.m; j++)
 				{
-					var t = R[i, j];
-					R[i, j] = R[j, i];
-					R[j, i] = t;
+					R[i, j] = this[j, i];
 				}
 			return R;
 		}
@@ -159,7 +162,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="list_of_matrices"></param>
 		/// <returns></returns>
-		static Matrix Avg(List<Matrix> list_of_matrices)
+		public static Matrix Avg(List<Matrix> list_of_matrices)
 		{
 			return Sum(list_of_matrices) / list_of_matrices.Count();
 		}
@@ -202,15 +205,27 @@ namespace Group_choice_algos_fuzzy
 				throw new ArgumentException("Не совпадают размерности матриц");
 			double ans = 0;
 			for (int i = 0; i < M1.n; i++)
-				for (int j = 0; j < M1.m; j++) // почему j = i+1??
+				for (int j = 0; j < M1.m; j++)
 					ans += elem_diff(M1[i, j], M2[i, j]);
 			return ans;
 		}
+		/// <summary>
+		/// вычисляет расстояние из квадратов разностей элементов (между двумя матрицами)
+		/// </summary>
+		/// <param name="M1"></param>
+		/// <param name="M2"></param>
+		/// <returns></returns>
 		public static double DistanceSquare(Matrix M1, Matrix M2)
 		{
 			Func<double, double, double> f = (x, y) => Math.Pow(x - y, 2);
 			return Distance(M1, M2, f);
 		}
+		/// <summary>
+		/// вычисляет расстояние из модулей разностей элементов (между двумя матрицами)
+		/// </summary>
+		/// <param name="M1"></param>
+		/// <param name="M2"></param>
+		/// <returns></returns>
 		public static double DistanceModulus(Matrix M1, Matrix M2)
 		{
 			Func<double, double, double> f = (x, y) => Math.Abs(x - y);
@@ -231,6 +246,16 @@ namespace Group_choice_algos_fuzzy
 			return DistanceModulus(M1, M2);
 		}
 		/// <summary>
+		/// вычисляет евклидово расстояние между двумя матрицами
+		/// </summary>
+		/// <param name="M1"></param>
+		/// <param name="M2"></param>
+		/// <returns></returns>
+		public static double DistanceEuclidean(Matrix M1, Matrix M2)
+		{
+			return Math.Sqrt(DistanceSquare(M1, M2));
+		}
+		/// <summary>
 		/// суммарное расстояние от заданной матрицы до всех остальных матриц из списка
 		/// </summary>
 		public double SumDistance(List<Matrix> List_of_other_R, Func<Matrix, Matrix, double> distance_function)
@@ -245,7 +270,7 @@ namespace Group_choice_algos_fuzzy
 
 	public class Fuzzy
 	{
-		public class FuzzySet
+		/* public class FuzzySet
 		{
 			public FuzzySet() { membershipFunction = new Dictionary<object, double>(); }
 			public FuzzySet(Dictionary<object, double> func) { membershipFunction = func; }
@@ -297,6 +322,7 @@ namespace Group_choice_algos_fuzzy
 				return S;
 			}
 		}
+		*/
 		public class FuzzyRelation : Matrix
 		{// base - матрица нечёткого бинарного отношения
 		 //полагаем квадратными
@@ -318,6 +344,10 @@ namespace Group_choice_algos_fuzzy
 			{
 				get { return base.Self; }
 			}
+			/// <summary>
+			/// все элементы (пары), в том числе с принадлежностью 0
+			/// </summary>
+			/// <returns></returns>
 			public Tuple<int, int>[] Elements()
 			{
 				Tuple<int, int>[] ans = new Tuple<int, int>[this.n * this.m];
@@ -345,7 +375,7 @@ namespace Group_choice_algos_fuzzy
 			public FuzzyRelation Intersect(FuzzyRelation other)//A \intersect B
 			{
 				var S = new FuzzyRelation();
-				foreach (var x in Elements().Concat(other.Elements()))
+				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Min(this[x], other[x]);
 				return S;
 			}
@@ -357,7 +387,7 @@ namespace Group_choice_algos_fuzzy
 			public FuzzyRelation Union(FuzzyRelation other)//A U B
 			{
 				var S = new FuzzyRelation();
-				foreach (var x in Elements().Concat(other.Elements()))
+				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Max(this[x], other[x]);
 				return S;
 			}
@@ -366,11 +396,23 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			/// <param name="other"></param>
 			/// <returns></returns>
-			public FuzzyRelation SetMinus(FuzzyRelation other)//A \ B
+			public FuzzyRelation SetMinus1(FuzzyRelation other)//A \ B
 			{
 				var S = new FuzzyRelation();
-				foreach (var x in Elements().Concat(other.Elements()))
+				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Max(this[x] - other[x], 0);
+				return S;
+			}
+			/// <summary>
+			/// симметрическая разность
+			/// </summary>
+			/// <param name="other"></param>
+			/// <returns></returns>
+			public FuzzyRelation SetMinus2(FuzzyRelation other)//A \ B
+			{
+				var S = new FuzzyRelation();
+				foreach (var x in Elements().Union(other.Elements()))
+					S[x] = Math.Min(this[x], 1 - other[x]);
 				return S;
 			}
 			/// <summary>
@@ -379,15 +421,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation Inverse()
 			{
-				var R = new FuzzyRelation();
-				for (int i = 0; i < this.n; i++)
-					for (int j = i + 1; j < this.m; j++)
-					{
-						var t = R[i, j];
-						R[i, j] = R[j, i];
-						R[j, i] = t;
-					}
-				return new FuzzyRelation(Transpose());
+				return new FuzzyRelation(this.Transpose());
 			}
 			/// <summary>
 			/// композиция нечётких бинарных отношений
@@ -398,7 +432,7 @@ namespace Group_choice_algos_fuzzy
 				var R = new FuzzyRelation();
 				int[] Z = Enumerable.Range(0, this.n).ToArray();
 				for (int i = 0; i < this.n; i++)
-					for (int j = i + 1; j < this.m; j++)
+					for (int j = 0; j < this.m; j++)
 					{
 						R[i, j] = Z.Select(z => Math.Min(this[i, z], other[z, j])).Max();
 					}
@@ -492,13 +526,16 @@ namespace Group_choice_algos_fuzzy
 			get { return Path.Count; }
 		}
 
-
-		public List<int> String2List(string s)
+		
+		/*public List<int> String2List(string s)
 		{
 			return s.Split(mark).ToList()
 				.Where(x => int.TryParse(x, out var _))
 				.Select(x => int.Parse(x)).ToList();
-		}
+		}*/
+		/// <summary>
+		/// вычисление всех параметров ранжирования
+		/// </summary>
 		private void SetRankingParams()
 		{
 			if (Path != null)
@@ -667,25 +704,36 @@ namespace Group_choice_algos_fuzzy
 	/// <summary>
 	/// все методы
 	/// </summary>
-	static public class Methods
+	public static class Methods
 	{
-		static public Method All_various_rankings = new Method(ALL_RANKINGS);
-		static public Method All_Hamiltonian_paths = new Method(ALL_HP);
-		static public Method Linear_medians = new Method(LINEAR_MEDIANS);
-		static public Method Hp_max_length = new Method(HP_MAX_LENGTH);
-		static public Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
-		static public Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
+		public static Method All_various_rankings = new Method(ALL_RANKINGS);
+		public static Method All_Hamiltonian_paths = new Method(ALL_HP);
+		public static Method Linear_medians = new Method(LINEAR_MEDIANS);
+		public static Method Hp_max_length = new Method(HP_MAX_LENGTH);
+		public static Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
+		public static Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 
-		static public double MinHammingDistance;//расстояние Хэмминга линейных медиан
-		static public double MaxLength;//длина пути длиннейших Гаммильтоновых путей
-		static public double MaxStrength;//сила пути сильнейших Гаммильтоновых путей
-		static public List<int> SchulzeWinners = null;//победители по методу Шульце
-
+		public static double MinSummaryDistance;//расстояние (Хэмминга) линейных медиан
+		public static double MaxLength;//длина пути длиннейших Гаммильтоновых путей
+		public static double MaxStrength;//сила пути сильнейших Гаммильтоновых путей
+		public static List<int> SchulzeWinners = null;//победители по методу Шульце
+		/// <summary>
+		/// очищает результаты методов и характеристики этих результатов
+		/// </summary>
+		public static void ClearMethods()
+		{
+			foreach (Method M in GetMethods())
+				M.ClearRankings();
+			MinSummaryDistance = 0;
+			MaxLength = 0;
+			MaxStrength = 0;
+			SchulzeWinners = null;
+		}
 		/// <summary>
 		/// выдаёт все используемые методы
 		/// </summary>
 		/// <returns></returns>
-		static public Method[] GetMethods()
+		public static Method[] GetMethods()
 		{
 			Type t = typeof(Methods);
 			return t.GetFields().Select(x => x.GetValue(t) as Method).Where(x => x != null).ToArray();
@@ -695,7 +743,7 @@ namespace Group_choice_algos_fuzzy
 		/// создание всех возможных ранжирований данных альтернатив
 		/// </summary>
 		/// <returns></returns>
-		static public void Set_All_various_rankings()
+		public static void Set_All_various_rankings()
 		{
 			List<List<int>> permutations_of_elements(List<int> elements)
 			{
@@ -750,7 +798,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="HP"></param>
 		/// <param name="Weights_matrix"></param>
-		static public void Set_All_Hamiltonian_paths()
+		public static void Set_All_Hamiltonian_paths()
 		{
 			List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(C);
 			All_Hamiltonian_paths.ClearRankings();
@@ -765,14 +813,14 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="R_list"></param>
 		/// <returns></returns>
-		static public void Set_Linear_medians()
+		public static void Set_Linear_medians()
 		{
 			if (All_various_rankings.Rankings.Count == 0)
 				Set_All_various_rankings();
-			MinHammingDistance = All_various_rankings.Rankings.Select(x => x.PathSummaryDistance).Min();
+			MinSummaryDistance = All_various_rankings.Rankings.Select(x => x.PathSummaryDistance).Min();
 			Linear_medians.ClearRankings();
 			foreach (Ranking r in All_various_rankings.Rankings)
-				if (r.PathSummaryDistance == MinHammingDistance)
+				if (r.PathSummaryDistance == MinSummaryDistance)
 					Linear_medians.Rankings.Add(r);
 		}
 
@@ -781,7 +829,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		static public void Set_Hp_max_length()
+		public static void Set_Hp_max_length()
 		{
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
 				Set_All_Hamiltonian_paths();
@@ -797,7 +845,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		static public void Set_Hp_max_strength()
+		public static void Set_Hp_max_strength()
 		{
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
 				Set_All_Hamiltonian_paths();
@@ -813,7 +861,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		static public void Set_Schulze_method()
+		public static void Set_Schulze_method()
 		{
 			double[,] PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
 			int[,] pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
@@ -918,8 +966,7 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 	}
-	/*
-			def all_simple_paths_betweenAB(Adjacency_list, idA, idB):
+	/* def all_simple_paths_betweenAB(Adjacency_list, idA, idB):
 			   Paths = []  # simple - без циклов
 			   if idA != idB:
 				   n = len(Adjacency_list)

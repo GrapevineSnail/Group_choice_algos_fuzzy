@@ -43,12 +43,14 @@ namespace Group_choice_algos_fuzzy
 			refresh_variables();
 		}
 
-		#region FIELDS
+		#region GLOBALS
+		public static int n;//количество альтернатив
+		public static int m;//количество экспертов
 		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
 		public static Matrix P;//суммарная матрица матриц профилей
 		public static Matrix C;//общая матрица весов
 		public static Matrix R;//общая матрица смежности
-		#endregion FIELDS
+		#endregion GLOBALS
 
 
 		void clear_output()
@@ -125,18 +127,8 @@ namespace Group_choice_algos_fuzzy
 			P = new Matrix { };
 			C = new Matrix { };
 			R = new Matrix { };
-			foreach (Method M in Methods.GetMethods())
-				M.ClearRankings();
-			Methods.MinHammingDistance = 0;
-			Methods.MaxLength = 0;
-			Methods.MaxStrength = 0;
-			Methods.SchulzeWinners = null;
-
-			for (int i = 0; i < n; i++)
-			{
-				sym2ind[$"{mark}{i}"] = i;
-				ind2sym[i] = $"{mark}{i}";
-			}
+			Methods.ClearMethods();
+			SetConstants(n);
 		}
 
 		/// <summary>
@@ -474,7 +466,7 @@ namespace Group_choice_algos_fuzzy
 						met.connectedFrame[j, n].Value = met.Rankings[j].PathLength;
 						met.connectedFrame[j, n + 1].Value = met.Rankings[j].PathStrength;
 						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathSummaryDistance;
-						if (met.Rankings[j].PathSummaryDistance == Methods.MinHammingDistance)
+						if (met.Rankings[j].PathSummaryDistance == Methods.MinSummaryDistance)
 							met.connectedFrame[j, n + 2].Value += "\nМедиана";
 
 						for (int k = 0; k < 3; k++)
