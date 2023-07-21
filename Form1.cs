@@ -17,6 +17,7 @@ namespace Group_choice_algos_fuzzy
 		public Form1()
 		{
 			InitializeComponent();
+			//связывание методов с control-ами на форме
 			Methods.Hp_max_length = new Method(HP_MAX_LENGTH, cb_HP_max_length, dg_HP_max_length);
 			Methods.Hp_max_strength = new Method(HP_MAX_STRENGTH, cb_HP_max_strength, dg_HP_max_strength);
 			Methods.Schulze_method = new Method(SCHULZE_METHOD, cb_Schulze_method, dg_Schulze_method);
@@ -54,7 +55,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				label_info.Visible = false;
+				label3.Visible = false;
 				foreach (var m in Methods.GetMethods())
 					m.ClearMethodOutput();
 			}
@@ -65,7 +66,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				label_info.Visible = true;
+				label3.Visible = true;
 				foreach (var m in Methods.GetMethods())
 					m.ShowMethodOutput();
 				flowLayoutPanel_output.Focus();
@@ -418,8 +419,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			clear_output();
 			deactivate_input();
-			label_info.Text = $"Минимальное суммарное расстояние Хэмминга для мажоритарного графа: " +
-				$"{R.SumDistance(R, R_list, Matrix.DistanceHamming)}";
+			label3.Text = $"Минимальное суммарное расстояние Хэмминга для мажоритарного графа: " +
+				$"{R.SumDistance(R_list, Matrix.DistanceHamming)}";
 			foreach (Method met in Methods.GetMethods())
 			{
 				if (met.IsExecute == true && met.Rankings.Count != 0)
@@ -472,8 +473,8 @@ namespace Group_choice_algos_fuzzy
 						}
 						met.connectedFrame[j, n].Value = met.Rankings[j].PathLength;
 						met.connectedFrame[j, n + 1].Value = met.Rankings[j].PathStrength;
-						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathHammingDistance;
-						if (met.Rankings[j].PathHammingDistance == Methods.MinHammingDistance)
+						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathSummaryDistance;
+						if (met.Rankings[j].PathSummaryDistance == Methods.MinHammingDistance)
 							met.connectedFrame[j, n + 2].Value += "\nМедиана";
 
 						for (int k = 0; k < 3; k++)
@@ -481,7 +482,7 @@ namespace Group_choice_algos_fuzzy
 
 						color_characteristics(j, met.LengthsMin, met.LengthsMax, met.Rankings[j].PathLength);
 						color_characteristics(j, met.StrengthsMin, met.StrengthsMax, met.Rankings[j].PathStrength);
-						color_characteristics(j, met.DistancesMin, met.DistancesMax, met.Rankings[j].PathHammingDistance);
+						color_characteristics(j, met.DistancesMin, met.DistancesMax, met.Rankings[j].PathSummaryDistance);
 
 						if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
 							for (int i = 0; i < met.Rankings[j].Count; i++)

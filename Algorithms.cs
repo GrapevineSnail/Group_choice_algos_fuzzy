@@ -144,29 +144,6 @@ namespace Group_choice_algos_fuzzy
 			return Enumerable.Min(wp);
 		}
 
-		/// <summary>
-		/// создаёт матрицу смежности (порядок) из профиля эксперта
-		/// </summary>
-		/// <param name="single_profile"></param>
-		/// <returns></returns>
-		public static Matrix make_single_R_profile_matrix(int[] single_profile)
-		{
-			var l = single_profile.Length;
-			if (l != n || l != Enumerable.Distinct(single_profile).ToArray().Length)
-				throw new ArgumentException("Некорректный профиль эксперта");
-			int[,] Rj = new int[l, l];
-			for (int i = 0; i < l; i++)
-				for (int j = 0; j < l; j++)
-				{
-					var candidate1 = single_profile[i];
-					var candidate2 = single_profile[j];
-					if (i < j)
-						Rj[candidate1, candidate2] = 1;
-					else
-						Rj[candidate1, candidate2] = 0;
-				}
-			return new Matrix(Rj); // adjacency_matrix
-		}
 
 		/// <summary>
 		/// создаёт матрицу смежности

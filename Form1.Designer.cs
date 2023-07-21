@@ -63,8 +63,8 @@ namespace Group_choice_algos_fuzzy
 			this.numericUpDown_m = new System.Windows.Forms.NumericUpDown();
 			this.button_n_m = new System.Windows.Forms.Button();
 			this.numericUpDown_n = new System.Windows.Forms.NumericUpDown();
-			this.button_start = new System.Windows.Forms.Button();
-			this.label_info = new System.Windows.Forms.Label();
+			this.button_run_program = new System.Windows.Forms.Button();
+			this.label3 = new System.Windows.Forms.Label();
 			this.tableLayoutPanel1.SuspendLayout();
 			this.flowLayoutPanel_output.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
@@ -98,8 +98,8 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 2);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox2, 0, 0);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox1, 0, 1);
-			this.tableLayoutPanel1.Controls.Add(this.button_start, 2, 0);
-			this.tableLayoutPanel1.Controls.Add(this.label_info, 0, 3);
+			this.tableLayoutPanel1.Controls.Add(this.button_run_program, 2, 0);
+			this.tableLayoutPanel1.Controls.Add(this.label3, 0, 3);
 			this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
 			this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -525,28 +525,28 @@ namespace Group_choice_algos_fuzzy
             0,
             0});
 			// 
-			// button_start
+			// button_run_program
 			// 
-			this.button_start.AutoSize = true;
-			this.button_start.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-			this.button_start.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button_start.Location = new System.Drawing.Point(388, 3);
-			this.button_start.Name = "button_start";
-			this.button_start.Size = new System.Drawing.Size(44, 49);
-			this.button_start.TabIndex = 6;
-			this.button_start.Text = "Пуск!\r\n→";
-			this.button_start.UseVisualStyleBackColor = true;
-			this.button_start.Click += new System.EventHandler(this.read_profiles_input_table);
+			this.button_run_program.AutoSize = true;
+			this.button_run_program.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+			this.button_run_program.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.button_run_program.Location = new System.Drawing.Point(388, 3);
+			this.button_run_program.Name = "button_run_program";
+			this.button_run_program.Size = new System.Drawing.Size(44, 49);
+			this.button_run_program.TabIndex = 6;
+			this.button_run_program.Text = "Пуск!\r\n→";
+			this.button_run_program.UseVisualStyleBackColor = true;
+			this.button_run_program.Click += new System.EventHandler(this.read_profiles_input_table);
 			// 
-			// label_info
+			// label3
 			// 
-			this.label_info.AutoSize = true;
-			this.tableLayoutPanel1.SetColumnSpan(this.label_info, 3);
-			this.label_info.Location = new System.Drawing.Point(3, 442);
-			this.label_info.Name = "label_info";
-			this.label_info.Size = new System.Drawing.Size(405, 13);
-			this.label_info.TabIndex = 7;
-			this.label_info.Text = "Минимальное суммарное расстояние Хэмминга для мажоритарного графа: 0";
+			this.label3.AutoSize = true;
+			this.tableLayoutPanel1.SetColumnSpan(this.label3, 3);
+			this.label3.Location = new System.Drawing.Point(3, 442);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(405, 13);
+			this.label3.TabIndex = 7;
+			this.label3.Text = "Минимальное суммарное расстояние Хэмминга для мажоритарного графа: 0";
 			// 
 			// Form1
 			// 
@@ -592,7 +592,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.GroupBox groupBox2;
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.NumericUpDown numericUpDown_n;
-		private System.Windows.Forms.Button button_start;
+		private System.Windows.Forms.Button button_run_program;
 		private System.Windows.Forms.NumericUpDown numericUpDown_m;
 		private System.Windows.Forms.Button button_n_m;
 		private System.Windows.Forms.Button button_file;
@@ -604,7 +604,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.CheckBox cb_HP_max_strength;
 		private System.Windows.Forms.CheckBox cb_HP_max_length;
 		private System.Windows.Forms.TextBox textBox_file;
-		private System.Windows.Forms.Label label_info;
+		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output;
 		private System.Windows.Forms.GroupBox groupBox_HP_max_length;
 		private System.Windows.Forms.DataGridView dg_HP_max_length;
