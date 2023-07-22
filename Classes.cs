@@ -139,7 +139,7 @@ namespace Group_choice_algos_fuzzy
 		public Matrix Pow(int p)
 		{//квадратная матрица
 			if (this.n != this.m)
-				throw new Exception("Для возведения в степень матрица должна быть квадратной");
+				throw new Exception(EX_matrix_not_square);
 			var R = Eye(this.n, this.m);
 			for (int i = 0; i < p; i++)
 				R *= this;
@@ -202,7 +202,7 @@ namespace Group_choice_algos_fuzzy
 		private static double Distance(Matrix M1, Matrix M2, Func<double, double, double> elem_diff)
 		{
 			if (M1.n != M2.n || M1.m != M2.m)
-				throw new ArgumentException("Не совпадают размерности матриц");
+				throw new ArgumentException(EX_matrix_multing_dim);
 			double ans = 0;
 			for (int i = 0; i < M1.n; i++)
 				for (int j = 0; j < M1.m; j++)
@@ -242,7 +242,7 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < M1.n; i++)
 				for (int j = 0; j < M1.m; j++)
 					if (M1[i, j] < 0 || M1[i, j] > 1 || M2[i, j] < 0 || M2[i, j] > 1)
-						throw new ArgumentException("Некорректные матрицы");
+						throw new ArgumentException(EX_bad_matrix);
 			return DistanceModulus(M1, M2);
 		}
 		/// <summary>
@@ -328,9 +328,16 @@ namespace Group_choice_algos_fuzzy
 		 //полагаем квадратными
 			public FuzzyRelation() : base() { }
 			public FuzzyRelation(int n) : base(n, n) { }
-			public FuzzyRelation(double[,] M) : base(M) { }
-			public FuzzyRelation(int[,] M) : base(M) { }
-			public FuzzyRelation(Matrix M) : base(M) { }
+			public FuzzyRelation(double[,] M) : base(M)
+			{
+				if (M.GetLength(0) != M.GetLength(1))
+					throw new Exception(EX_matrix_not_square);
+			}
+			public FuzzyRelation(Matrix M) : base(M)
+			{
+				if (M.GetLength(0) != M.GetLength(1))
+					throw new Exception(EX_matrix_not_square);
+			}
 
 			public double this[Tuple<int, int> pair]
 			{
@@ -338,9 +345,9 @@ namespace Group_choice_algos_fuzzy
 				set { base[pair.Item1, pair.Item2] = value; }
 			}
 			/// <summary>
-			/// матрица принадлежности (= м. предпочтений)
+			/// матрица принадлежности (= м. предпочтений, функция принадлжености)
 			/// </summary>
-			public Matrix M
+			public Matrix MembershipFunction
 			{
 				get { return base.Self; }
 			}
@@ -448,6 +455,19 @@ namespace Group_choice_algos_fuzzy
 					R = R.Compose(R);
 				return R;
 			}
+			/// <summary>
+			/// возвращает матрицу четкого отношения из нечёткого
+			/// </summary>
+			/// <param name="alpha">уровень, на котором отсекаем принадлежность (\mu(x)>alpha => 1, иначе 0)</param>
+			/// <returns></returns>
+			public Matrix Defuzzyfying(double alpha)
+			{
+				var R = new Matrix(this.n, this.m);
+				for (int i = 0; i < R.n; i++)
+					for (int j = 0; j < R.m; j++)
+						R[i, j] = this[i, j] > alpha ? 1 : 0;
+				return R;
+			}
 		}
 	}
 
@@ -499,7 +519,7 @@ namespace Group_choice_algos_fuzzy
 				var single_profile = Rank2Array;
 				var l = single_profile.Length;
 				if (l != n || l != Enumerable.Distinct(single_profile).ToArray().Length)
-					throw new ArgumentException("Некорректный профиль эксперта");
+					throw new ArgumentException(EX_bad_expert_profile);
 				int[,] Rj = new int[l, l];
 				for (int i = 0; i < l; i++)
 					for (int j = 0; j < l; j++)
@@ -526,7 +546,7 @@ namespace Group_choice_algos_fuzzy
 			get { return Path.Count; }
 		}
 
-		
+
 		/*public List<int> String2List(string s)
 		{
 			return s.Split(mark).ToList()

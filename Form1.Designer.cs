@@ -490,6 +490,11 @@ namespace Group_choice_algos_fuzzy
 			this.numericUpDown_m.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.numericUpDown_m.Location = new System.Drawing.Point(127, 37);
+			this.numericUpDown_m.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
 			this.numericUpDown_m.Name = "numericUpDown_m";
 			this.numericUpDown_m.Size = new System.Drawing.Size(41, 20);
 			this.numericUpDown_m.TabIndex = 2;
@@ -516,6 +521,11 @@ namespace Group_choice_algos_fuzzy
 			this.numericUpDown_n.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.numericUpDown_n.Location = new System.Drawing.Point(127, 14);
+			this.numericUpDown_n.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
 			this.numericUpDown_n.Name = "numericUpDown_n";
 			this.numericUpDown_n.Size = new System.Drawing.Size(41, 20);
 			this.numericUpDown_n.TabIndex = 0;
@@ -536,7 +546,7 @@ namespace Group_choice_algos_fuzzy
 			this.button_run_program.TabIndex = 6;
 			this.button_run_program.Text = "Пуск!\r\n→";
 			this.button_run_program.UseVisualStyleBackColor = true;
-			this.button_run_program.Click += new System.EventHandler(this.read_profiles_input_table);
+			this.button_run_program.Click += new System.EventHandler(this.read_input_expert_profiles);
 			// 
 			// label3
 			// 

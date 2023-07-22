@@ -24,12 +24,15 @@ namespace Group_choice_algos_fuzzy
 			Methods.Linear_medians = new Method(LINEAR_MEDIANS, cb_Linear_medians, dg_Linear_medians);
 			Methods.All_various_rankings = new Method(ALL_RANKINGS, cb_All_rankings, dg_All_rankings);
 
+			numericUpDown_n.Minimum = 1;
+			numericUpDown_m.Minimum = 1;
 			numericUpDown_n.Maximum = max_number_for_spinbox;
 			numericUpDown_m.Maximum = max_number_for_spinbox;
+
 			//dataGridView_input_profiles.EnableHeadersVisualStyles = false;
 			button_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
-			foreach(Control c in flowLayoutPanel_output.Controls)
+			foreach (Control c in flowLayoutPanel_output.Controls)
 			{
 				c.MouseEnter += flowLayoutPanel_output_MouseEnter;
 			}
@@ -80,12 +83,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				foreach (Control dgv in flowLayoutPanel_input.Controls)
-				{
-					//dgv.Rows.Clear();
-					//dgv.Columns.Clear();
-					dgv.Dispose();
-				}
+				flowLayoutPanel_input.Controls.Clear();
 			}
 			catch (Exception ex) { }
 		}
@@ -160,6 +158,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
+				clear_input();
+				refresh_variables();
 				string s = textBox_file.Text;
 				List<Matrix> matrices = new List<Matrix>();
 				string[] lines = File.ReadAllLines(s).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
@@ -173,7 +173,7 @@ namespace Group_choice_algos_fuzzy
 						double[] numbers = lines[l].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
 							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
 						if (numbers.Any(x => x == INF) || numbers.Length != nn)
-							throw new ArgumentException("Неверное количество альтернатив профиля");
+							throw new ArgumentException(EX_number_of_alternatives);
 						for (int j = 0; j < numbers.Length; j++)
 							cur_matrix[l % nn, j] = numbers[j];
 					}
@@ -181,18 +181,19 @@ namespace Group_choice_algos_fuzzy
 						matrices.Add(new Matrix(cur_matrix));
 				}
 				if (matrices.Count == 0)
-					throw new ArgumentException("Пустой файл");
+					throw new ArgumentException(EX_file_empty);
 				m = matrices.Count;
 				n = nn;
-				set_input_datagrids_matrices(sender, e, matrices);
+				set_input_datagrids_matrices(matrices);
+				Form1_SizeChanged(sender, e);
 			}
 			catch (FileNotFoundException ex)
 			{
-				throw new Exception($"Файл не найден\n{ex.Message}");
+				throw new Exception(EX_file_not_found + $"\n{ex.Message}");
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"Файл некорректен\n{ex.Message}");
+				MessageBox.Show($"\n{ex.Message}");
 			}
 			finally
 			{
@@ -217,31 +218,25 @@ namespace Group_choice_algos_fuzzy
 				{
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
-					if (n <= 0 || n <= 0)
-						throw new ArgumentException("Должно выполняться n > 0, m > 0");
-					clear_input();
-					clear_output();
-					refresh_variables();
 					if (n > max_number_for_spinbox || m > max_number_for_spinbox || n * m > max_number_for_cells)
-						throw new ArgumentException(
-							"Число альтернатив n и/или число экспертов m слишком большое\n" +
-							$"n максимальное = {max_number_for_spinbox}\n" +
-							$"m максимальное = {max_number_for_spinbox}\n" +
-							$"n*m максимальное = {max_number_for_cells}");
+						throw new ArgumentException(EX_n_m_too_big);
 					else
-						set_input_datagrids_matrices(sender, e, null);
+					{
+						set_input_datagrids_matrices(null);
+						Form1_SizeChanged(sender, e);
+					}
 				}
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"Введите кооректные данные\n{ex.Message}");
+				MessageBox.Show($"\n{ex.Message}");
 			}
 		}
 
 		/// <summary>
 		/// размещение таблицы для ввода профилей
 		/// </summary>
-		private void set_input_datagrids_matrices(object sender, EventArgs e, List<Matrix> list_of_matrices)
+		private void set_input_datagrids_matrices(List<Matrix> list_of_matrices)
 		{
 			clear_input();
 			clear_output();
@@ -302,11 +297,10 @@ namespace Group_choice_algos_fuzzy
 					for (int j = 0; j < dgv.Columns.Count; j++)
 					{
 						dgv[j, i].ReadOnly = false;
-						dgv[j, i].Value = fill_values[i,j];
+						dgv[j, i].Value = fill_values[i, j];
 						dgv[j, i].ValueType = typeof(double);
 					}
 			}
-			Form1_SizeChanged(sender, e);
 			activate_input();
 		}
 
@@ -315,21 +309,18 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
-		private void read_profiles_input_table(object sender, EventArgs e)
+		private void read_input_expert_profiles(object sender, EventArgs e)
 		{
 			try
 			{
-				if (n == 0 || m == 0)
-					throw new ArgumentException("Пустой ввод");
 				if (n > max_count_of_alternatives)
-					throw new ArgumentException(
-						"Количество альтернатив n слишком велико\nПрограмма может зависнуть");
+					throw new ArgumentException(EX_n_m_too_big);
 				R_list = new List<Matrix>() { };
 				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 				{
 					Matrix input_matrix = new Matrix(n, n);
 					for (int i = 0; i < dgv.Rows.Count; i++)
-						for (int j = 0; j < dgv.Columns.Count; j++)						
+						for (int j = 0; j < dgv.Columns.Count; j++)
 							input_matrix[i, j] = (double)dgv[j, i].Value;
 					R_list.Add(new Matrix(input_matrix));
 				}
@@ -338,7 +329,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (ArgumentException ex)
 			{
-				MessageBox.Show($"Введите кооректные данные\n{ex.Message}");
+				MessageBox.Show($"\n{ex.Message}");
 			}
 		}
 
@@ -354,7 +345,7 @@ namespace Group_choice_algos_fuzzy
 				var checkbuttons = Enumerable.Select(Methods.GetMethods(), x => x.IsExecute);
 				var frames = Enumerable.Select(Methods.GetMethods(), x => x.connectedFrame);
 				if (Enumerable.All(checkbuttons, x => x == false))
-					throw new Exception("Выберите метод");
+					throw new Exception(EX_choose_method);
 
 				R_list = Relations_list;
 				P = Matrix.Sum(R_list);

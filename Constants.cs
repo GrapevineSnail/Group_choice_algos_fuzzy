@@ -48,5 +48,21 @@ namespace Group_choice_algos_fuzzy
 				ind2sym[i] = $"{mark}{i}";
 			}
 		}
+
+		#region EXCEPTIONS
+		public static string EX_bad_expert_profile = "Некорректный профиль эксперта";
+		public static string EX_matrix_not_square = "Матрица должна быть квадратной";
+		public static string EX_matrix_multing_dim = "Размерности двух матриц не совпадают";
+		public static string EX_bad_matrix = "Некорректная матрица";
+		public static string EX_number_of_alternatives = "Неверное количество альтернатив профиля";
+		public static string EX_file_empty = "Пустой файл";
+		public static string EX_file_not_found = "Файл не найден";
+		public static string EX_n_m_too_big = "Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
+			$"n максимальное = {max_number_for_spinbox}\n" + 
+			$"m максимальное = {max_number_for_spinbox}\n" + 
+			$"n*m максимальное = {max_number_for_cells}"; 
+		public static string EX_choose_method = "Выберите метод";
+		public static string EX_bad_symbol = "Неверный символ";
+		#endregion EXCEPTIONS
 	}
 }

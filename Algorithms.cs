@@ -92,7 +92,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			else
 			{
-				throw new ArgumentException("Неверный символ");
+				throw new ArgumentException(EX_bad_symbol);
 			}
 		}
 
