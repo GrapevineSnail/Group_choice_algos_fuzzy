@@ -18,43 +18,84 @@ namespace Group_choice_algos_fuzzy
 		{
 			InitializeComponent();
 			//связывание методов с control-ами на форме
-			Methods.Hp_max_length = new Method(HP_MAX_LENGTH, cb_HP_max_length, dg_HP_max_length);
-			Methods.Hp_max_strength = new Method(HP_MAX_STRENGTH, cb_HP_max_strength, dg_HP_max_strength);
-			Methods.Schulze_method = new Method(SCHULZE_METHOD, cb_Schulze_method, dg_Schulze_method);
-			Methods.Linear_medians = new Method(LINEAR_MEDIANS, cb_Linear_medians, dg_Linear_medians);
-			Methods.All_various_rankings = new Method(ALL_RANKINGS, cb_All_rankings, dg_All_rankings);
-
-			numericUpDown_n.Minimum = 1;
-			numericUpDown_m.Minimum = 1;
-			numericUpDown_n.Maximum = max_number_for_spinbox;
-			numericUpDown_m.Maximum = max_number_for_spinbox;
+			Methods.Hp_max_length.SetConnectedControls(cb_HP_max_length, dg_HP_max_length);
+			Methods.Hp_max_strength.SetConnectedControls(cb_HP_max_strength, dg_HP_max_strength);
+			Methods.Schulze_method.SetConnectedControls(cb_Schulze_method, dg_Schulze_method);
+			Methods.Linear_medians.SetConnectedControls(cb_Linear_medians, dg_Linear_medians);
+			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
 
 			//dataGridView_input_profiles.EnableHeadersVisualStyles = false;
 			button_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
-			foreach (Control c in flowLayoutPanel_output.Controls)
-			{
-				c.MouseEnter += flowLayoutPanel_output_MouseEnter;
-			}
 			foreach (Control c in flowLayoutPanel_input.Controls)
 			{
 				c.MouseEnter += flowLayoutPanel_input_MouseEnter;
 			}
+			foreach (Control c in flowLayoutPanel_output.Controls)
+			{
+				c.MouseEnter += flowLayoutPanel_output_MouseEnter;
+			}
 
 			interface_coloring(this);
 			clear_output();
-			refresh_variables();
 		}
 
 		#region GLOBALS
-		public static int n;//количество альтернатив
-		public static int m;//количество экспертов
+		private static int _n;//количество альтернатив
+		private static int _m;//количество экспертов
+		public static int n
+		{
+			set
+			{
+				_n = value;
+				SetConstants(n);
+			}
+			get { return _n; }
+		}
+		public static int m { set { _m = value; } get { return _m; } }
 		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
-		public static Matrix P;//суммарная матрица матриц профилей
+		public static Matrix R_avg;//агрегированная матрица матриц профилей (среднее)
+		public static Matrix R_med;//агрегированная матрица матриц профилей (медианные)
 		public static Matrix C;//общая матрица весов
-		public static Matrix R;//общая матрица смежности
+		public static Matrix r;//общая матрица смежности
 		#endregion GLOBALS
 
+
+		/// <summary>
+		/// установка дефолтных значений переменных
+		/// </summary>
+		void refresh_variables()
+		{
+			R_list = new List<Matrix>();
+			R_avg = new Matrix { };
+			R_med = new Matrix { };
+			C = new Matrix { };
+			r = new Matrix { };
+			Methods.ClearMethods();
+		}
+
+		/// <summary>
+		/// начальное расцвечивание формы
+		/// </summary>
+		/// <param name="main_control"></param>
+		void interface_coloring(Control main_control)
+		{
+			try
+			{
+				foreach (Control c in main_control.Controls)
+				{
+					if (c as Button != null)
+					{
+						var b = c as Button;
+						b.BackColor = button_background;
+						b.FlatAppearance.BorderColor = button_background;
+					}
+					else
+						interface_coloring(c);
+				}
+			}
+			catch (Exception ex) { }
+		}
 
 		void clear_output()
 		{
@@ -117,132 +158,12 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
-		/// установка дефолтных значений переменных
-		/// </summary>
-		void refresh_variables()
-		{
-			R_list = new List<Matrix>();
-			P = new Matrix { };
-			C = new Matrix { };
-			R = new Matrix { };
-			Methods.ClearMethods();
-			SetConstants(n);
-		}
-
-		/// <summary>
-		/// начальное расцвечивание формы
-		/// </summary>
-		/// <param name="main_control"></param>
-		void interface_coloring(Control main_control)
-		{
-			if (main_control.Controls.Count != 0)
-				foreach (Control c in main_control.Controls)
-				{
-					if (c as Button != null)
-					{
-						var b = c as Button;
-						b.BackColor = button_background;
-						b.FlatAppearance.BorderColor = button_background;
-					}
-					else
-						interface_coloring(c);
-				}
-		}
-
-		/// <summary>
-		/// считать профили экспертов из файла
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void read_profiles_file(object sender, EventArgs e)
-		{
-			try
-			{
-				clear_input();
-				refresh_variables();
-				string s = textBox_file.Text;
-				List<Matrix> matrices = new List<Matrix>();
-				string[] lines = File.ReadAllLines(s).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-				var nn = lines.First().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Count();
-				Matrix cur_matrix = new Matrix(nn, nn);
-				for (int l = 0; l < lines.Length; l++)
-				{
-					if (lines[l].Length != 0)
-					{
-						double res;
-						double[] numbers = lines[l].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
-						if (numbers.Any(x => x == INF) || numbers.Length != nn)
-							throw new ArgumentException(EX_number_of_alternatives);
-						for (int j = 0; j < numbers.Length; j++)
-							cur_matrix[l % nn, j] = numbers[j];
-					}
-					if (l % nn == nn - 1)
-						matrices.Add(new Matrix(cur_matrix));
-				}
-				if (matrices.Count == 0)
-					throw new ArgumentException(EX_file_empty);
-				m = matrices.Count;
-				n = nn;
-				set_input_datagrids_matrices(matrices);
-				Form1_SizeChanged(sender, e);
-			}
-			catch (FileNotFoundException ex)
-			{
-				throw new Exception(EX_file_not_found + $"\n{ex.Message}");
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show($"\n{ex.Message}");
-			}
-			finally
-			{
-				numericUpDown_n.Value = n;
-				numericUpDown_m.Value = m;
-			}
-		}
-
-		/// <summary>
-		/// Считывает с формы переменные n и m (количество альтернатив и экспертов)
-		/// </summary>
-		private void read_n_and_m(object sender, EventArgs e)
-		{
-			try
-			{
-				if (n == (int)numericUpDown_n.Value && m == (int)numericUpDown_m.Value)
-				{
-					clear_output();
-					activate_input();
-				}
-				else
-				{
-					n = (int)numericUpDown_n.Value;
-					m = (int)numericUpDown_m.Value;
-					if (n > max_number_for_spinbox || m > max_number_for_spinbox || n * m > max_number_for_cells)
-						throw new ArgumentException(EX_n_m_too_big);
-					else
-					{
-						set_input_datagrids_matrices(null);
-						Form1_SizeChanged(sender, e);
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show($"\n{ex.Message}");
-			}
-		}
-
-		/// <summary>
 		/// размещение таблицы для ввода профилей
 		/// </summary>
-		private void set_input_datagrids_matrices(List<Matrix> list_of_matrices)
+		private void set_input_datagrids(List<Matrix> list_of_matrices)
 		{
 			clear_input();
 			clear_output();
-			string[] used_alternatives = new string[n];
-			for (int i = 0; i < n; i++)
-				used_alternatives[i] = index2symbol(i, n - 1);
 			for (int expert = 0; expert < m; expert++)
 			{
 				DataGridView dgv = new DataGridView();
@@ -263,8 +184,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					var cell = ((DataGridView)ss).CurrentCell;
 					double res;
-					if (!double.TryParse(cell.Value.ToString(), out res)
-					|| res > 1 || res < 0)
+					if (!double.TryParse(cell.Value.ToString(), out res) || res > 1 || res < 0)
 						cell.Value = 0.0;
 				};
 				flowLayoutPanel_input.Controls.Add(dgv);
@@ -273,20 +193,22 @@ namespace Group_choice_algos_fuzzy
 				{
 					DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
 					column.Name = j.ToString();
-					column.HeaderText = $"{index2symbol(j, n - 1)}";
+					column.HeaderText = $"{ind2letter[j]}";
 					column.SortMode = DataGridViewColumnSortMode.NotSortable;
 					dgv.Columns.Add(column);
 				}
 				for (int i = 0; i < n; i++)
 				{
 					dgv.Rows.Add();
-					dgv.Rows[i].HeaderCell.Value = $"{index2symbol(i, n - 1)}";
+					dgv.Rows[i].HeaderCell.Value = $"{ind2letter[i]}";
 				}
 
 				double[,] fill_values = new double[n, n];
 				for (int i = 0; i < n; i++)
+				{
 					for (int j = 0; j < n; j++)
 						fill_values[i, j] = 0.0;
+				}
 				if (list_of_matrices != null && list_of_matrices.Count != 0)
 				{
 					for (int i = 0; i < list_of_matrices[expert].n; i++)
@@ -305,39 +227,10 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
-		/// чтение входных профилей и запуск работы программы на выбранных алгоритмах
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void read_input_expert_profiles(object sender, EventArgs e)
-		{
-			try
-			{
-				if (n > max_count_of_alternatives)
-					throw new ArgumentException(EX_n_m_too_big);
-				R_list = new List<Matrix>() { };
-				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
-				{
-					Matrix input_matrix = new Matrix(n, n);
-					for (int i = 0; i < dgv.Rows.Count; i++)
-						for (int j = 0; j < dgv.Columns.Count; j++)
-							input_matrix[i, j] = (double)dgv[j, i].Value;
-					R_list.Add(new Matrix(input_matrix));
-				}
-				execute_algorythms(R_list);
-				Form1_SizeChanged(sender, e);
-			}
-			catch (ArgumentException ex)
-			{
-				MessageBox.Show($"\n{ex.Message}");
-			}
-		}
-
-		/// <summary>
 		/// запускает выполнение выбранных алгоритмов
 		/// </summary>
 		/// <param name="list_of_profiles"></param>
-		private void execute_algorythms(List<Matrix> Relations_list)
+		private void execute_algorythms(List<Matrix> ExpertsRelationsList)
 		{
 			try
 			{
@@ -347,10 +240,9 @@ namespace Group_choice_algos_fuzzy
 				if (Enumerable.All(checkbuttons, x => x == false))
 					throw new Exception(EX_choose_method);
 
-				R_list = Relations_list;
-				P = Matrix.Sum(R_list);
-				C = make_weight_C_matrix(P);
-				R = make_sum_R_profile_matrix(C);
+				R_list = ExpertsRelationsList;
+				C = make_weight_C_matrix(Matrix.Sum(R_list));
+				r = Matrix.MakeAdjacencyMatrix(C);
 				Methods.Set_Linear_medians();
 				if (Methods.All_various_rankings.IsExecute && Methods.All_various_rankings.Rankings.Count == 0)
 					Methods.Set_All_various_rankings();
@@ -365,28 +257,23 @@ namespace Group_choice_algos_fuzzy
 				if (Methods.Schulze_method.IsExecute)
 					Methods.Set_Schulze_method();
 				List<string> Intersect = new List<string>();
-				bool[] is_rankings_of_method_exist = Enumerable.Select(Methods.GetMethods(),
-					x => x.IsExecute && x.Rankings != null && x.Rankings.Count != 0).ToArray();
-				if (is_rankings_of_method_exist.Where(x => x == true).Count() > 1)
+				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
+				if (is_rankings_of_method_exist.Count() > 1)
 				{
 					bool enter_intersect = false;
-					foreach (Method m in Methods.GetMethods())
+					foreach (Method m in is_rankings_of_method_exist)
 					{
-						if (m != null && m.IsExecute == true && m.Rankings != null && m.Rankings.Count > 0)
+						if (enter_intersect == false)
 						{
-							if (enter_intersect == false)
-							{
-								Intersect = m.Ranks2Strings;
-								enter_intersect = true;
-							}
-							else
-								Intersect = Enumerable.Intersect(Intersect, m.Ranks2Strings).ToList();
+							Intersect = m.Ranks2Strings;
+							enter_intersect = true;
 						}
+						else
+							Intersect = Enumerable.Intersect(Intersect, m.Ranks2Strings).ToList();
 					}
 				}
-				set_output_table(Intersect);
+				set_output_results(Intersect);
 				// visualize_graph(C, null);//
-
 			}
 			catch (Exception ex)
 			{
@@ -398,12 +285,13 @@ namespace Group_choice_algos_fuzzy
 		/// вывести на экран результирующие ранжирования
 		/// </summary>
 		/// <param name="Mutual_rankings"></param>
-		private void set_output_table(List<string> Mutual_rankings)
+		private void set_output_results(List<string> Mutual_rankings)
 		{
 			clear_output();
 			deactivate_input();
-			label3.Text = $"Минимальное суммарное расстояние Хэмминга для мажоритарного графа: " +
-				$"{R.SumDistance(R_list, Matrix.DistanceHamming)}";
+			label3.Text = $"Минимальное суммарное расстояние для агрегированного графа:\n" +
+				$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
+				$"'квадрат разности': {Methods.MinSummarySquareDistance}";
 			foreach (Method met in Methods.GetMethods())
 			{
 				if (met.IsExecute == true && met.Rankings.Count != 0)
@@ -457,7 +345,7 @@ namespace Group_choice_algos_fuzzy
 						met.connectedFrame[j, n].Value = met.Rankings[j].PathLength;
 						met.connectedFrame[j, n + 1].Value = met.Rankings[j].PathStrength;
 						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathSummaryDistance;
-						if (met.Rankings[j].PathSummaryDistance == Methods.MinSummaryDistance)
+						if (met.Rankings[j].PathSummaryDistance == Methods.MinSummaryModulusDistance)
 							met.connectedFrame[j, n + 2].Value += "\nМедиана";
 
 						for (int k = 0; k < 3; k++)
@@ -486,6 +374,122 @@ namespace Group_choice_algos_fuzzy
 			show_output();
 		}
 
+		/// <summary>
+		/// считать профили экспертов из файла
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void read_expert_profiles_from_file(object sender, EventArgs e)
+		{
+			try
+			{
+				clear_input();
+				refresh_variables();
+				string s = textBox_file.Text;
+				List<Matrix> matrices = new List<Matrix>();
+				string[] lines = File.ReadAllLines(s).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				var nn = lines.First().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Count();
+				Matrix cur_matrix = new Matrix(nn, nn);
+				for (int l = 0; l < lines.Length; l++)
+				{
+					if (lines[l].Length != 0)
+					{
+						double res;
+						double[] numbers = lines[l].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
+						if (numbers.Any(x => x == INF) || numbers.Length != nn)
+							throw new ArgumentException(EX_number_of_alternatives);
+						for (int j = 0; j < numbers.Length; j++)
+							cur_matrix[l % nn, j] = numbers[j];
+					}
+					if (l % nn == nn - 1)
+						matrices.Add(new Matrix(cur_matrix));
+				}
+				if (matrices.Count == 0)
+					throw new ArgumentException(EX_file_empty);
+				m = matrices.Count;
+				n = nn;
+				set_input_datagrids(matrices);
+				Form1_SizeChanged(sender, e);
+			}
+			catch (FileNotFoundException ex)
+			{
+				throw new Exception(EX_file_not_found + $"\n{ex.Message}");
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"\n{ex.Message}");
+			}
+			finally
+			{
+				numericUpDown_n.Value = n;
+				numericUpDown_m.Value = m;
+			}
+		}
+
+		/// <summary>
+		/// чтение входных профилей и запуск работы программы на выбранных алгоритмах
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void read_expert_profiles_from_input(object sender, EventArgs e)
+		{
+			try
+			{
+				if (n > max_count_of_alternatives)
+					throw new ArgumentException(EX_n_m_too_big);
+				R_list = new List<Matrix>() { };
+				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
+				{
+					Matrix input_matrix = new Matrix(n, n);
+					for (int i = 0; i < dgv.Rows.Count; i++)
+						for (int j = 0; j < dgv.Columns.Count; j++)
+							input_matrix[i, j] = (double)dgv[j, i].Value;
+					R_list.Add(new Matrix(input_matrix));
+				}
+				execute_algorythms(R_list);
+				Form1_SizeChanged(sender, e);
+			}
+			catch (ArgumentException ex)
+			{
+				MessageBox.Show($"\n{ex.Message}");
+			}
+		}
+
+		/// <summary>
+		/// Считывает с формы переменные n и m (количество альтернатив и экспертов)
+		/// </summary>
+		/// 
+		private void button_n_m_Click(object sender, EventArgs e)
+		{
+			try
+			{
+				if (n == (int)numericUpDown_n.Value && m == (int)numericUpDown_m.Value)
+				{
+					clear_output();
+					activate_input();
+				}
+				else
+				{
+					var nn = (int)numericUpDown_n.Value;
+					var mm = (int)numericUpDown_m.Value;
+					if (nn > max_count_of_alternatives || mm > max_count_of_experts)
+						throw new ArgumentException(EX_n_m_too_big);
+					else
+					{
+						n = (int)numericUpDown_n.Value;
+						m = (int)numericUpDown_m.Value;
+						set_input_datagrids(null);
+						Form1_SizeChanged(sender, e);
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"\n{ex.Message}");
+			}
+		}
+
 		private void Form1_SizeChanged(object sender, EventArgs e)
 		{
 			foreach (Method m in Methods.GetMethods())
@@ -495,9 +499,8 @@ namespace Group_choice_algos_fuzzy
 			}
 			foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 			{
-				dgv.Width = flowLayoutPanel_input.Width
-					- flowLayoutPanel_input.Padding.Right - flowLayoutPanel_input.Padding.Left
-					- dgv.Margin.Right - dgv.Margin.Left;
+				dgv.Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
+				dgv.Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
 			}
 		}
 
@@ -510,5 +513,6 @@ namespace Group_choice_algos_fuzzy
 		{
 			flowLayoutPanel_input.Focus();
 		}
+
 	}
 }

@@ -87,6 +87,43 @@ namespace Group_choice_algos_fuzzy
 		{
 			return R1 + (-1) * R2;
 		}
+
+		/// <summary>
+		/// для удобства печати матриц
+		/// </summary>
+		/// <param name="Matrix"></param>
+		/// <returns></returns>
+		public static string Matrix2String(double[,] Matrix)
+		{
+			/// удаляет последние cnt символов из строки
+			string trim_end(string s, int cnt)
+			{
+				return s.Remove(s.Length - cnt, cnt);
+			}
+			var n = Matrix.GetLength(0);
+			var m = Matrix.GetLength(1);
+			int[] max_widths = new int[m];
+			for (int j = 0; j < m; j++)
+				max_widths[j] = 3;
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					if (Matrix[i, j].ToString().Length > max_widths[j])
+						max_widths[j] = Matrix[i, j].ToString().Length;
+			var str = "";
+			for (int i = 0; i < n; i++)
+			{
+				for (int j = 0; j < m; j++)
+				{
+					//var fill = "_";
+					//var align = "^";
+					int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
+					//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
+					str += string.Format($"[{{0,{width}}}]", Matrix[i, j], width);
+				}
+				str += "\n";
+			}
+			return trim_end(str, 1);
+		}
 		public int GetLength(int dimension)
 		{
 			return matrix.GetLength(dimension);
@@ -193,11 +230,11 @@ namespace Group_choice_algos_fuzzy
 			return ans;
 		}
 		/// <summary>
-		/// расстояние между матрицами
+		/// расстояние между матрицами на основании выбранной функции расстояния для отдельных элементов
 		/// </summary>
 		/// <param name="M1"></param>
 		/// <param name="M2"></param>
-		/// <param name="elem_diff"></param>
+		/// <param name="elem_diff">функция расстояния для отдельных элементов</param>
 		/// <returns></returns>
 		private static double Distance(Matrix M1, Matrix M2, Func<double, double, double> elem_diff)
 		{
@@ -208,17 +245,6 @@ namespace Group_choice_algos_fuzzy
 				for (int j = 0; j < M1.m; j++)
 					ans += elem_diff(M1[i, j], M2[i, j]);
 			return ans;
-		}
-		/// <summary>
-		/// вычисляет расстояние из квадратов разностей элементов (между двумя матрицами)
-		/// </summary>
-		/// <param name="M1"></param>
-		/// <param name="M2"></param>
-		/// <returns></returns>
-		public static double DistanceSquare(Matrix M1, Matrix M2)
-		{
-			Func<double, double, double> f = (x, y) => Math.Pow(x - y, 2);
-			return Distance(M1, M2, f);
 		}
 		/// <summary>
 		/// вычисляет расстояние из модулей разностей элементов (между двумя матрицами)
@@ -246,6 +272,17 @@ namespace Group_choice_algos_fuzzy
 			return DistanceModulus(M1, M2);
 		}
 		/// <summary>
+		 /// вычисляет расстояние из квадратов разностей элементов (между двумя матрицами)
+		 /// </summary>
+		 /// <param name="M1"></param>
+		 /// <param name="M2"></param>
+		 /// <returns></returns>
+		public static double DistanceSquare(Matrix M1, Matrix M2)
+		{
+			Func<double, double, double> f = (x, y) => Math.Pow(x - y, 2);
+			return Distance(M1, M2, f);
+		}
+		/// <summary>
 		/// вычисляет евклидово расстояние между двумя матрицами
 		/// </summary>
 		/// <param name="M1"></param>
@@ -265,6 +302,24 @@ namespace Group_choice_algos_fuzzy
 			foreach (Matrix other_R in List_of_other_R)
 				sum_dist += distance_function(this, other_R);
 			return sum_dist;
+		}
+		/// <summary>
+		/// из любой матрицы весов делает матрицу смежности
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public static Matrix MakeAdjacencyMatrix(Matrix M)
+		{
+			Matrix R = new Matrix(M.n, M.m);
+			for (int i = 0; i < M.n; i++)
+				for (int j = 0; j < M.m; j++)
+				{
+					if (Math.Abs(M[i, j]) == INF)// && Math.Abs(M[i, j]) == 0)
+						R[i, j] = 0;
+					else
+						R[i, j] = 1;
+				}
+			return R;
 		}
 	}
 
@@ -407,7 +462,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				var S = new FuzzyRelation();
 				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Max(this[x] - other[x], 0);
+					S[x] = Math.Min(this[x], 1 - other[x]);
 				return S;
 			}
 			/// <summary>
@@ -419,7 +474,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				var S = new FuzzyRelation();
 				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Min(this[x], 1 - other[x]);
+					S[x] = Math.Max(this[x] - other[x], 0);
 				return S;
 			}
 			/// <summary>
@@ -460,12 +515,12 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			/// <param name="alpha">уровень, на котором отсекаем принадлежность (\mu(x)>alpha => 1, иначе 0)</param>
 			/// <returns></returns>
-			public Matrix Defuzzyfying(double alpha)
+			public Matrix DefuzzyfyingAlphaSlice(double alpha)
 			{
 				var R = new Matrix(this.n, this.m);
 				for (int i = 0; i < R.n; i++)
 					for (int j = 0; j < R.m; j++)
-						R[i, j] = this[i, j] > alpha ? 1 : 0;
+						R[i, j] = this[i, j] >= alpha ? 1 : 0;
 				return R;
 			}
 		}
@@ -587,14 +642,7 @@ namespace Group_choice_algos_fuzzy
 			Name = name;
 			Rankings = new List<Ranking>();
 		}
-		public Method(int name, CheckBox checkBox, DataGridView frame)
-		{
-			Name = name;
-			connectedCheckBox = checkBox;
-			connectedFrame = frame;
-			Rankings = new List<Ranking>();
-		}
-		public int Name;//название метода
+		public int Name;//обозначение метода
 		private CheckBox connectedCheckBox = null;//чекбокс - будем ли запускать метод
 		public DataGridView connectedFrame = null;//в какой контейнер выводить результаты работы метода
 		private Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
@@ -646,6 +694,16 @@ namespace Group_choice_algos_fuzzy
 		public List<string> Ranks2Strings
 		{
 			get { return this.Rankings.Select(x => x.Rank2String).ToList(); }
+		}
+		/// <summary>
+		/// задаёт связанные с методом элементы управления
+		/// </summary>
+		/// <param name="checkBox"></param>
+		/// <param name="frame"></param>
+		public void SetConnectedControls(CheckBox checkBox, DataGridView frame)
+		{
+			connectedCheckBox = checkBox;
+			connectedFrame = frame;
 		}
 		/// <summary>
 		/// удаление ранжирований и их характеристик
@@ -733,10 +791,12 @@ namespace Group_choice_algos_fuzzy
 		public static Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
 		public static Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 
-		public static double MinSummaryDistance;//расстояние (Хэмминга) линейных медиан
+		public static double MinSummaryModulusDistance;//расстояние наиближайшего ко всем агрегированного ранжирования (модули) - лин. медианы
+		public static double MinSummarySquareDistance;//расстояние наиближайшего ко всем агрегированного ранжирования (квадраты)
 		public static double MaxLength;//длина пути длиннейших Гаммильтоновых путей
 		public static double MaxStrength;//сила пути сильнейших Гаммильтоновых путей
 		public static List<int> SchulzeWinners = null;//победители по методу Шульце
+
 		/// <summary>
 		/// очищает результаты методов и характеристики этих результатов
 		/// </summary>
@@ -744,11 +804,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			foreach (Method M in GetMethods())
 				M.ClearRankings();
-			MinSummaryDistance = 0;
+			MinSummaryModulusDistance = 0;
 			MaxLength = 0;
 			MaxStrength = 0;
 			SchulzeWinners = null;
 		}
+
 		/// <summary>
 		/// выдаёт все используемые методы
 		/// </summary>
@@ -757,6 +818,20 @@ namespace Group_choice_algos_fuzzy
 		{
 			Type t = typeof(Methods);
 			return t.GetFields().Select(x => x.GetValue(t) as Method).Where(x => x != null).ToArray();
+		}
+
+		/// <summary>
+		/// выдаёт все методы, имеющие ранжирования и отмеченные к выполнению в текущей программе
+		/// </summary>
+		/// <returns></returns>
+		public static List<Method> GetMethodsExecutedWhithResult() {
+			var is_rankings_of_method_exists = new List<Method>();
+			foreach(Method m in Methods.GetMethods())
+			{
+				if (m.IsExecute && m.Rankings != null && m.Rankings.Count > 0)
+					is_rankings_of_method_exists.Add(m);
+			}
+			return is_rankings_of_method_exists;
 		}
 
 		/// <summary>
@@ -837,10 +912,10 @@ namespace Group_choice_algos_fuzzy
 		{
 			if (All_various_rankings.Rankings.Count == 0)
 				Set_All_various_rankings();
-			MinSummaryDistance = All_various_rankings.Rankings.Select(x => x.PathSummaryDistance).Min();
+			MinSummaryModulusDistance = All_various_rankings.Rankings.Select(x => x.PathSummaryDistance).Min();
 			Linear_medians.ClearRankings();
 			foreach (Ranking r in All_various_rankings.Rankings)
-				if (r.PathSummaryDistance == MinSummaryDistance)
+				if (r.PathSummaryDistance == MinSummaryModulusDistance)
 					Linear_medians.Rankings.Add(r);
 		}
 

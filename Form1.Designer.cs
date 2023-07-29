@@ -450,7 +450,7 @@ namespace Group_choice_algos_fuzzy
 			this.button_file.TabIndex = 0;
 			this.button_file.Text = "Ввод из файла";
 			this.button_file.UseVisualStyleBackColor = true;
-			this.button_file.Click += new System.EventHandler(this.read_profiles_file);
+			this.button_file.Click += new System.EventHandler(this.read_expert_profiles_from_file);
 			// 
 			// groupBox1
 			// 
@@ -514,7 +514,7 @@ namespace Group_choice_algos_fuzzy
 			this.button_n_m.TabIndex = 1;
 			this.button_n_m.Text = "Ввод n и m";
 			this.button_n_m.UseVisualStyleBackColor = true;
-			this.button_n_m.Click += new System.EventHandler(this.read_n_and_m);
+			this.button_n_m.Click += new System.EventHandler(this.button_n_m_Click);
 			// 
 			// numericUpDown_n
 			// 
@@ -546,7 +546,7 @@ namespace Group_choice_algos_fuzzy
 			this.button_run_program.TabIndex = 6;
 			this.button_run_program.Text = "Пуск!\r\n→";
 			this.button_run_program.UseVisualStyleBackColor = true;
-			this.button_run_program.Click += new System.EventHandler(this.read_input_expert_profiles);
+			this.button_run_program.Click += new System.EventHandler(this.read_expert_profiles_from_input);
 			// 
 			// label3
 			// 
@@ -554,9 +554,9 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.SetColumnSpan(this.label3, 3);
 			this.label3.Location = new System.Drawing.Point(3, 442);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(405, 13);
+			this.label3.Size = new System.Drawing.Size(209, 13);
 			this.label3.TabIndex = 7;
-			this.label3.Text = "Минимальное суммарное расстояние Хэмминга для мажоритарного графа: 0";
+			this.label3.Text = "Минимальное суммарное расстояние...";
 			// 
 			// Form1
 			// 

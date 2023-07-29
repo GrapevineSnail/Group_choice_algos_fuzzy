@@ -21,8 +21,7 @@ namespace Group_choice_algos_fuzzy
 		public static Color disabled_button_background = ColorTranslator.FromHtml("#D9D9D9");
 
 		public const int max_count_of_alternatives = 9;
-		public const int max_number_for_spinbox = 300;
-		public const int max_number_for_cells = 3000;
+		public const int max_count_of_experts = 50;
 		public const double INF = double.PositiveInfinity;
 		public const string ZER = "0";
 		public const string ONE = "1";
@@ -34,8 +33,11 @@ namespace Group_choice_algos_fuzzy
 		public const int HP_MAX_LENGTH = 3;
 		public const int HP_MAX_STRENGTH = 4;
 		public const int SCHULZE_METHOD = 5;
+		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
+		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
+
 		/// <summary>
 		/// задание констант (при инициализации формы)
 		/// </summary>
@@ -46,6 +48,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				sym2ind[$"{mark}{i}"] = i;
 				ind2sym[i] = $"{mark}{i}";
+				ind2letter[i] = n > 26 ? (i + 1).ToString() : letters[i].ToString();
 			}
 		}
 
@@ -58,9 +61,8 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_file_empty = "Пустой файл";
 		public static string EX_file_not_found = "Файл не найден";
 		public static string EX_n_m_too_big = "Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
-			$"n максимальное = {max_number_for_spinbox}\n" + 
-			$"m максимальное = {max_number_for_spinbox}\n" + 
-			$"n*m максимальное = {max_number_for_cells}"; 
+			$"n максимальное = {max_count_of_alternatives}\n" + 
+			$"m максимальное = {max_count_of_experts}\n"; 
 		public static string EX_choose_method = "Выберите метод";
 		public static string EX_bad_symbol = "Неверный символ";
 		#endregion EXCEPTIONS

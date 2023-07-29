@@ -9,47 +9,11 @@ using static Group_choice_algos_fuzzy.Constants;
 
 namespace Group_choice_algos_fuzzy
 {
+	/// <summary>
+	/// AUXILIARY FUNCS
+	/// </summary>
 	public class Algorithms
 	{
-
-		#region AUXILIARY FUNCS
-
-		/// <summary>
-		/// для удобства печати матриц
-		/// </summary>
-		/// <param name="Matrix"></param>
-		/// <returns></returns>
-		public static string matrix2string(double[,] Matrix)
-		{
-			/// удаляет последние cnt символов из строки
-			string trim_end(string s, int cnt)
-			{
-				return s.Remove(s.Length - cnt, cnt);
-			}
-			var n = Matrix.GetLength(0);
-			var m = Matrix.GetLength(1);
-			int[] max_widths = new int[m];
-			for (int j = 0; j < m; j++)
-				max_widths[j] = 3;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					if (Matrix[i, j].ToString().Length > max_widths[j])
-						max_widths[j] = Matrix[i, j].ToString().Length;
-			var str = "";
-			for (int i = 0; i < n; i++)
-			{
-				for (int j = 0; j < m; j++)
-				{
-					//var fill = "_";
-					//var align = "^";
-					int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
-					//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
-					str += string.Format($"[{{0,{width}}}]", Matrix[i, j], width);
-				}
-				str += "\n";
-			}
-			return trim_end(str, 1);
-		}
 
 		/// <summary>
 		/// переводит индекс альтернативы в её буквенное обозначение, если возможно (букв всего 26)
@@ -96,9 +60,6 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-		#endregion AUXILIARY FUNCS
-
-
 		/// <summary>
 		/// веса данного пути
 		/// </summary>
@@ -142,26 +103,6 @@ namespace Group_choice_algos_fuzzy
 			if (wp.Count == 0)
 				return -INF;
 			return Enumerable.Min(wp);
-		}
-
-		/// <summary>
-		/// создаёт матрицу смежности
-		/// </summary>
-		/// <param name="weight_C_matrix"></param>
-		/// <returns></returns>
-		public static Matrix make_sum_R_profile_matrix(Matrix weight_C_matrix)
-		{  // adjacency_matrix	
-			var n = weight_C_matrix.n;
-			Matrix R = new Matrix(n, n);
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-				{
-					if (Math.Abs(weight_C_matrix[i, j]) != INF)
-						R[i, j] = 1;
-					else
-						R[i, j] = 0;
-				}
-			return R;
 		}
 
 		/// <summary>
