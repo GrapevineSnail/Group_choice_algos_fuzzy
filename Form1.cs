@@ -52,7 +52,14 @@ namespace Group_choice_algos_fuzzy
 			}
 			get { return _n; }
 		}
-		public static int m { set { _m = value; } get { return _m; } }
+		public static int m 
+		{ 
+			set 
+			{ 
+				_m = value; 
+			} 
+			get { return _m; } 
+		}
 		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
 		public static Matrix R_avg;//агрегированная матрица матриц профилей (среднее)
 		public static Matrix R_med;//агрегированная матрица матриц профилей (медианные)
@@ -299,9 +306,6 @@ namespace Group_choice_algos_fuzzy
 					var r = met.Rankings.Count;
 					met.connectedFrame.Rows.Clear();
 					met.connectedFrame.Columns.Clear();
-					string[] values = new string[n];
-					for (int i = 0; i < n; i++)
-						values[i] = index2symbol(i, n - 1);
 					for (int j = 0; j < r; j++)
 					{
 						DataGridViewColumn column = new DataGridViewColumn();
@@ -340,20 +344,20 @@ namespace Group_choice_algos_fuzzy
 						for (int i = 0; i < met.Rankings[j].Count; i++)
 						{
 							met.connectedFrame[j, i].ReadOnly = true;
-							met.connectedFrame[j, i].Value = index2symbol(met.Rankings[j].Rank2List[i], n - 1);
+							met.connectedFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
 						}
 						met.connectedFrame[j, n].Value = met.Rankings[j].PathLength;
 						met.connectedFrame[j, n + 1].Value = met.Rankings[j].PathStrength;
-						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathSummaryDistance;
-						if (met.Rankings[j].PathSummaryDistance == Methods.MinSummaryModulusDistance)
-							met.connectedFrame[j, n + 2].Value += "\nМедиана";
+						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathSummaryDistance_modulus.Value;
+						if (met.Rankings[j].PathSummaryDistance_modulus.Value == Methods.MinSummaryModulusDistance)
+							met.connectedFrame[j, n + 2].Value += "\n(минимум)";
 
 						for (int k = 0; k < 3; k++)
 							met.connectedFrame[j, n + k].Style.BackColor = output_characteristics_bg_color;
 
-						color_characteristics(j, met.LengthsMin, met.LengthsMax, met.Rankings[j].PathLength);
-						color_characteristics(j, met.StrengthsMin, met.StrengthsMax, met.Rankings[j].PathStrength);
-						color_characteristics(j, met.DistancesMin, met.DistancesMax, met.Rankings[j].PathSummaryDistance);
+						color_characteristics(j, met.LengthsMin, met.LengthsMax, met.Rankings[j].PathLength.Value);
+						color_characteristics(j, met.StrengthsMin, met.StrengthsMax, met.Rankings[j].PathStrength.Value);
+						color_characteristics(j, met.DistancesMin_modulus, met.DistancesMax_modulus, met.Rankings[j].PathSummaryDistance_modulus.Value);
 
 						if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
 							for (int i = 0; i < met.Rankings[j].Count; i++)
@@ -362,12 +366,12 @@ namespace Group_choice_algos_fuzzy
 				}
 
 				// вывести на экран победителей по методу Шульце
-				if (met.Name == SCHULZE_METHOD && Methods.SchulzeWinners != null)
+				if (met.ID == SCHULZE_METHOD && Methods.SchulzeWinners != null)
 				{
 					string text = "";
 					if (met.Rankings == null || met.Rankings.Count == 0)
 						text += "Ранжирование невозможно. ";
-					text += $"Победители: {string.Join(",", Methods.SchulzeWinners.Select(x => index2symbol(x, n)))}";
+					text += $"Победители: {string.Join(",", Methods.SchulzeWinners.Select(x => ind2letter[x]))}";
 					met.ConnectedLabel = text;
 				}
 			}
@@ -383,22 +387,24 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
+				clear_output();
 				clear_input();
 				refresh_variables();
-				string s = textBox_file.Text;
 				List<Matrix> matrices = new List<Matrix>();
-				string[] lines = File.ReadAllLines(s).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-				var nn = lines.First().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Count();
+				string[] lines = File.ReadAllLines(textBox_file.Text)
+					.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				var chars_for_split = new char[] { ' ', '	' };
+				var nn = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
 				Matrix cur_matrix = new Matrix(nn, nn);
 				for (int l = 0; l < lines.Length; l++)
 				{
 					if (lines[l].Length != 0)
 					{
 						double res;
-						double[] numbers = lines[l].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+						double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
 							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
 						if (numbers.Any(x => x == INF) || numbers.Length != nn)
-							throw new ArgumentException(EX_number_of_alternatives);
+							throw new ArgumentException(EX_bad_file);
 						for (int j = 0; j < numbers.Length; j++)
 							cur_matrix[l % nn, j] = numbers[j];
 					}
@@ -406,7 +412,7 @@ namespace Group_choice_algos_fuzzy
 						matrices.Add(new Matrix(cur_matrix));
 				}
 				if (matrices.Count == 0)
-					throw new ArgumentException(EX_file_empty);
+					throw new ArgumentException(EX_bad_file);
 				m = matrices.Count;
 				n = nn;
 				set_input_datagrids(matrices);
@@ -418,7 +424,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"\n{ex.Message}");
+				MessageBox.Show($"{ex.Message}");
 			}
 			finally
 			{
@@ -452,7 +458,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (ArgumentException ex)
 			{
-				MessageBox.Show($"\n{ex.Message}");
+				MessageBox.Show($"{ex.Message}");
 			}
 		}
 
@@ -471,9 +477,8 @@ namespace Group_choice_algos_fuzzy
 				}
 				else
 				{
-					var nn = (int)numericUpDown_n.Value;
-					var mm = (int)numericUpDown_m.Value;
-					if (nn > max_count_of_alternatives || mm > max_count_of_experts)
+					if ((int)numericUpDown_n.Value > max_count_of_alternatives || 
+						(int)numericUpDown_m.Value > max_count_of_experts)
 						throw new ArgumentException(EX_n_m_too_big);
 					else
 					{

@@ -35,7 +35,9 @@ namespace Group_choice_algos_fuzzy
 		public const int SCHULZE_METHOD = 5;
 		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
+		//индекс альтернативы в её символ a1, a2 и т.д.
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
+		//индекс альтернативы в её буквенное обозначение, если возможно(букв всего 26)
 		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
 
 		/// <summary>
@@ -48,7 +50,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				sym2ind[$"{mark}{i}"] = i;
 				ind2sym[i] = $"{mark}{i}";
-				ind2letter[i] = n > 26 ? (i + 1).ToString() : letters[i].ToString();
+				ind2letter[i] = n > 26 ? ind2sym[i] : letters[i].ToString();
 			}
 		}
 
@@ -57,8 +59,7 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_matrix_not_square = "Матрица должна быть квадратной";
 		public static string EX_matrix_multing_dim = "Размерности двух матриц не совпадают";
 		public static string EX_bad_matrix = "Некорректная матрица";
-		public static string EX_number_of_alternatives = "Неверное количество альтернатив профиля";
-		public static string EX_file_empty = "Пустой файл";
+		public static string EX_bad_file = "Некорректный файл";
 		public static string EX_file_not_found = "Файл не найден";
 		public static string EX_n_m_too_big = "Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
 			$"n максимальное = {max_count_of_alternatives}\n" + 

@@ -14,26 +14,6 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Algorithms
 	{
-
-		/// <summary>
-		/// переводит индекс альтернативы в её буквенное обозначение, если возможно (букв всего 26)
-		/// </summary>
-		/// <param name="index"></param>
-		/// <param name="max_index"></param>
-		/// <returns></returns>
-		public static string index2symbol(int index, int max_index)
-		{
-			if (max_index > 25)
-			{
-				return (index + 1).ToString();
-			}
-			else
-			{
-				string symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-				return symbols[index].ToString();
-			}
-		}
-
 		/// <summary>
 		/// переводит буквенное обозначение альтернативы в её индекс (букв всего 26)
 		/// </summary>
