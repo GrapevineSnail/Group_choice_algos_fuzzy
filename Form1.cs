@@ -52,13 +52,13 @@ namespace Group_choice_algos_fuzzy
 			}
 			get { return _n; }
 		}
-		public static int m 
-		{ 
-			set 
-			{ 
-				_m = value; 
-			} 
-			get { return _m; } 
+		public static int m
+		{
+			set
+			{
+				_m = value;
+			}
+			get { return _m; }
 		}
 		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
 		public static Matrix R_avg;//агрегированная матрица матриц профилей (среднее)
@@ -265,18 +265,21 @@ namespace Group_choice_algos_fuzzy
 					Methods.Set_Schulze_method();
 				List<string> Intersect = new List<string>();
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
+				foreach (Method met in is_rankings_of_method_exist)
+					met.SetCharacteristicsMinsMaxes();
 				if (is_rankings_of_method_exist.Count() > 1)
 				{
 					bool enter_intersect = false;
-					foreach (Method m in is_rankings_of_method_exist)
+					foreach (Method met in is_rankings_of_method_exist)
 					{
+						met.SetCharacteristicsMinsMaxes();
 						if (enter_intersect == false)
 						{
-							Intersect = m.Ranks2Strings;
+							Intersect = met.Ranks2Strings;
 							enter_intersect = true;
 						}
 						else
-							Intersect = Enumerable.Intersect(Intersect, m.Ranks2Strings).ToList();
+							Intersect = Enumerable.Intersect(Intersect, met.Ranks2Strings).ToList();
 					}
 				}
 				set_output_results(Intersect);
@@ -304,13 +307,11 @@ namespace Group_choice_algos_fuzzy
 				if (met.IsExecute == true && met.Rankings.Count != 0)
 				{
 					var r = met.Rankings.Count;
-					met.connectedFrame.Rows.Clear();
-					met.connectedFrame.Columns.Clear();
 					for (int j = 0; j < r; j++)
 					{
 						DataGridViewColumn column = new DataGridViewColumn();
 						column.CellTemplate = new DataGridViewTextBoxCell();
-						column.HeaderText = $"Ранжи-\nрование {j + 1}";
+						column.HeaderText = $"Ранжиро-\nвание {j + 1}";
 						column.Name = j.ToString();
 						column.HeaderCell.Style.BackColor = window_background;
 						column.FillWeight = 1;
@@ -321,47 +322,57 @@ namespace Group_choice_algos_fuzzy
 						met.connectedFrame.Rows.Add();
 						met.connectedFrame.Rows[i].HeaderCell.Value = $"Место {i + 1}";
 					}
-					met.connectedFrame.Rows.Add();
-					met.connectedFrame.Rows[met.connectedFrame.RowCount - 1].HeaderCell.Value = "Длина:";
-					met.connectedFrame.Rows.Add();
-					met.connectedFrame.Rows[met.connectedFrame.RowCount - 1].HeaderCell.Value = "Сила:";
-					met.connectedFrame.Rows.Add();
-					met.connectedFrame.Rows[met.connectedFrame.RowCount - 1].HeaderCell.Value = "Суммарное расстояние\nХэмминга:";
 
-					met.SetCharacteristicsMinsMaxes();
-					void color_characteristics(int j, double min, double max, double charact_value)
+					//добавить в конец datagrid-а строку с характеристикой ранжирования
+					int add_row_with_characteristic(string label)
 					{
+						met.connectedFrame.Rows.Add();
+						int i = met.connectedFrame.Rows.Count - 1;
+						met.connectedFrame.Rows[i].HeaderCell.Value = label;
+						return i;
+					}
+					//задать значение характеристики ранжирования и раскрасить
+					void display_characteristic(int j, int i, double min, double max,
+						Ranking.Characteristic characteristic)
+					{
+						met.connectedFrame[j, i].Value = characteristic.Value;
+						met.connectedFrame[j, i].Style.BackColor = output_characteristics_bg_color;
 						if (min < max)
 						{
-							if (charact_value == min)
-								met.connectedFrame[j, n].Style.BackColor = color_min;
-							else if (charact_value == max)
-								met.connectedFrame[j, n].Style.BackColor = color_max;
+							if (characteristic.Value == min)
+								met.connectedFrame[j, i].Style.BackColor = color_min;
+							else if (characteristic.Value == max)
+								met.connectedFrame[j, i].Style.BackColor = color_max;
 						}
 					}
+
+					var some_rank = met.Rankings.First();
+					add_row_with_characteristic(some_rank.PathLength.Label);
+					add_row_with_characteristic(some_rank.PathStrength.Label);
+					add_row_with_characteristic(some_rank.PathSummaryDistance_modulus.Label);
+					add_row_with_characteristic(some_rank.PathSummaryDistance_square.Label);
+
 					for (int j = 0; j < r; j++)
 					{
-						for (int i = 0; i < met.Rankings[j].Count; i++)
+						for (int i = 0; i < n; i++)
 						{
 							met.connectedFrame[j, i].ReadOnly = true;
 							met.connectedFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
 						}
-						met.connectedFrame[j, n].Value = met.Rankings[j].PathLength;
-						met.connectedFrame[j, n + 1].Value = met.Rankings[j].PathStrength;
-						met.connectedFrame[j, n + 2].Value = met.Rankings[j].PathSummaryDistance_modulus.Value;
-						if (met.Rankings[j].PathSummaryDistance_modulus.Value == Methods.MinSummaryModulusDistance)
-							met.connectedFrame[j, n + 2].Value += "\n(минимум)";
-
-						for (int k = 0; k < 3; k++)
-							met.connectedFrame[j, n + k].Style.BackColor = output_characteristics_bg_color;
-
-						color_characteristics(j, met.LengthsMin, met.LengthsMax, met.Rankings[j].PathLength.Value);
-						color_characteristics(j, met.StrengthsMin, met.StrengthsMax, met.Rankings[j].PathStrength.Value);
-						color_characteristics(j, met.DistancesMin_modulus, met.DistancesMax_modulus, met.Rankings[j].PathSummaryDistance_modulus.Value);
-
 						if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
-							for (int i = 0; i < met.Rankings[j].Count; i++)
+						{
+							for (int i = 0; i < n; i++)
 								met.connectedFrame[j, i].Style.BackColor = color_mutual;
+						}
+
+						display_characteristic(j, n, met.LengthsMin, met.LengthsMax,
+							met.Rankings[j].PathLength);
+						display_characteristic(j, n + 1, met.StrengthsMin, met.StrengthsMax,
+							met.Rankings[j].PathStrength);
+						display_characteristic(j, n + 2, met.DistancesMin_modulus, met.DistancesMax_modulus,
+							met.Rankings[j].PathSummaryDistance_modulus);
+						display_characteristic(j, n + 3, met.DistancesMin_square, met.DistancesMax_square,
+							met.Rankings[j].PathSummaryDistance_square);
 					}
 				}
 
@@ -477,7 +488,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				else
 				{
-					if ((int)numericUpDown_n.Value > max_count_of_alternatives || 
+					if ((int)numericUpDown_n.Value > max_count_of_alternatives ||
 						(int)numericUpDown_m.Value > max_count_of_experts)
 						throw new ArgumentException(EX_n_m_too_big);
 					else
