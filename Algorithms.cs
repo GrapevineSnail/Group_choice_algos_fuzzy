@@ -41,6 +41,26 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
+		/// создаёт матрицу весов
+		/// </summary>
+		/// <param name="summarized_P_matrix"></param>
+		/// <returns></returns>
+		public static Matrix make_weight_C_matrix(Matrix summarized_P_matrix)
+		{
+			var n = summarized_P_matrix.n;
+			Matrix C = new Matrix(n, n);
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < n; j++)
+				{
+					if (i == j || summarized_P_matrix[i, j] < summarized_P_matrix[j, i])
+						C[i, j] = -INF;
+					else
+						C[i, j] = summarized_P_matrix[i, j] - summarized_P_matrix[j, i];
+				}
+			return C;
+		}
+
+		/// <summary>
 		/// веса данного пути
 		/// </summary>
 		/// <param name="vertices_list"></param>
@@ -84,27 +104,6 @@ namespace Group_choice_algos_fuzzy
 				return INF;
 			return Enumerable.Min(wp);
 		}
-
-		/// <summary>
-		/// создаёт матрицу весов
-		/// </summary>
-		/// <param name="summarized_P_matrix"></param>
-		/// <returns></returns>
-		public static Matrix make_weight_C_matrix(Matrix summarized_P_matrix)
-		{
-			var n = summarized_P_matrix.n;
-			Matrix C = new Matrix(n, n);
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-				{
-					if (i == j || summarized_P_matrix[i, j] < summarized_P_matrix[j, i])
-						C[i, j] = -INF;
-					else
-						C[i, j] = summarized_P_matrix[i, j] - summarized_P_matrix[j, i];
-				}
-			return C;
-		}
-
 
 		/// <summary>
 		/// нахождение Гамильтоновых путей

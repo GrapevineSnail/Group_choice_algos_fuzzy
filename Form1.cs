@@ -21,7 +21,6 @@ namespace Group_choice_algos_fuzzy
 			Methods.Hp_max_length.SetConnectedControls(cb_HP_max_length, dg_HP_max_length);
 			Methods.Hp_max_strength.SetConnectedControls(cb_HP_max_strength, dg_HP_max_strength);
 			Methods.Schulze_method.SetConnectedControls(cb_Schulze_method, dg_Schulze_method);
-			Methods.Linear_medians.SetConnectedControls(cb_Linear_medians, dg_Linear_medians);
 			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
 
 			//dataGridView_input_profiles.EnableHeadersVisualStyles = false;
@@ -61,9 +60,11 @@ namespace Group_choice_algos_fuzzy
 			get { return _m; }
 		}
 		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
+		public static Matrix R;//агрегированная матрица матриц профилей
 		public static Matrix R_avg;//агрегированная матрица матриц профилей (среднее)
 		public static Matrix R_med;//агрегированная матрица матриц профилей (медианные)
 		//общая матрица смежности
+		public static Matrix r;
 		public static Matrix r_avg;
 		public static Matrix r_med;
 		#endregion GLOBALS
@@ -75,9 +76,12 @@ namespace Group_choice_algos_fuzzy
 		void refresh_variables()
 		{
 			R_list = new List<Matrix>();
+			R = new Matrix { };
 			R_avg = new Matrix { };
 			R_med = new Matrix { };
+			r = new Matrix { };
 			r_avg = new Matrix { };
+			r_med = new Matrix { };
 			Methods.ClearMethods();
 		}
 
@@ -249,23 +253,39 @@ namespace Group_choice_algos_fuzzy
 
 				R_list = ExpertsRelationsList;
 				R_avg = Matrix.Average(R_list);
+				r_avg = Matrix.MakeAdjacencyMatrix(R);
 				R_med = Matrix.Median(R_list);
-				r_avg = Matrix.MakeAdjacencyMatrix(R_avg);
 				r_med = Matrix.MakeAdjacencyMatrix(R_med);
+				if (rb_dist_square.Checked)
+				{
+					R = R_avg;
+					r = r_avg;
+				}
+				else if (rb_dist_modulus.Checked)
+				{
+					R = R_med;
+					r = r_med;
+				}
 
-				Methods.Set_Linear_medians(n);
+
+				if (Methods.All_various_rankings.Rankings.Count == 0)
+					Methods.Set_All_various_rankings(n);
+				Methods.MinSummaryModulusDistance = Methods.All_various_rankings.Rankings
+					.Select(x => x.PathSummaryDistance_modulus.Value).Min();
+				Methods.MinSummarySquareDistance = Methods.All_various_rankings.Rankings
+					.Select(x => x.PathSummaryDistance_square.Value).Min();
+
 				if (Methods.All_various_rankings.IsExecute && Methods.All_various_rankings.Rankings.Count == 0)
 					Methods.Set_All_various_rankings(n);
-				if (Methods.Linear_medians.IsExecute)
-					Methods.Set_Linear_medians(n);
 				if (Methods.All_Hamiltonian_paths.IsExecute && Methods.All_Hamiltonian_paths.Rankings.Count == 0)
-					Methods.Set_All_Hamiltonian_paths(R_avg);
+					Methods.Set_All_Hamiltonian_paths(R);
 				if (Methods.Hp_max_length.IsExecute)
-					Methods.Set_Hp_max_length(R_avg);
+					Methods.Set_Hp_max_length(R);
 				if (Methods.Hp_max_strength.IsExecute)
-					Methods.Set_Hp_max_strength(R_avg);
+					Methods.Set_Hp_max_strength(R);
 				if (Methods.Schulze_method.IsExecute)
-					Methods.Set_Schulze_method(n,R_avg);
+					Methods.Set_Schulze_method(n,R);
+
 				List<string> Intersect = new List<string>();
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -368,13 +388,13 @@ namespace Group_choice_algos_fuzzy
 								met.connectedFrame[j, i].Style.BackColor = color_mutual;
 						}
 
-						display_characteristic(j, n, met.LengthsMin, met.LengthsMax,
+						display_characteristic(j, n, met.MinLength, met.MaxLength,
 							met.Rankings[j].PathLength);
-						display_characteristic(j, n + 1, met.StrengthsMin, met.StrengthsMax,
+						display_characteristic(j, n + 1, met.MinStrength, met.MaxStrength,
 							met.Rankings[j].PathStrength);
-						display_characteristic(j, n + 2, met.DistancesMin_modulus, met.DistancesMax_modulus,
+						display_characteristic(j, n + 2, met.MinDistance_modulus, met.MaxDistance_modulus,
 							met.Rankings[j].PathSummaryDistance_modulus);
-						display_characteristic(j, n + 3, met.DistancesMin_square, met.DistancesMax_square,
+						display_characteristic(j, n + 3, met.MinDistance_square, met.MaxDistance_square,
 							met.Rankings[j].PathSummaryDistance_square);
 					}
 				}

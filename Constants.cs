@@ -29,11 +29,10 @@ namespace Group_choice_algos_fuzzy
 		public const char mark = 'a';
 		public const int ALL_RANKINGS = 0;
 		public const int ALL_HP = 1;
-		public const int LINEAR_MEDIANS = 2;
-		public const int HP_MAX_LENGTH = 3;
-		public const int HP_MAX_STRENGTH = 4;
-		public const int SCHULZE_METHOD = 5;
-		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+		public const int HP_MAX_LENGTH = 2;
+		public const int HP_MAX_STRENGTH = 3;
+		public const int SCHULZE_METHOD = 4;
+		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
 		//индекс альтернативы в её символ a1, a2 и т.д.
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
