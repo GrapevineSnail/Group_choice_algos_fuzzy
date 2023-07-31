@@ -63,8 +63,9 @@ namespace Group_choice_algos_fuzzy
 		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
 		public static Matrix R_avg;//агрегированная матрица матриц профилей (среднее)
 		public static Matrix R_med;//агрегированная матрица матриц профилей (медианные)
-		public static Matrix C;//общая матрица весов
-		public static Matrix r;//общая матрица смежности
+		//общая матрица смежности
+		public static Matrix r_avg;
+		public static Matrix r_med;
 		#endregion GLOBALS
 
 
@@ -76,8 +77,7 @@ namespace Group_choice_algos_fuzzy
 			R_list = new List<Matrix>();
 			R_avg = new Matrix { };
 			R_med = new Matrix { };
-			C = new Matrix { };
-			r = new Matrix { };
+			r_avg = new Matrix { };
 			Methods.ClearMethods();
 		}
 
@@ -248,21 +248,24 @@ namespace Group_choice_algos_fuzzy
 					throw new Exception(EX_choose_method);
 
 				R_list = ExpertsRelationsList;
-				C = make_weight_C_matrix(Matrix.Sum(R_list));
-				r = Matrix.MakeAdjacencyMatrix(C);
-				Methods.Set_Linear_medians();
+				R_avg = Matrix.Average(R_list);
+				R_med = Matrix.Median(R_list);
+				r_avg = Matrix.MakeAdjacencyMatrix(R_avg);
+				r_med = Matrix.MakeAdjacencyMatrix(R_med);
+
+				Methods.Set_Linear_medians(n);
 				if (Methods.All_various_rankings.IsExecute && Methods.All_various_rankings.Rankings.Count == 0)
-					Methods.Set_All_various_rankings();
+					Methods.Set_All_various_rankings(n);
 				if (Methods.Linear_medians.IsExecute)
-					Methods.Set_Linear_medians();
+					Methods.Set_Linear_medians(n);
 				if (Methods.All_Hamiltonian_paths.IsExecute && Methods.All_Hamiltonian_paths.Rankings.Count == 0)
-					Methods.Set_All_Hamiltonian_paths();
+					Methods.Set_All_Hamiltonian_paths(R_avg);
 				if (Methods.Hp_max_length.IsExecute)
-					Methods.Set_Hp_max_length();
+					Methods.Set_Hp_max_length(R_avg);
 				if (Methods.Hp_max_strength.IsExecute)
-					Methods.Set_Hp_max_strength();
+					Methods.Set_Hp_max_strength(R_avg);
 				if (Methods.Schulze_method.IsExecute)
-					Methods.Set_Schulze_method();
+					Methods.Set_Schulze_method(n,R_avg);
 				List<string> Intersect = new List<string>();
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)

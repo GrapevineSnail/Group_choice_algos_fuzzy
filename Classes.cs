@@ -197,11 +197,29 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// среднее арифметическое матриц из списка
 		/// </summary>
-		/// <param name="list_of_matrices"></param>
+		/// <param name="M_list"></param>
 		/// <returns></returns>
-		public static Matrix Avg(List<Matrix> list_of_matrices)
+		public static Matrix Average(List<Matrix> M_list)
 		{
-			return Sum(list_of_matrices) / list_of_matrices.Count();
+			return Sum(M_list) / M_list.Count();
+		}
+		/// <summary>
+		/// матрица из медианы для каждого элемента, из списка матриц
+		/// </summary>
+		/// <param name="M_list"></param>
+		/// <returns></returns>
+		public static Matrix Median(List<Matrix> M_list)
+		{
+			var R = Zeros(M_list.Last().n, M_list.Last().m);
+			int med_index = M_list.Count / 2 + 1;
+			for(int i =0; i < R.n; i++)
+				for(int j = 0; j < R.m; j++)
+				{
+					var Rij_list = Enumerable.Select(M_list, x => x[i, j]).OrderBy(y => y).ToArray();
+					R[i,j] = M_list.Count % 2 == 1 ? Rij_list[med_index]: 
+						(Rij_list[med_index-1] + Rij_list[med_index])/2;
+				}
+			return R;
 		}
 		/// <summary>
 		/// матрица из модулей её элементов
@@ -559,7 +577,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value;
-				SetRankingParams();
+				SetRankingParams(R_list, R_avg);
 			}
 			get { return Path; }
 		}
@@ -568,7 +586,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value.ToList();
-				SetRankingParams();
+				SetRankingParams(R_list, R_avg);
 			}
 			get { return Path.ToArray(); }
 		}
@@ -581,7 +599,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				var single_profile = Rank2Array;
 				var l = single_profile.Length;
-				if (l != n || l != Enumerable.Distinct(single_profile).ToArray().Length)
+				if (l != Enumerable.Distinct(single_profile).ToArray().Length)
 					throw new ArgumentException(EX_bad_expert_profile);
 				Matrix Rj = new Matrix(l, l);
 				for (int i = 0; i < l; i++)
@@ -620,7 +638,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// вычисление всех параметров ранжирования
 		/// </summary>
-		private void SetRankingParams()
+		private void SetRankingParams(List<Matrix> other_matrices, Matrix weight_matrix)
 		{
 			if (Path != null)
 			{
@@ -633,10 +651,10 @@ namespace Group_choice_algos_fuzzy
 				}
 				else
 				{
-					PathLength.Value = path_length(Rank2List, C);
-					PathStrength.Value = path_strength(Rank2List, C);
-					PathSummaryDistance_modulus.Value = Rank2Matrix.SumDistance(R_list, Matrix.DistanceModulus);
-					PathSummaryDistance_square.Value = Rank2Matrix.SumDistance(R_list, Matrix.DistanceSquare);
+					PathLength.Value = path_cost(Rank2List, weight_matrix);
+					PathStrength.Value = path_strength(Rank2List, weight_matrix);
+					PathSummaryDistance_modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
+					PathSummaryDistance_square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
 				}
 			}
 		}
@@ -855,7 +873,7 @@ namespace Group_choice_algos_fuzzy
 		/// создание всех возможных ранжирований данных альтернатив
 		/// </summary>
 		/// <returns></returns>
-		public static void Set_All_various_rankings()
+		public static void Set_All_various_rankings(int n)
 		{
 			List<List<int>> permutations_of_elements(List<int> elements)
 			{
@@ -910,9 +928,9 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="HP"></param>
 		/// <param name="Weights_matrix"></param>
-		public static void Set_All_Hamiltonian_paths()
+		public static void Set_All_Hamiltonian_paths(Matrix weight_matrix)
 		{
-			List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(C);
+			List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix);
 			All_Hamiltonian_paths.ClearRankings();
 			for (int i = 0; i < HP.GetLength(0); i++)
 				for (int j = 0; j < HP.GetLength(1); j++)
@@ -925,10 +943,10 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="R_list"></param>
 		/// <returns></returns>
-		public static void Set_Linear_medians()
+		public static void Set_Linear_medians(int n)
 		{
 			if (All_various_rankings.Rankings.Count == 0)
-				Set_All_various_rankings();
+				Set_All_various_rankings(n);
 			MinSummaryModulusDistance = All_various_rankings.Rankings
 				.Select(x => x.PathSummaryDistance_modulus.Value).Min();
 			MinSummarySquareDistance = All_various_rankings.Rankings
@@ -944,10 +962,10 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		public static void Set_Hp_max_length()
+		public static void Set_Hp_max_length(Matrix weight_matrix)
 		{
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
-				Set_All_Hamiltonian_paths();
+				Set_All_Hamiltonian_paths(weight_matrix);
 			MaxLength = All_Hamiltonian_paths.Rankings.Select(x => x.PathLength.Value).Max();
 			Hp_max_length.ClearRankings();
 			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
@@ -960,10 +978,10 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		public static void Set_Hp_max_strength()
+		public static void Set_Hp_max_strength(Matrix weight_matrix)
 		{
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
-				Set_All_Hamiltonian_paths();
+				Set_All_Hamiltonian_paths(weight_matrix);
 			MaxStrength = Enumerable.Select(All_Hamiltonian_paths.Rankings, x => x.PathStrength.Value).Max();
 			Hp_max_strength.ClearRankings();
 			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
@@ -976,7 +994,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		public static void Set_Schulze_method()
+		public static void Set_Schulze_method(int n, Matrix weight_matrix)
 		{
 			double[,] PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
 			int[,] pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
@@ -987,7 +1005,7 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < n; j++)
 				{
-					PD[i, j] = C[i, j];
+					PD[i, j] = weight_matrix[i, j];
 					pred[i, j] = i;
 				}
 			//calculation of the strengths of the strongest paths

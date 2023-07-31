@@ -61,12 +61,12 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
-		/// длина пути
+		/// стоимость пути (суммарный вес)
 		/// </summary>
 		/// <param name="vertices_list"></param>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		public static double path_length(List<int> vertices_list, Matrix Weights_matrix)
+		public static double path_cost(List<int> vertices_list, Matrix Weights_matrix)
 		{
 			return weights_of_path(vertices_list, Weights_matrix).Sum();
 		}
@@ -81,7 +81,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			var wp = weights_of_path(vertices_list, Weights_matrix);
 			if (wp.Count == 0)
-				return -INF;
+				return INF;
 			return Enumerable.Min(wp);
 		}
 
@@ -104,6 +104,7 @@ namespace Group_choice_algos_fuzzy
 				}
 			return C;
 		}
+
 
 		/// <summary>
 		/// нахождение Гамильтоновых путей
