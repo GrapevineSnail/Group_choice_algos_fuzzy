@@ -29,12 +29,12 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-			this.flowLayoutPanel_output = new System.Windows.Forms.FlowLayoutPanel();
+			this.flowLayoutPanel_output_tables = new System.Windows.Forms.FlowLayoutPanel();
 			this.groupBox_HP_max_length = new System.Windows.Forms.GroupBox();
 			this.dg_HP_max_length = new System.Windows.Forms.DataGridView();
 			this.groupBox_HP_max_strength = new System.Windows.Forms.GroupBox();
@@ -50,7 +50,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_HP_max_length = new System.Windows.Forms.CheckBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.textBox_file = new System.Windows.Forms.TextBox();
-			this.button_file = new System.Windows.Forms.Button();
+			this.button_read_file = new System.Windows.Forms.Button();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
@@ -58,14 +58,16 @@ namespace Group_choice_algos_fuzzy
 			this.button_n_m = new System.Windows.Forms.Button();
 			this.numericUpDown_n = new System.Windows.Forms.NumericUpDown();
 			this.button_run_program = new System.Windows.Forms.Button();
-			this.label3 = new System.Windows.Forms.Label();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.flowLayoutPanel_input = new System.Windows.Forms.FlowLayoutPanel();
 			this.groupBox5 = new System.Windows.Forms.GroupBox();
-			this.rb_dist_modulus = new System.Windows.Forms.RadioButton();
 			this.rb_dist_square = new System.Windows.Forms.RadioButton();
+			this.rb_dist_modulus = new System.Windows.Forms.RadioButton();
+			this.flowLayoutPanel_output_info = new System.Windows.Forms.FlowLayoutPanel();
+			this.label3 = new System.Windows.Forms.Label();
+			this.button_for_tests = new System.Windows.Forms.Button();
 			this.tableLayoutPanel1.SuspendLayout();
-			this.flowLayoutPanel_output.SuspendLayout();
+			this.flowLayoutPanel_output_tables.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_length)).BeginInit();
 			this.groupBox_HP_max_strength.SuspendLayout();
@@ -81,52 +83,54 @@ namespace Group_choice_algos_fuzzy
 			((System.ComponentModel.ISupportInitialize)(this.numericUpDown_n)).BeginInit();
 			this.groupBox3.SuspendLayout();
 			this.groupBox5.SuspendLayout();
+			this.flowLayoutPanel_output_info.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// tableLayoutPanel1
 			// 
 			this.tableLayoutPanel1.AutoScroll = true;
-			this.tableLayoutPanel1.ColumnCount = 4;
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 180F));
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F));
+			this.tableLayoutPanel1.ColumnCount = 3;
+			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
 			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 50F));
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F));
-			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output, 3, 0);
-			this.tableLayoutPanel1.Controls.Add(this.groupBox4, 1, 1);
+			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 60F));
+			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output_tables, 2, 2);
+			this.tableLayoutPanel1.Controls.Add(this.groupBox4, 0, 2);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox2, 0, 0);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox1, 0, 1);
-			this.tableLayoutPanel1.Controls.Add(this.button_run_program, 2, 0);
-			this.tableLayoutPanel1.Controls.Add(this.label3, 0, 4);
-			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 3);
-			this.tableLayoutPanel1.Controls.Add(this.groupBox5, 1, 2);
+			this.tableLayoutPanel1.Controls.Add(this.button_run_program, 1, 0);
+			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 4);
+			this.tableLayoutPanel1.Controls.Add(this.groupBox5, 0, 3);
+			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output_info, 2, 0);
+			this.tableLayoutPanel1.Controls.Add(this.button_for_tests, 1, 1);
 			this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
 			this.tableLayoutPanel1.Name = "tableLayoutPanel1";
 			this.tableLayoutPanel1.RowCount = 5;
-			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 55F));
-			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 100F));
-			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 70F));
-			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 85.10638F));
-			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14.89362F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 50F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 90F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 90F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 65F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this.tableLayoutPanel1.Size = new System.Drawing.Size(944, 491);
 			this.tableLayoutPanel1.TabIndex = 2;
 			// 
-			// flowLayoutPanel_output
+			// flowLayoutPanel_output_tables
 			// 
-			this.flowLayoutPanel_output.AutoScroll = true;
-			this.flowLayoutPanel_output.Controls.Add(this.groupBox_HP_max_length);
-			this.flowLayoutPanel_output.Controls.Add(this.groupBox_HP_max_strength);
-			this.flowLayoutPanel_output.Controls.Add(this.groupBox_Schulze_method);
-			this.flowLayoutPanel_output.Controls.Add(this.groupBox_All_rankings);
-			this.flowLayoutPanel_output.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.flowLayoutPanel_output.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-			this.flowLayoutPanel_output.Location = new System.Drawing.Point(447, 3);
-			this.flowLayoutPanel_output.Name = "flowLayoutPanel_output";
-			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output, 5);
-			this.flowLayoutPanel_output.Size = new System.Drawing.Size(494, 485);
-			this.flowLayoutPanel_output.TabIndex = 24;
-			this.flowLayoutPanel_output.WrapContents = false;
-			this.flowLayoutPanel_output.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_MouseEnter);
+			this.flowLayoutPanel_output_tables.AutoScroll = true;
+			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_HP_max_length);
+			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_HP_max_strength);
+			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_Schulze_method);
+			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_All_rankings);
+			this.flowLayoutPanel_output_tables.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.flowLayoutPanel_output_tables.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+			this.flowLayoutPanel_output_tables.Location = new System.Drawing.Point(410, 143);
+			this.flowLayoutPanel_output_tables.Name = "flowLayoutPanel_output_tables";
+			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_tables, 3);
+			this.flowLayoutPanel_output_tables.Size = new System.Drawing.Size(531, 345);
+			this.flowLayoutPanel_output_tables.TabIndex = 24;
+			this.flowLayoutPanel_output_tables.WrapContents = false;
+			this.flowLayoutPanel_output_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_MouseEnter);
 			// 
 			// groupBox_HP_max_length
 			// 
@@ -138,7 +142,7 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox_HP_max_length.Size = new System.Drawing.Size(450, 250);
 			this.groupBox_HP_max_length.TabIndex = 19;
 			this.groupBox_HP_max_length.TabStop = false;
-			this.groupBox_HP_max_length.Text = "Гамильтоновы пути максимальной длины";
+			this.groupBox_HP_max_length.Text = "Гамильтоновы пути максимальной стоимости";
 			// 
 			// dg_HP_max_length
 			// 
@@ -148,14 +152,14 @@ namespace Group_choice_algos_fuzzy
 			this.dg_HP_max_length.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
 			this.dg_HP_max_length.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
 			this.dg_HP_max_length.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_HP_max_length.DefaultCellStyle = dataGridViewCellStyle1;
+			dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_HP_max_length.DefaultCellStyle = dataGridViewCellStyle5;
 			this.dg_HP_max_length.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_HP_max_length.Location = new System.Drawing.Point(3, 16);
 			this.dg_HP_max_length.MinimumSize = new System.Drawing.Size(100, 100);
@@ -186,14 +190,14 @@ namespace Group_choice_algos_fuzzy
 			this.dg_HP_max_strength.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
 			this.dg_HP_max_strength.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
 			this.dg_HP_max_strength.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_HP_max_strength.DefaultCellStyle = dataGridViewCellStyle2;
+			dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_HP_max_strength.DefaultCellStyle = dataGridViewCellStyle6;
 			this.dg_HP_max_strength.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_HP_max_strength.Location = new System.Drawing.Point(3, 16);
 			this.dg_HP_max_strength.MinimumSize = new System.Drawing.Size(100, 100);
@@ -224,14 +228,14 @@ namespace Group_choice_algos_fuzzy
 			this.dg_Schulze_method.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
 			this.dg_Schulze_method.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
 			this.dg_Schulze_method.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_Schulze_method.DefaultCellStyle = dataGridViewCellStyle3;
+			dataGridViewCellStyle7.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle7.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle7.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle7.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle7.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle7.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle7.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_Schulze_method.DefaultCellStyle = dataGridViewCellStyle7;
 			this.dg_Schulze_method.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_Schulze_method.Location = new System.Drawing.Point(3, 16);
 			this.dg_Schulze_method.MinimumSize = new System.Drawing.Size(100, 100);
@@ -262,14 +266,14 @@ namespace Group_choice_algos_fuzzy
 			this.dg_All_rankings.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
 			this.dg_All_rankings.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
 			this.dg_All_rankings.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_All_rankings.DefaultCellStyle = dataGridViewCellStyle4;
+			dataGridViewCellStyle8.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle8.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle8.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle8.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle8.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle8.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle8.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_All_rankings.DefaultCellStyle = dataGridViewCellStyle8;
 			this.dg_All_rankings.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_All_rankings.Location = new System.Drawing.Point(3, 16);
 			this.dg_All_rankings.MinimumSize = new System.Drawing.Size(100, 100);
@@ -282,15 +286,14 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// groupBox4
 			// 
-			this.tableLayoutPanel1.SetColumnSpan(this.groupBox4, 2);
 			this.groupBox4.Controls.Add(this.cb_All_rankings);
 			this.groupBox4.Controls.Add(this.cb_Schulze_method);
 			this.groupBox4.Controls.Add(this.cb_HP_max_strength);
 			this.groupBox4.Controls.Add(this.cb_HP_max_length);
 			this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.groupBox4.Location = new System.Drawing.Point(183, 58);
+			this.groupBox4.Location = new System.Drawing.Point(3, 143);
 			this.groupBox4.Name = "groupBox4";
-			this.groupBox4.Size = new System.Drawing.Size(258, 94);
+			this.groupBox4.Size = new System.Drawing.Size(351, 84);
 			this.groupBox4.TabIndex = 5;
 			this.groupBox4.TabStop = false;
 			this.groupBox4.Text = "Выбор метода";
@@ -301,7 +304,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_All_rankings.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_All_rankings.Location = new System.Drawing.Point(3, 67);
 			this.cb_All_rankings.Name = "cb_All_rankings";
-			this.cb_All_rankings.Size = new System.Drawing.Size(252, 17);
+			this.cb_All_rankings.Size = new System.Drawing.Size(345, 17);
 			this.cb_All_rankings.TabIndex = 4;
 			this.cb_All_rankings.Text = "Всевозможные ранжирования";
 			this.cb_All_rankings.UseVisualStyleBackColor = true;
@@ -312,7 +315,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_Schulze_method.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_Schulze_method.Location = new System.Drawing.Point(3, 50);
 			this.cb_Schulze_method.Name = "cb_Schulze_method";
-			this.cb_Schulze_method.Size = new System.Drawing.Size(252, 17);
+			this.cb_Schulze_method.Size = new System.Drawing.Size(345, 17);
 			this.cb_Schulze_method.TabIndex = 2;
 			this.cb_Schulze_method.Text = "Ранжирование по Алгоритму Шульце";
 			this.cb_Schulze_method.UseVisualStyleBackColor = true;
@@ -323,7 +326,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_HP_max_strength.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_HP_max_strength.Location = new System.Drawing.Point(3, 33);
 			this.cb_HP_max_strength.Name = "cb_HP_max_strength";
-			this.cb_HP_max_strength.Size = new System.Drawing.Size(252, 17);
+			this.cb_HP_max_strength.Size = new System.Drawing.Size(345, 17);
 			this.cb_HP_max_strength.TabIndex = 1;
 			this.cb_HP_max_strength.Text = "Гамильтоновы пути наибольшей силы";
 			this.cb_HP_max_strength.UseVisualStyleBackColor = true;
@@ -334,20 +337,19 @@ namespace Group_choice_algos_fuzzy
 			this.cb_HP_max_length.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_HP_max_length.Location = new System.Drawing.Point(3, 16);
 			this.cb_HP_max_length.Name = "cb_HP_max_length";
-			this.cb_HP_max_length.Size = new System.Drawing.Size(252, 17);
+			this.cb_HP_max_length.Size = new System.Drawing.Size(345, 17);
 			this.cb_HP_max_length.TabIndex = 0;
-			this.cb_HP_max_length.Text = "Гамильтоновы пути максимальной длины";
+			this.cb_HP_max_length.Text = "Гамильтоновы пути максимальной стоимости";
 			this.cb_HP_max_length.UseVisualStyleBackColor = true;
 			// 
 			// groupBox2
 			// 
-			this.tableLayoutPanel1.SetColumnSpan(this.groupBox2, 2);
 			this.groupBox2.Controls.Add(this.textBox_file);
-			this.groupBox2.Controls.Add(this.button_file);
+			this.groupBox2.Controls.Add(this.button_read_file);
 			this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.groupBox2.Location = new System.Drawing.Point(3, 3);
 			this.groupBox2.Name = "groupBox2";
-			this.groupBox2.Size = new System.Drawing.Size(388, 49);
+			this.groupBox2.Size = new System.Drawing.Size(351, 44);
 			this.groupBox2.TabIndex = 2;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Импорт из txt-файла";
@@ -358,20 +360,20 @@ namespace Group_choice_algos_fuzzy
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.textBox_file.Location = new System.Drawing.Point(6, 17);
 			this.textBox_file.Name = "textBox_file";
-			this.textBox_file.Size = new System.Drawing.Size(286, 20);
+			this.textBox_file.Size = new System.Drawing.Size(247, 20);
 			this.textBox_file.TabIndex = 1;
 			this.textBox_file.Text = "test.txt";
 			// 
-			// button_file
+			// button_read_file
 			// 
-			this.button_file.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.button_file.Location = new System.Drawing.Point(290, 16);
-			this.button_file.Name = "button_file";
-			this.button_file.Size = new System.Drawing.Size(92, 22);
-			this.button_file.TabIndex = 0;
-			this.button_file.Text = "Ввод из файла";
-			this.button_file.UseVisualStyleBackColor = true;
-			this.button_file.Click += new System.EventHandler(this.read_expert_profiles_from_file);
+			this.button_read_file.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.button_read_file.Location = new System.Drawing.Point(252, 16);
+			this.button_read_file.Name = "button_read_file";
+			this.button_read_file.Size = new System.Drawing.Size(93, 22);
+			this.button_read_file.TabIndex = 0;
+			this.button_read_file.Text = "Ввод из файла";
+			this.button_read_file.UseVisualStyleBackColor = true;
+			this.button_read_file.Click += new System.EventHandler(this.button_read_file_Click);
 			// 
 			// groupBox1
 			// 
@@ -381,17 +383,18 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox1.Controls.Add(this.button_n_m);
 			this.groupBox1.Controls.Add(this.numericUpDown_n);
 			this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.groupBox1.Location = new System.Drawing.Point(3, 58);
+			this.groupBox1.Location = new System.Drawing.Point(3, 53);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(174, 94);
+			this.groupBox1.Size = new System.Drawing.Size(351, 84);
 			this.groupBox1.TabIndex = 1;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Выбор n и m";
 			// 
 			// label2
 			// 
+			this.label2.AutoEllipsis = true;
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(6, 39);
+			this.label2.Location = new System.Drawing.Point(6, 35);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(106, 13);
 			this.label2.TabIndex = 4;
@@ -399,8 +402,9 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// label1
 			// 
+			this.label1.AutoEllipsis = true;
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(6, 16);
+			this.label1.Location = new System.Drawing.Point(6, 14);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(115, 13);
 			this.label1.TabIndex = 3;
@@ -408,9 +412,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// numericUpDown_m
 			// 
-			this.numericUpDown_m.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.numericUpDown_m.Location = new System.Drawing.Point(127, 37);
+			this.numericUpDown_m.Location = new System.Drawing.Point(127, 33);
 			this.numericUpDown_m.Minimum = new decimal(new int[] {
             1,
             0,
@@ -427,9 +429,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// button_n_m
 			// 
-			this.button_n_m.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.button_n_m.Location = new System.Drawing.Point(9, 62);
+			this.button_n_m.Location = new System.Drawing.Point(9, 56);
 			this.button_n_m.Name = "button_n_m";
 			this.button_n_m.Size = new System.Drawing.Size(159, 22);
 			this.button_n_m.TabIndex = 1;
@@ -439,9 +439,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// numericUpDown_n
 			// 
-			this.numericUpDown_n.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.numericUpDown_n.Location = new System.Drawing.Point(127, 14);
+			this.numericUpDown_n.Location = new System.Drawing.Point(127, 12);
 			this.numericUpDown_n.Minimum = new decimal(new int[] {
             1,
             0,
@@ -461,34 +459,23 @@ namespace Group_choice_algos_fuzzy
 			this.button_run_program.AutoSize = true;
 			this.button_run_program.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.button_run_program.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button_run_program.Location = new System.Drawing.Point(397, 3);
+			this.button_run_program.Location = new System.Drawing.Point(360, 3);
 			this.button_run_program.Name = "button_run_program";
-			this.button_run_program.Size = new System.Drawing.Size(44, 49);
+			this.button_run_program.Size = new System.Drawing.Size(44, 44);
 			this.button_run_program.TabIndex = 6;
 			this.button_run_program.Text = "Пуск!\r\n→";
 			this.button_run_program.UseVisualStyleBackColor = true;
-			this.button_run_program.Click += new System.EventHandler(this.read_expert_profiles_from_input);
-			// 
-			// label3
-			// 
-			this.label3.AutoSize = true;
-			this.tableLayoutPanel1.SetColumnSpan(this.label3, 3);
-			this.label3.Location = new System.Drawing.Point(3, 451);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(209, 13);
-			this.label3.TabIndex = 7;
-			this.label3.Text = "Минимальное суммарное расстояние...";
+			this.button_run_program.Click += new System.EventHandler(this.button_run_program_Click);
 			// 
 			// groupBox3
 			// 
 			this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.tableLayoutPanel1.SetColumnSpan(this.groupBox3, 3);
 			this.groupBox3.Controls.Add(this.flowLayoutPanel_input);
-			this.groupBox3.Location = new System.Drawing.Point(3, 228);
+			this.groupBox3.Location = new System.Drawing.Point(3, 298);
 			this.groupBox3.Name = "groupBox3";
-			this.groupBox3.Size = new System.Drawing.Size(438, 220);
+			this.groupBox3.Size = new System.Drawing.Size(351, 190);
 			this.groupBox3.TabIndex = 3;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Ввод матриц предпочтений экспертов";
@@ -500,29 +487,39 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_input.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
 			this.flowLayoutPanel_input.Location = new System.Drawing.Point(3, 16);
 			this.flowLayoutPanel_input.Name = "flowLayoutPanel_input";
-			this.flowLayoutPanel_input.Size = new System.Drawing.Size(432, 201);
+			this.flowLayoutPanel_input.Size = new System.Drawing.Size(345, 171);
 			this.flowLayoutPanel_input.TabIndex = 25;
 			this.flowLayoutPanel_input.WrapContents = false;
 			this.flowLayoutPanel_input.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_MouseEnter);
 			// 
 			// groupBox5
 			// 
-			this.tableLayoutPanel1.SetColumnSpan(this.groupBox5, 2);
 			this.groupBox5.Controls.Add(this.rb_dist_square);
 			this.groupBox5.Controls.Add(this.rb_dist_modulus);
 			this.groupBox5.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.groupBox5.Location = new System.Drawing.Point(183, 158);
+			this.groupBox5.Location = new System.Drawing.Point(3, 233);
 			this.groupBox5.Name = "groupBox5";
-			this.groupBox5.Size = new System.Drawing.Size(258, 64);
+			this.groupBox5.Size = new System.Drawing.Size(351, 59);
 			this.groupBox5.TabIndex = 25;
 			this.groupBox5.TabStop = false;
 			this.groupBox5.Text = "Выбор расстояния";
 			// 
+			// rb_dist_square
+			// 
+			this.rb_dist_square.AutoSize = true;
+			this.rb_dist_square.Checked = true;
+			this.rb_dist_square.Location = new System.Drawing.Point(4, 34);
+			this.rb_dist_square.Name = "rb_dist_square";
+			this.rb_dist_square.Size = new System.Drawing.Size(117, 17);
+			this.rb_dist_square.TabIndex = 1;
+			this.rb_dist_square.TabStop = true;
+			this.rb_dist_square.Text = "Квадрат разности";
+			this.rb_dist_square.UseVisualStyleBackColor = true;
+			// 
 			// rb_dist_modulus
 			// 
-			this.rb_dist_modulus.AutoEllipsis = true;
 			this.rb_dist_modulus.AutoSize = true;
-			this.rb_dist_modulus.Location = new System.Drawing.Point(6, 19);
+			this.rb_dist_modulus.Location = new System.Drawing.Point(4, 17);
 			this.rb_dist_modulus.Name = "rb_dist_modulus";
 			this.rb_dist_modulus.Size = new System.Drawing.Size(113, 17);
 			this.rb_dist_modulus.TabIndex = 0;
@@ -530,17 +527,39 @@ namespace Group_choice_algos_fuzzy
 			this.rb_dist_modulus.Text = "Модуль разности";
 			this.rb_dist_modulus.UseVisualStyleBackColor = true;
 			// 
-			// rb_dist_square
+			// flowLayoutPanel_output_info
 			// 
-			this.rb_dist_square.AutoEllipsis = true;
-			this.rb_dist_square.AutoSize = true;
-			this.rb_dist_square.Location = new System.Drawing.Point(6, 37);
-			this.rb_dist_square.Name = "rb_dist_square";
-			this.rb_dist_square.Size = new System.Drawing.Size(117, 17);
-			this.rb_dist_square.TabIndex = 1;
-			this.rb_dist_square.TabStop = true;
-			this.rb_dist_square.Text = "Квадрат разности";
-			this.rb_dist_square.UseVisualStyleBackColor = true;
+			this.flowLayoutPanel_output_info.AutoScroll = true;
+			this.flowLayoutPanel_output_info.Controls.Add(this.label3);
+			this.flowLayoutPanel_output_info.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.flowLayoutPanel_output_info.Location = new System.Drawing.Point(410, 3);
+			this.flowLayoutPanel_output_info.Name = "flowLayoutPanel_output_info";
+			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_info, 2);
+			this.flowLayoutPanel_output_info.Size = new System.Drawing.Size(531, 134);
+			this.flowLayoutPanel_output_info.TabIndex = 3;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			this.label3.Location = new System.Drawing.Point(3, 0);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(252, 14);
+			this.label3.TabIndex = 7;
+			this.label3.Text = "Минимальное суммарное расстояние...";
+			// 
+			// button_for_tests
+			// 
+			this.button_for_tests.AutoSize = true;
+			this.button_for_tests.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.button_for_tests.Font = new System.Drawing.Font("Calibri", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			this.button_for_tests.Location = new System.Drawing.Point(360, 53);
+			this.button_for_tests.Name = "button_for_tests";
+			this.button_for_tests.Size = new System.Drawing.Size(44, 84);
+			this.button_for_tests.TabIndex = 26;
+			this.button_for_tests.Text = "ПРОГНАТЬ ВСЕ ТЕСТЫ В ПАПКЕ (для разработчика)";
+			this.button_for_tests.UseVisualStyleBackColor = true;
+			this.button_for_tests.Click += new System.EventHandler(this.button_for_tests_Click);
 			// 
 			// Form1
 			// 
@@ -555,7 +574,7 @@ namespace Group_choice_algos_fuzzy
 			this.SizeChanged += new System.EventHandler(this.Form1_SizeChanged);
 			this.tableLayoutPanel1.ResumeLayout(false);
 			this.tableLayoutPanel1.PerformLayout();
-			this.flowLayoutPanel_output.ResumeLayout(false);
+			this.flowLayoutPanel_output_tables.ResumeLayout(false);
 			this.groupBox_HP_max_length.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_length)).EndInit();
 			this.groupBox_HP_max_strength.ResumeLayout(false);
@@ -574,6 +593,8 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox3.ResumeLayout(false);
 			this.groupBox5.ResumeLayout(false);
 			this.groupBox5.PerformLayout();
+			this.flowLayoutPanel_output_info.ResumeLayout(false);
+			this.flowLayoutPanel_output_info.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -587,7 +608,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.Button button_run_program;
 		private System.Windows.Forms.Button button_n_m;
-		private System.Windows.Forms.Button button_file;
+		private System.Windows.Forms.Button button_read_file;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.CheckBox cb_All_rankings;
@@ -596,7 +617,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.CheckBox cb_HP_max_length;
 		private System.Windows.Forms.TextBox textBox_file;
 		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output;
+		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_tables;
 		private System.Windows.Forms.GroupBox groupBox_HP_max_length;
 		private System.Windows.Forms.DataGridView dg_HP_max_length;
 		private System.Windows.Forms.GroupBox groupBox_HP_max_strength;
@@ -611,6 +632,8 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.GroupBox groupBox5;
 		private System.Windows.Forms.RadioButton rb_dist_square;
 		private System.Windows.Forms.RadioButton rb_dist_modulus;
+		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_info;
+		private System.Windows.Forms.Button button_for_tests;
 	}
 }
 

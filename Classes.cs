@@ -93,22 +93,23 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="Matrix"></param>
 		/// <returns></returns>
-		public static string Matrix2String(double[,] Matrix)
+		public string Matrix2String()
 		{
 			/// удаляет последние cnt символов из строки
 			string trim_end(string s, int cnt)
 			{
+				var start = s.Length - cnt;
+				if (start < 0)
+					return "";
 				return s.Remove(s.Length - cnt, cnt);
 			}
-			var n = Matrix.GetLength(0);
-			var m = Matrix.GetLength(1);
 			int[] max_widths = new int[m];
 			for (int j = 0; j < m; j++)
 				max_widths[j] = 3;
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < m; j++)
-					if (Matrix[i, j].ToString().Length > max_widths[j])
-						max_widths[j] = Matrix[i, j].ToString().Length;
+					if (this[i, j].ToString().Length > max_widths[j])
+						max_widths[j] = this[i, j].ToString().Length;
 			var str = "";
 			for (int i = 0; i < n; i++)
 			{
@@ -118,7 +119,7 @@ namespace Group_choice_algos_fuzzy
 					//var align = "^";
 					int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
 					//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
-					str += string.Format($"[{{0,{width}}}]", Matrix[i, j], width);
+					str += string.Format($"[{{0,{width}}}]", this[i, j], width);
 				}
 				str += "\n";
 			}
@@ -176,7 +177,7 @@ namespace Group_choice_algos_fuzzy
 		public Matrix Pow(int p)
 		{//квадратная матрица
 			if (this.n != this.m)
-				throw new Exception(EX_matrix_not_square);
+				throw new MyException(EX_matrix_not_square);
 			var R = Eye(this.n, this.m);
 			for (int i = 0; i < p; i++)
 				R *= this;
@@ -211,13 +212,13 @@ namespace Group_choice_algos_fuzzy
 		public static Matrix Median(List<Matrix> M_list)
 		{
 			var R = Zeros(M_list.Last().n, M_list.Last().m);
-			int med_index = M_list.Count / 2 + 1;
-			for(int i =0; i < R.n; i++)
-				for(int j = 0; j < R.m; j++)
+			int med_index = M_list.Count / 2; // так как нумерация с 0
+			for (int i = 0; i < R.n; i++)
+				for (int j = 0; j < R.m; j++)
 				{
 					var Rij_list = Enumerable.Select(M_list, x => x[i, j]).OrderBy(y => y).ToArray();
-					R[i,j] = M_list.Count % 2 == 1 ? Rij_list[med_index]: 
-						(Rij_list[med_index-1] + Rij_list[med_index])/2;
+					R[i, j] = M_list.Count % 2 == 1 ? Rij_list[med_index] :
+						(Rij_list[med_index - 1] + Rij_list[med_index]) / 2;
 				}
 			return R;
 		}
@@ -257,13 +258,13 @@ namespace Group_choice_algos_fuzzy
 		private static double Distance(Matrix M1, Matrix M2, Func<double, double, double> elem_diff)
 		{// вход: матрицы одинаковой размерности только из чисел \in [0;1]
 			if (M1.n != M2.n || M1.m != M2.m)
-				throw new ArgumentException(EX_matrix_multing_dim);
+				throw new MyException(EX_matrix_multing_dim);
 			double ans = 0;
 			for (int i = 0; i < M1.n; i++)
 				for (int j = 0; j < M1.m; j++)
 				{
 					if (M1[i, j] < 0 || M1[i, j] > 1 || M2[i, j] < 0 || M2[i, j] > 1)
-						throw new ArgumentException(EX_bad_matrix);
+						throw new MyException(EX_bad_matrix);
 					ans += elem_diff(M1[i, j], M2[i, j]);
 				}
 			return ans;
@@ -280,11 +281,11 @@ namespace Group_choice_algos_fuzzy
 			return Distance(M1, M2, f);
 		}
 		/// <summary>
-		 /// вычисляет расстояние из квадратов разностей элементов (между двумя матрицами)
-		 /// </summary>
-		 /// <param name="M1"></param>
-		 /// <param name="M2"></param>
-		 /// <returns></returns>
+		/// вычисляет расстояние из квадратов разностей элементов (между двумя матрицами)
+		/// </summary>
+		/// <param name="M1"></param>
+		/// <param name="M2"></param>
+		/// <returns></returns>
 		public static double DistanceSquare(Matrix M1, Matrix M2)
 		{
 			Func<double, double, double> f = (x, y) => Math.Pow(x - y, 2);
@@ -322,12 +323,27 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < M.n; i++)
 				for (int j = 0; j < M.m; j++)
 				{
-					if (Math.Abs(M[i, j]) == INF)// && Math.Abs(M[i, j]) == 0)
+					if (Math.Abs(M[i, j]) == INF || Math.Abs(M[i, j]) == 0)
 						R[i, j] = 0;
 					else
 						R[i, j] = 1;
 				}
 			return R;
+		}
+		/// <summary>
+		/// из любой матрицы весов достаёт её асимметричную часть
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public static Matrix GetAsymmetricPart(Matrix M)
+		{//только для квадратных
+			if (M.n != M.m)
+				throw new MyException(EX_matrix_not_square);
+			Matrix Asy = new Matrix(M.n, M.m);
+			for (int i = 0; i < Asy.n; i++)
+				for (int j = 0; j < Asy.m; j++)
+					Asy[i, j] = Math.Max(M[i, j] - M[j, i], 0);
+			return Asy;
 		}
 	}
 
@@ -394,7 +410,7 @@ namespace Group_choice_algos_fuzzy
 			public FuzzyRelation(double[,] M) : base(M)
 			{
 				if (M.GetLength(0) != M.GetLength(1))
-					throw new Exception(EX_matrix_not_square);
+					throw new MyException(EX_matrix_not_square);
 			}
 			public FuzzyRelation(Matrix M) : base(M)
 			{
@@ -600,7 +616,7 @@ namespace Group_choice_algos_fuzzy
 				var single_profile = Rank2Array;
 				var l = single_profile.Length;
 				if (l != Enumerable.Distinct(single_profile).ToArray().Length)
-					throw new ArgumentException(EX_bad_expert_profile);
+					throw new MyException(EX_bad_expert_profile);
 				Matrix Rj = new Matrix(l, l);
 				for (int i = 0; i < l; i++)
 					for (int j = 0; j < l; j++)
@@ -740,6 +756,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			connectedCheckBox = checkBox;
 			connectedFrame = frame;
+			connectedCheckBox.Text = MethodsLabelDatas[ID];
+			try
+			{
+				((GroupBox)connectedFrame.Parent).Text = MethodsLabelDatas[ID];
+			}
+			catch (Exception) { }
 		}
 		/// <summary>
 		/// удаление ранжирований и их характеристик
@@ -863,9 +885,10 @@ namespace Group_choice_algos_fuzzy
 		/// выдаёт все методы, имеющие ранжирования и отмеченные к выполнению в текущей программе
 		/// </summary>
 		/// <returns></returns>
-		public static List<Method> GetMethodsExecutedWhithResult() {
+		public static List<Method> GetMethodsExecutedWhithResult()
+		{
 			var is_rankings_of_method_exists = new List<Method>();
-			foreach(Method m in Methods.GetMethods())
+			foreach (Method m in Methods.GetMethods())
 			{
 				if (m.IsExecute && m.Rankings != null && m.Rankings.Count > 0)
 					is_rankings_of_method_exists.Add(m);

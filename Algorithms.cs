@@ -36,7 +36,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			else
 			{
-				throw new ArgumentException(EX_bad_symbol);
+				throw new MyException(EX_bad_symbol);
 			}
 		}
 

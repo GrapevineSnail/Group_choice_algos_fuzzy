@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace Group_choice_algos_fuzzy
@@ -27,18 +28,25 @@ namespace Group_choice_algos_fuzzy
 		public const string ONE = "1";
 		public const char PLS = '+';
 		public const char mark = 'a';
+		//IDs
 		public const int ALL_RANKINGS = 0;
 		public const int ALL_HP = 1;
 		public const int HP_MAX_LENGTH = 2;
 		public const int HP_MAX_STRENGTH = 3;
 		public const int SCHULZE_METHOD = 4;
+		//название на ествественном языке для вывода в интерфейс
+		public static Dictionary<int,string> MethodsLabelDatas = new Dictionary<int, string>{
+			{ ALL_RANKINGS, "Всевозможные ранжирования" },
+			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
+			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
+			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" }
+		};
 		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
 		//индекс альтернативы в её символ a1, a2 и т.д.
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
 		//индекс альтернативы в её буквенное обозначение, если возможно(букв всего 26)
 		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
-
 		/// <summary>
 		/// задание констант (при инициализации формы)
 		/// </summary>
@@ -54,17 +62,21 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		#region EXCEPTIONS
-		public static string EX_bad_expert_profile = "Некорректный профиль эксперта";
+		public static string EX_bad_expert_profile = "Введите корректные профили экспертов";
 		public static string EX_matrix_not_square = "Матрица должна быть квадратной";
 		public static string EX_matrix_multing_dim = "Размерности двух матриц не совпадают";
 		public static string EX_bad_matrix = "Некорректная матрица";
 		public static string EX_bad_file = "Некорректный файл";
-		public static string EX_file_not_found = "Файл не найден";
 		public static string EX_n_m_too_big = "Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
 			$"n максимальное = {max_count_of_alternatives}\n" + 
 			$"m максимальное = {max_count_of_experts}\n"; 
-		public static string EX_choose_method = "Выберите метод";
+		public static string EX_choose_method = "Выберите метод агрегирования";
+		public static string EX_choose_distance_func = "Выберите способ подсчёта расстояния между отношениями";
 		public static string EX_bad_symbol = "Неверный символ";
+		public class MyException : Exception
+		{
+			public MyException(string s) : base(s) { }
+		}
 		#endregion EXCEPTIONS
 	}
 }
