@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Algorithms;
+using static System.IO.DirectoryInfo;
+using static Group_choice_algos_fuzzy.Fuzzy;
 
 
 namespace Group_choice_algos_fuzzy
@@ -58,12 +60,12 @@ namespace Group_choice_algos_fuzzy
 			}
 			get { return _m; }
 		}
-		public static List<Matrix> R_list; //список матриц нечётких предпочтений экспертов
-		public static Matrix R;//агрегированная матрица матриц профилей
-		public static Matrix R_avg;//агрегированная матрица матриц профилей (среднее)
-		public static Matrix R_med;//агрегированная матрица матриц профилей (медианные)
-								   //общая матрица смежности
-		public static Matrix r;
+		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
+		public static FuzzyRelation R;//агрегированная матрица матриц профилей
+		public static FuzzyRelation R_avg;//агрегированная матрица матриц профилей (среднее)
+		public static FuzzyRelation R_med;//агрегированная матрица матриц профилей (медианные)
+		
+		public static Matrix r;//общая матрица смежности
 		public static Matrix r_avg;
 		public static Matrix r_med;
 		#endregion GLOBALS
@@ -74,10 +76,10 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		void refresh_variables()
 		{
-			R_list = new List<Matrix>();
-			R = new Matrix { };
-			R_avg = new Matrix { };
-			R_med = new Matrix { };
+			R_list = new List<FuzzyRelation>();
+			R = new FuzzyRelation { };
+			R_avg = new FuzzyRelation { };
+			R_med = new FuzzyRelation { };
 			r = new Matrix { };
 			r_avg = new Matrix { };
 			r_med = new Matrix { };
@@ -171,24 +173,24 @@ namespace Group_choice_algos_fuzzy
 		/// запускает выполнение выбранных алгоритмов
 		/// </summary>
 		/// <param name="list_of_profiles"></param>
-		private List<string> execute_algorythms(List<Matrix> ExpertsRelationsList)
+		private List<string> execute_algorythms(List<FuzzyRelation> ExpertsRelationsList)
 		{
 			List<string> Intersect = new List<string>();//общие ранжирования для использованных методов
 			try
 			{
 				refresh_variables();
-				var checkbuttons = Enumerable.Select(Methods.GetMethods(), x => x.IsExecute);
-				var frames = Enumerable.Select(Methods.GetMethods(), x => x.connectedFrame);
-				if (Enumerable.All(checkbuttons, x => x == false))
+				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
+				var frames = Methods.GetMethods().Select(x => x.connectedFrame);
+				if (checkbuttons.All(x => x == false))
 					throw new MyException(EX_choose_method);
 
 				if (ExpertsRelationsList.Count == 0)
 					throw new MyException(EX_bad_expert_profile);
 
 				R_list = ExpertsRelationsList;
-				R_avg = Matrix.Average(R_list);
+				R_avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy();
 				r_avg = Matrix.MakeAdjacencyMatrix(R_avg);
-				R_med = Matrix.Median(R_list);
+				R_med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy();
 				r_med = Matrix.MakeAdjacencyMatrix(R_med);
 
 				if (rb_dist_square.Checked)
@@ -286,8 +288,8 @@ namespace Group_choice_algos_fuzzy
 					|| cell.RowIndex == cell.ColumnIndex)
 						cell.Value = 0.0;
 					else // эксперт вводит асимметричное отношение
-						dd[cell.RowIndex, cell.ColumnIndex].Value = 0.0; 
-						
+						dd[cell.RowIndex, cell.ColumnIndex].Value = 0.0;
+
 				};
 				flowLayoutPanel_input.Controls.Add(dgv);
 
@@ -498,17 +500,17 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (n > max_count_of_alternatives)
 					throw new MyException(EX_n_m_too_big);
-				R_list = new List<Matrix>() { };
+				R_list = new List<FuzzyRelation>() { };
 				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 				{
 					Matrix input_matrix = new Matrix(n, n);
 					for (int i = 0; i < dgv.Rows.Count; i++)
 						for (int j = 0; j < dgv.Columns.Count; j++)
 							input_matrix[i, j] = (double)dgv[j, i].Value;
-					R_list.Add(new Matrix(input_matrix));
+					R_list.Add(new FuzzyRelation(input_matrix));
 				}
-				R_list = Enumerable.Select(R_list, x => Matrix.GetAsymmetricPart(x)).ToList();
-				set_input_datagrids(R_list);
+				R_list = R_list.Select(x => x.AsPart).ToList();
+				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
@@ -575,10 +577,11 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		private void button_for_tests_Click(object sender, EventArgs e)
-		{			
+		{
 			refresh_variables();//?
-			List<Matrix> matrices = new List<Matrix>();
+			var matrices = new List<FuzzyRelation>();
 
+			label3.Text = Directory.GetCurrentDirectory().ToString();
 			//список всех файлов директории !!!
 			List<string> files = new List<string>() { textBox_file.Text };//
 
@@ -588,7 +591,7 @@ namespace Group_choice_algos_fuzzy
 					.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 				var chars_for_split = new char[] { ' ' };
 				var n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
-				Matrix cur_matrix = new Matrix(n, n);
+				var cur_matrix = new FuzzyRelation(n);
 				for (int l = 0; l < lines.Length; l++)
 				{
 					if (lines[l].Length != 0)
@@ -600,9 +603,9 @@ namespace Group_choice_algos_fuzzy
 							cur_matrix[l % n, j] = numbers[j];
 					}
 					if (l % n == n - 1)
-						matrices.Add(new Matrix(cur_matrix));
+						matrices.Add(new FuzzyRelation(cur_matrix));
 				}
-				m = matrices.Count;				
+				m = matrices.Count;
 				//R_list = Enumerable.Select(R_list, x => Matrix.GetAsymmetricPart(x)).ToList();
 				var Intersect = execute_algorythms(matrices);
 				set_output_results(Intersect);//вывод в файл или начисление статистики

@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Algorithms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Form1;
-
+using static Group_choice_algos_fuzzy.Fuzzy;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -335,16 +335,36 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
-		public static Matrix GetAsymmetricPart(Matrix M)
+		public Matrix GetAsymmetricPart()
 		{//только для квадратных
-			if (M.n != M.m)
+			if (n != m)
 				throw new MyException(EX_matrix_not_square);
-			Matrix Asy = new Matrix(M.n, M.m);
+			Matrix Asy = new Matrix(n, m);
 			for (int i = 0; i < Asy.n; i++)
 				for (int j = 0; j < Asy.m; j++)
-					Asy[i, j] = Math.Max(M[i, j] - M[j, i], 0);
+					Asy[i, j] = Math.Max(this[i, j] - this[j, i], 0);
 			return Asy;
 		}
+		/// <summary>
+		/// из любой матрицы весов достаёт её симметричную часть
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public Matrix GetSymmetricPart()
+		{//только для квадратных
+			if (n != m)
+				throw new MyException(EX_matrix_not_square);
+			Matrix Sym = new Matrix(n, m);
+			for (int i = 0; i < Sym.n; i++)
+				for (int j = 0; j < Sym.m; j++)
+					Sym[i, j] = Math.Min(this[i, j], this[j, i]);
+			return Sym;
+		}
+		/// <summary>
+		/// превращает матрицу в нечёткое отношение
+		/// </summary>
+		/// <returns></returns>
+		public FuzzyRelation ToFuzzy() { return new FuzzyRelation(this); }
 	}
 
 	public class Fuzzy
@@ -426,7 +446,7 @@ namespace Group_choice_algos_fuzzy
 			/// <summary>
 			/// матрица принадлежности (= м. предпочтений, функция принадлжености)
 			/// </summary>
-			public Matrix MembershipFunction
+			public Matrix ToMatrix
 			{
 				get { return base.Self; }
 			}
@@ -547,6 +567,24 @@ namespace Group_choice_algos_fuzzy
 						R[i, j] = this[i, j] >= alpha ? 1 : 0;
 				return R;
 			}
+
+			/// <summary>
+			/// преобразование списка FuzzyRelation в список Matrix
+			/// </summary>
+			/// <param name="R_list"></param>
+			/// <returns></returns>
+			public static List<Matrix> ToMatrixList(List<FuzzyRelation> R_list)
+			{
+				return R_list.Select(x => x.ToMatrix).ToList();
+			}
+			/// <summary>
+			/// асимметричная часть отношения
+			/// </summary>
+			public FuzzyRelation AsPart { get { return this.ToMatrix.GetAsymmetricPart().ToFuzzy(); } }
+			/// <summary>
+			/// симметричная часть отношения
+			/// </summary>
+			public FuzzyRelation SymPart { get { return this.ToMatrix.GetSymmetricPart().ToFuzzy(); } }
 		}
 	}
 
@@ -593,7 +631,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value;
-				SetRankingParams(R_list, R);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R);
 			}
 			get { return Path; }
 		}
@@ -602,7 +640,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value.ToList();
-				SetRankingParams(R_list, R);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R);
 			}
 			get { return Path.ToArray(); }
 		}
@@ -700,7 +738,7 @@ namespace Group_choice_algos_fuzzy
 		public double MaxLength;//максимальная длина среди ранжирований метода
 		public double MinStrength;//минимальная сила среди ранжирований метода
 		public double MaxStrength;//максимальная сила среди ранжирований метода
-		//минимальное и максимальное суммарные расстояние среди ранжирований метода
+								  //минимальное и максимальное суммарные расстояние среди ранжирований метода
 		public double MinDistance_modulus;
 		public double MaxDistance_modulus;
 		public double MinDistance_square;
@@ -740,8 +778,8 @@ namespace Group_choice_algos_fuzzy
 		}
 		public List<int[]> Ranks2Arrays
 		{
-			set { Rankings = Enumerable.Select(value, x => new Ranking(x)).ToList(); }
-			get { return Enumerable.Select(this.Rankings, x => x.Rank2Array).ToList(); }
+			set { Rankings = value.Select(x => new Ranking(x)).ToList(); }
+			get { return this.Rankings.Select(x => x.Rank2Array).ToList(); }
 		}
 		public List<string> Ranks2Strings
 		{
@@ -822,7 +860,7 @@ namespace Group_choice_algos_fuzzy
 			connectedFrame?.Rows.Clear();
 			connectedFrame?.Columns.Clear();
 			connectedFrame?.Hide();
-			connectedFrame?.Parent.Hide();
+			connectedFrame?.Parent?.Hide();
 			ConnectedLabel = "";
 		}
 		/// <summary>
