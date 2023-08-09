@@ -35,7 +35,7 @@ namespace Group_choice_algos_fuzzy
 		public const int HP_MAX_STRENGTH = 3;
 		public const int SCHULZE_METHOD = 4;
 		//название на ествественном языке для вывода в интерфейс
-		public static Dictionary<int,string> MethodsLabelDatas = new Dictionary<int, string>{
+		public static Dictionary<int,string> MethodsInfo = new Dictionary<int, string>{
 			{ ALL_RANKINGS, "Всевозможные ранжирования" },
 			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
 			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },

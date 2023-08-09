@@ -12,9 +12,9 @@ namespace Group_choice_algos_fuzzy
 {
 	public class Matrix
 	{
-		public Matrix() { matrix = new double[matrix.GetLength(0), matrix.GetLength(1)]; }
+		public Matrix(int n) { matrix = new double[n, n]; }
 		public Matrix(int n, int m) { matrix = new double[n, m]; }
-		public Matrix(double[,] M) { matrix = M; }
+		public Matrix(double[,] M) { matrix = (double[,])M.Clone(); }
 		public Matrix(int[,] M)
 		{
 			matrix = new double[M.GetLength(0), M.GetLength(1)];
@@ -22,7 +22,7 @@ namespace Group_choice_algos_fuzzy
 				for (int j = 0; j < this.m; j++)
 					matrix[i, j] = M[i, j];
 		}
-		public Matrix(Matrix M) { this.matrix = (double[,])M.matrix.Clone(); }
+		public Matrix(Matrix M) { matrix = (double[,])M.matrix.Clone(); }
 
 		private double[,] matrix = new double[,] { }; //"основа" матрицы - двумерный массив
 		public double this[int i, int j]
@@ -45,6 +45,47 @@ namespace Group_choice_algos_fuzzy
 			get { return matrix.GetLength(1); }
 		}
 		public Matrix Self { get { return this; } }
+		/// <summary>
+		/// из любой матрицы весов достаёт её асимметричную часть
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public Matrix AsymmetricPart
+		{//только для квадратных
+			get
+			{
+				if (n != m)
+					throw new MyException(EX_matrix_not_square);
+				Matrix Asy = new Matrix(n);
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < n; j++)
+						Asy[i, j] = Math.Max(this[i, j] - this[j, i], 0);
+				return Asy;
+			}
+		}
+		/// <summary>
+		/// из любой матрицы весов достаёт её симметричную часть
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public Matrix SymmetricPart
+		{//только для квадратных
+			get
+			{
+				if (n != m)
+					throw new MyException(EX_matrix_not_square);
+				Matrix Sym = new Matrix(n);
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < n; j++)
+						Sym[i, j] = Math.Min(this[i, j], this[j, i]);
+				return Sym;
+			}
+		}
+		/// <summary>
+		/// превращает матрицу в нечёткое отношение
+		/// </summary>
+		/// <returns></returns>
+		public FuzzyRelation ToFuzzy { get { return new FuzzyRelation(this); } }
 		public static Matrix operator *(double c, Matrix R1)
 		{
 			var R = new Matrix(R1);
@@ -227,12 +268,12 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
-		public static Matrix Abs(Matrix M)
+		public Matrix Abs()
 		{
-			var R = new Matrix(M.n, M.m);
+			var R = new Matrix(n, m);
 			for (int i = 0; i < R.n; i++)
 				for (int j = 0; j < R.m; j++)
-					R[i, j] = Math.Abs(M[i, j]);
+					R[i, j] = Math.Abs(this[i, j]);
 			return R;
 		}
 		/// <summary>
@@ -240,12 +281,12 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
-		public static double ElemSum(Matrix M)
+		public double ElemSum()
 		{
 			double ans = 0;
-			for (int i = 0; i < M.n; i++)
-				for (int j = 0; j < M.m; j++)
-					ans += M[i, j];
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					ans += this[i, j];
 			return ans;
 		}
 		/// <summary>
@@ -317,116 +358,22 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
-		public static Matrix MakeAdjacencyMatrix(Matrix M)
+		public Matrix GetAdjacencyMatrix()
 		{
-			Matrix R = new Matrix(M.n, M.m);
-			for (int i = 0; i < M.n; i++)
-				for (int j = 0; j < M.m; j++)
-				{
-					if (Math.Abs(M[i, j]) == INF || Math.Abs(M[i, j]) == 0)
-						R[i, j] = 0;
-					else
-						R[i, j] = 1;
-				}
+			Matrix R = new Matrix(n, m);
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					R[i, j] = (Math.Abs(this[i, j]) == INF || Math.Abs(this[i, j]) == 0) ? 0 : 1;
 			return R;
 		}
-		/// <summary>
-		/// из любой матрицы весов достаёт её асимметричную часть
-		/// </summary>
-		/// <param name="M"></param>
-		/// <returns></returns>
-		public Matrix GetAsymmetricPart()
-		{//только для квадратных
-			if (n != m)
-				throw new MyException(EX_matrix_not_square);
-			Matrix Asy = new Matrix(n, m);
-			for (int i = 0; i < Asy.n; i++)
-				for (int j = 0; j < Asy.m; j++)
-					Asy[i, j] = Math.Max(this[i, j] - this[j, i], 0);
-			return Asy;
-		}
-		/// <summary>
-		/// из любой матрицы весов достаёт её симметричную часть
-		/// </summary>
-		/// <param name="M"></param>
-		/// <returns></returns>
-		public Matrix GetSymmetricPart()
-		{//только для квадратных
-			if (n != m)
-				throw new MyException(EX_matrix_not_square);
-			Matrix Sym = new Matrix(n, m);
-			for (int i = 0; i < Sym.n; i++)
-				for (int j = 0; j < Sym.m; j++)
-					Sym[i, j] = Math.Min(this[i, j], this[j, i]);
-			return Sym;
-		}
-		/// <summary>
-		/// превращает матрицу в нечёткое отношение
-		/// </summary>
-		/// <returns></returns>
-		public FuzzyRelation ToFuzzy() { return new FuzzyRelation(this); }
 	}
 
 	public class Fuzzy
 	{
-		/* public class FuzzySet
-		{
-			public FuzzySet() { membershipFunction = new Dictionary<object, double>(); }
-			public FuzzySet(Dictionary<object, double> func) { membershipFunction = func; }
-			private Dictionary<object, double> membershipFunction;//функция принадлжености
-			public double this[object i]
-			{
-				get
-				{
-					if (!membershipFunction.Keys.Contains(i))
-						membershipFunction[i] = 0;
-					return membershipFunction[i];
-				}
-				set { membershipFunction[i] = value; }
-			}
-			/// <summary>
-			/// все элементы, в том числе с принадлежностью 0
-			/// </summary>
-			/// <returns></returns>
-			public List<object> Elements()
-			{
-				return membershipFunction.Keys.ToList();
-			}
-			public FuzzySet Negotate()//not A
-			{
-				var S = new FuzzySet();
-				foreach (var x in Elements())
-					S[x] = 1 - this[x];
-				return S;
-			}
-			public FuzzySet Intersect(FuzzySet other)//A \intersect B
-			{
-				var S = new FuzzySet();
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Min(this[x], other[x]);
-				return S;
-			}
-			public FuzzySet Union(FuzzySet other)//A U B
-			{
-				var S = new FuzzySet();
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Max(this[x], other[x]);
-				return S;
-			}
-			public FuzzySet SetMinus(FuzzySet other)//A \ B
-			{
-				var S = new FuzzySet();
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Max(this[x] - other[x], 0);
-				return S;
-			}
-		}
-		*/
 		public class FuzzyRelation : Matrix
 		{// base - матрица нечёткого бинарного отношения
 		 //полагаем квадратными
-			public FuzzyRelation() : base() { }
-			public FuzzyRelation(int n) : base(n, n) { }
+			public FuzzyRelation(int n) : base(n) { }
 			public FuzzyRelation(double[,] M) : base(M)
 			{
 				if (M.GetLength(0) != M.GetLength(1))
@@ -463,12 +410,25 @@ namespace Group_choice_algos_fuzzy
 				return ans;
 			}
 			/// <summary>
+			/// возвращает альфа-срез нечёткого отношения
+			/// </summary>
+			/// <param name="alpha">уровень, на котором отсекаем принадлежность (\mu(x)>alpha => 1, иначе 0)</param>
+			/// <returns></returns>
+			public FuzzyRelation AlphaSlice(double alpha)
+			{
+				var R = new FuzzyRelation(this.n);
+				for (int i = 0; i < this.n; i++)
+					for (int j = 0; j < this.n; j++)
+						R[i, j] = this[i, j] >= alpha ? this[i, j] : 0;
+				return R;
+			}
+			/// <summary>
 			/// дополнение
 			/// </summary>
 			/// <returns></returns>
 			public FuzzyRelation Negotate()//not A
 			{
-				var S = new FuzzyRelation();
+				var S = new FuzzyRelation(this.n);
 				foreach (var x in Elements())
 					S[x] = 1 - this[x];
 				return S;
@@ -480,7 +440,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation Intersect(FuzzyRelation other)//A \intersect B
 			{
-				var S = new FuzzyRelation();
+				var S = new FuzzyRelation(this.n);
 				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Min(this[x], other[x]);
 				return S;
@@ -492,7 +452,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation Union(FuzzyRelation other)//A U B
 			{
-				var S = new FuzzyRelation();
+				var S = new FuzzyRelation(this.n);
 				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Max(this[x], other[x]);
 				return S;
@@ -504,7 +464,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation SetMinus1(FuzzyRelation other)//A \ B
 			{
-				var S = new FuzzyRelation();
+				var S = new FuzzyRelation(this.n);
 				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Min(this[x], 1 - other[x]);
 				return S;
@@ -516,7 +476,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation SetMinus2(FuzzyRelation other)//A \ B
 			{
-				var S = new FuzzyRelation();
+				var S = new FuzzyRelation(this.n);
 				foreach (var x in Elements().Union(other.Elements()))
 					S[x] = Math.Max(this[x] - other[x], 0);
 				return S;
@@ -527,7 +487,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation Inverse()
 			{
-				return new FuzzyRelation(this.Transpose());
+				return this.Transpose().ToFuzzy;
 			}
 			/// <summary>
 			/// композиция нечётких бинарных отношений
@@ -535,7 +495,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public FuzzyRelation Compose(FuzzyRelation other)
 			{
-				var R = new FuzzyRelation();
+				var R = new FuzzyRelation(this.n);
 				int[] Z = Enumerable.Range(0, this.n).ToArray();
 				for (int i = 0; i < this.n; i++)
 					for (int j = 0; j < this.m; j++)
@@ -555,20 +515,6 @@ namespace Group_choice_algos_fuzzy
 				return R;
 			}
 			/// <summary>
-			/// возвращает матрицу четкого отношения из нечёткого
-			/// </summary>
-			/// <param name="alpha">уровень, на котором отсекаем принадлежность (\mu(x)>alpha => 1, иначе 0)</param>
-			/// <returns></returns>
-			public Matrix DefuzzyfyingAlphaSlice(double alpha)
-			{
-				var R = new Matrix(this.n, this.m);
-				for (int i = 0; i < R.n; i++)
-					for (int j = 0; j < R.m; j++)
-						R[i, j] = this[i, j] >= alpha ? 1 : 0;
-				return R;
-			}
-
-			/// <summary>
 			/// преобразование списка FuzzyRelation в список Matrix
 			/// </summary>
 			/// <param name="R_list"></param>
@@ -577,14 +523,6 @@ namespace Group_choice_algos_fuzzy
 			{
 				return R_list.Select(x => x.ToMatrix).ToList();
 			}
-			/// <summary>
-			/// асимметричная часть отношения
-			/// </summary>
-			public FuzzyRelation AsPart { get { return this.ToMatrix.GetAsymmetricPart().ToFuzzy(); } }
-			/// <summary>
-			/// симметричная часть отношения
-			/// </summary>
-			public FuzzyRelation SymPart { get { return this.ToMatrix.GetSymmetricPart().ToFuzzy(); } }
 		}
 	}
 
@@ -602,6 +540,7 @@ namespace Group_choice_algos_fuzzy
 			public double Value;
 			public string Label;
 		}
+
 		#region CONSTRUCTORS
 		public Ranking(int[] rank) { Rank2Array = rank; }
 		public Ranking(List<int> rank) { Rank2List = rank; }
@@ -623,7 +562,6 @@ namespace Group_choice_algos_fuzzy
 			"Сумм. расстояние 'модуль разности'"); //суммарное расстояние до всех остальных входных ранжирований
 		public Characteristic PathSummaryDistance_square = new Characteristic(
 			"Сумм. расстояние 'квадрат разности'"); //суммарное расстояние до всех остальных входных ранжирований
-
 
 		#region PROPERTIES
 		public List<int> Rank2List
@@ -648,25 +586,22 @@ namespace Group_choice_algos_fuzzy
 		/// создаёт матрицу смежности (порядок) из профиля эксперта
 		/// </summary>
 		public Matrix Rank2Matrix
-		{
+		{//ранжирование - как полный строгий порядок (полное, антирефлексивное, асимметричное, транзитивное)
 			get
 			{
-				var single_profile = Rank2Array;
-				var l = single_profile.Length;
-				if (l != Enumerable.Distinct(single_profile).ToArray().Length)
+				var node_list = Rank2Array;
+				var l = Rank2Array.Length;
+				if (l != Rank2Array.Distinct().Count())
 					throw new MyException(EX_bad_expert_profile);
-				Matrix Rj = new Matrix(l, l);
+				Matrix Rj = new Matrix(l);
 				for (int i = 0; i < l; i++)
 					for (int j = 0; j < l; j++)
 					{
-						var candidate1 = single_profile[i];
-						var candidate2 = single_profile[j];
-						if (i < j)
-							Rj[candidate1, candidate2] = 1;
-						else
-							Rj[candidate1, candidate2] = 0;
+						var candidate1 = node_list[i];
+						var candidate2 = node_list[j];
+						Rj[candidate1, candidate2] = (i < j) ? 1 : 0;//дуга i->j, левый лучше
 					}
-				return Rj; //полный строгий порядок (антиреф. асимм. транзитивное)	
+				return Rj;
 			}
 		}
 		public string Rank2String
@@ -745,7 +680,10 @@ namespace Group_choice_algos_fuzzy
 		public double MaxDistance_square;
 		public bool IsExecute
 		{
-			get { return connectedCheckBox != null ? connectedCheckBox.Checked : false; }
+			get
+			{
+				return (connectedCheckBox != null) ? connectedCheckBox.Checked : false;
+			}
 		}
 		public string ConnectedLabel
 		{
@@ -794,12 +732,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			connectedCheckBox = checkBox;
 			connectedFrame = frame;
-			connectedCheckBox.Text = MethodsLabelDatas[ID];
+			connectedCheckBox.Text = MethodsInfo[ID];
 			try
 			{
-				((GroupBox)connectedFrame.Parent).Text = MethodsLabelDatas[ID];
+				((GroupBox)connectedFrame?.Parent).Text = MethodsInfo[ID];
 			}
-			catch (Exception) { }
+			catch (Exception ex) { }
 		}
 		/// <summary>
 		/// удаление ранжирований и их характеристик
@@ -813,6 +751,8 @@ namespace Group_choice_algos_fuzzy
 			MaxStrength = INF;
 			MinDistance_modulus = INF;
 			MaxDistance_modulus = INF;
+			MinDistance_square = INF;
+			MaxDistance_square = INF;
 		}
 		/// <summary>
 		/// находит минимум характеристики ранжирований
@@ -902,10 +842,10 @@ namespace Group_choice_algos_fuzzy
 		{
 			foreach (Method M in GetMethods())
 				M.ClearRankings();
-			MinSummaryModulusDistance = 0;
-			MinSummarySquareDistance = 0;
-			MaxHamPathLength = 0;
-			MaxHamPathStrength = 0;
+			MinSummaryModulusDistance = INF;
+			MinSummarySquareDistance = INF;
+			MaxHamPathLength = INF;
+			MaxHamPathStrength = INF;
 			SchulzeWinners = null;
 		}
 
@@ -940,6 +880,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static void Set_All_various_rankings(int n)
 		{
+			All_various_rankings.ClearRankings();
 			List<List<int>> permutations_of_elements(List<int> elements)
 			{
 				var l = elements.Count;
@@ -951,17 +892,16 @@ namespace Group_choice_algos_fuzzy
 				{
 					List<List<int>> perms = new List<List<int>>() { };
 					for (int i = 0; i < l; i++)
-					{
+					{//выделяем 0-ой едет по всем i-тым местам и вокруг него крутим все возможные перестановки
 						List<int> elems = new List<int> { };
 						elems.AddRange(elements);
-						elems[i] = elements[0];
+						elems[i] = elements[0];//меняем местами 0-ой и i-ый (0-ое место скипается)
 						foreach (List<int> p in permutations_of_elements(elems.Skip(1).ToList()))
 							perms.Add(new List<int> { elements[i] }.Concat(p).ToList());
 					}
 					return perms;
 				}
 			}
-			All_various_rankings.ClearRankings();
 			if (n == 1)
 				All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 0 }));
 			else if (n == 2)
@@ -986,6 +926,11 @@ namespace Group_choice_algos_fuzzy
 							}
 						}
 			}
+
+			MinSummaryModulusDistance = All_various_rankings.Rankings
+				.Select(x => x.PathSummaryDistance_modulus.Value).Min();
+			MinSummarySquareDistance = All_various_rankings.Rankings
+				.Select(x => x.PathSummaryDistance_square.Value).Min();
 		}
 
 		/// <summary>
@@ -995,12 +940,12 @@ namespace Group_choice_algos_fuzzy
 		/// <param name="Weights_matrix"></param>
 		public static void Set_All_Hamiltonian_paths(Matrix weight_matrix)
 		{
-			List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix);
 			All_Hamiltonian_paths.ClearRankings();
+			List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix);
 			for (int i = 0; i < HP.GetLength(0); i++)
 				for (int j = 0; j < HP.GetLength(1); j++)
-					foreach (List<int> r in HP[i, j])
-						All_Hamiltonian_paths.Rankings.Add(new Ranking(ALL_HP, r));
+					foreach (List<int> path_from_i_to_j in HP[i, j])
+						All_Hamiltonian_paths.Rankings.Add(new Ranking(ALL_HP, path_from_i_to_j));
 		}
 
 		/// <summary>
@@ -1010,10 +955,10 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static void Set_Hp_max_length(Matrix weight_matrix)
 		{
+			Hp_max_length.ClearRankings();
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
 				Set_All_Hamiltonian_paths(weight_matrix);
 			MaxHamPathLength = All_Hamiltonian_paths.Rankings.Select(x => x.PathLength.Value).Max();
-			Hp_max_length.ClearRankings();
 			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
 				if (r.PathLength.Value == MaxHamPathLength)
 					Hp_max_length.Rankings.Add(r);
@@ -1026,10 +971,10 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static void Set_Hp_max_strength(Matrix weight_matrix)
 		{
+			Hp_max_strength.ClearRankings();
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
 				Set_All_Hamiltonian_paths(weight_matrix);
-			MaxHamPathStrength = Enumerable.Select(All_Hamiltonian_paths.Rankings, x => x.PathStrength.Value).Max();
-			Hp_max_strength.ClearRankings();
+			MaxHamPathStrength = All_Hamiltonian_paths.Rankings.Select(x => x.PathStrength.Value).Max();
 			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
 				if (r.PathStrength.Value == MaxHamPathStrength)
 					Hp_max_strength.Rankings.Add(r);
@@ -1042,6 +987,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static void Set_Schulze_method(int n, Matrix weight_matrix)
 		{
+			Schulze_method.ClearRankings();
 			double[,] PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
 			int[,] pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
 			List<(int, int)> O = new List<(int, int)>();
@@ -1125,7 +1071,6 @@ namespace Group_choice_algos_fuzzy
 								true_cnt++;
 							}
 
-			Schulze_method.ClearRankings();
 			if (true_cnt == n * (n - 1) / 2)
 			{
 				int[] r = Enumerable.Range(0, n).Reverse().ToArray();
@@ -1145,6 +1090,7 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 	}
+
 	/* def all_simple_paths_betweenAB(Adjacency_list, idA, idB):
 			   Paths = []  # simple - без циклов
 			   if idA != idB:
@@ -1242,6 +1188,5 @@ namespace Group_choice_algos_fuzzy
 					   j -= 1
 		   return S, ranking
 			*/
-
 
 }

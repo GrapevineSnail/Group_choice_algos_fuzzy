@@ -77,12 +77,12 @@ namespace Group_choice_algos_fuzzy
 		void refresh_variables()
 		{
 			R_list = new List<FuzzyRelation>();
-			R = new FuzzyRelation { };
-			R_avg = new FuzzyRelation { };
-			R_med = new FuzzyRelation { };
-			r = new Matrix { };
-			r_avg = new Matrix { };
-			r_med = new Matrix { };
+			R = new FuzzyRelation(n);
+			R_avg = new FuzzyRelation(n);
+			R_med = new FuzzyRelation(n);
+			r = new Matrix(n);
+			r_avg = new Matrix(n);
+			r_med = new Matrix(n);
 			Methods.ClearMethods();
 		}
 
@@ -188,10 +188,10 @@ namespace Group_choice_algos_fuzzy
 					throw new MyException(EX_bad_expert_profile);
 
 				R_list = ExpertsRelationsList;
-				R_avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy();
-				r_avg = Matrix.MakeAdjacencyMatrix(R_avg);
-				R_med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy();
-				r_med = Matrix.MakeAdjacencyMatrix(R_med);
+				R_avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
+				r_avg = R_avg.GetAdjacencyMatrix();
+				R_med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
+				r_med = R_med.GetAdjacencyMatrix();
 
 				if (rb_dist_square.Checked)
 				{
@@ -206,16 +206,9 @@ namespace Group_choice_algos_fuzzy
 				else
 					throw new MyException(EX_choose_distance_func);
 
-				if (Methods.All_various_rankings.Rankings.Count == 0)
+				if (Methods.All_various_rankings.IsExecute)
 					Methods.Set_All_various_rankings(n);
-				Methods.MinSummaryModulusDistance = Methods.All_various_rankings.Rankings
-					.Select(x => x.PathSummaryDistance_modulus.Value).Min();
-				Methods.MinSummarySquareDistance = Methods.All_various_rankings.Rankings
-					.Select(x => x.PathSummaryDistance_square.Value).Min();
-
-				if (Methods.All_various_rankings.IsExecute && Methods.All_various_rankings.Rankings.Count == 0)
-					Methods.Set_All_various_rankings(n);
-				if (Methods.All_Hamiltonian_paths.IsExecute && Methods.All_Hamiltonian_paths.Rankings.Count == 0)
+				if (Methods.All_Hamiltonian_paths.IsExecute)
 					Methods.Set_All_Hamiltonian_paths(R);
 				if (Methods.Hp_max_length.IsExecute)
 					Methods.Set_Hp_max_length(R);
@@ -340,7 +333,7 @@ namespace Group_choice_algos_fuzzy
 			deactivate_input();
 			try
 			{
-				var tex = $"Минимальное суммарное расстояние для агрегированного графа:\n" +
+				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
 				tex += "\nАгрегированное отношение: \n" + R.Matrix2String();
@@ -507,9 +500,9 @@ namespace Group_choice_algos_fuzzy
 					for (int i = 0; i < dgv.Rows.Count; i++)
 						for (int j = 0; j < dgv.Columns.Count; j++)
 							input_matrix[i, j] = (double)dgv[j, i].Value;
-					R_list.Add(new FuzzyRelation(input_matrix));
+					R_list.Add(input_matrix.ToFuzzy);
 				}
-				R_list = R_list.Select(x => x.AsPart).ToList();
+				R_list = R_list.Select(x => x.AsymmetricPart.ToFuzzy).ToList();
 				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
@@ -603,7 +596,7 @@ namespace Group_choice_algos_fuzzy
 							cur_matrix[l % n, j] = numbers[j];
 					}
 					if (l % n == n - 1)
-						matrices.Add(new FuzzyRelation(cur_matrix));
+						matrices.Add(cur_matrix.ToFuzzy);
 				}
 				m = matrices.Count;
 				//R_list = Enumerable.Select(R_list, x => Matrix.GetAsymmetricPart(x)).ToList();
