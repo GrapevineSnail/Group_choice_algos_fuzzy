@@ -271,6 +271,7 @@ namespace Group_choice_algos_fuzzy
 					dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 					dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 					dgv.ShowEditingIcon = false;
+					dgv.DefaultCellStyle.Format = $"0.{new string('#', digits_precision)}";
 					dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 					dgv.CellEndEdit += (object d, DataGridViewCellEventArgs ee) =>
 					{//что должно происходить при завершении редактирования ячейки
@@ -524,6 +525,8 @@ namespace Group_choice_algos_fuzzy
 				}
 				R_list = R_list.Select(x => x.AsymmetricPart.ToFuzzy).ToList();
 				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
+				if (R_list.Any(x => x.IsHasCycle(out _)))
+					throw new MyException(EX_not_transitive_profile);
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//

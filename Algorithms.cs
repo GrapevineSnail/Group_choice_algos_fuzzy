@@ -70,8 +70,7 @@ namespace Group_choice_algos_fuzzy
 			for (int ii = 0; ii < d.Rows.Count; ii++)
 				for (int jj = 0; jj < d.Columns.Count; jj++)
 					input_matrix[ii, jj] = (double)d[jj, ii].Value;
-			var trans_closured_input_matrix = input_matrix.TransitiveClosure();
-			if (trans_closured_input_matrix.IsAsymmetric())
+			if (!input_matrix.IsHasCycle(out var trans_closured_input_matrix))
 			{//транзитивное замыкание не должно содержать циклов
 				for (int ii = 0; ii < d.Rows.Count; ii++)
 					for (int jj = 0; jj < d.Columns.Count; jj++)

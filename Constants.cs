@@ -24,6 +24,7 @@ namespace Group_choice_algos_fuzzy
 		public const int max_count_of_alternatives = 9;
 		public const int max_count_of_experts = 50;
 		public const double INF = double.PositiveInfinity;
+		public const int digits_precision = 12;//насколько точными будут вычисления на double
 		public const string ZER = "0";
 		public const string ONE = "1";
 		public const char PLS = '+';

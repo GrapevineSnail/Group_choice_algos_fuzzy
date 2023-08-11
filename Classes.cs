@@ -9,6 +9,9 @@ using static Group_choice_algos_fuzzy.Form1;
 
 namespace Group_choice_algos_fuzzy
 {
+	/// <summary>
+	/// матрицы
+	/// </summary>
 	public class Matrix
 	{
 		public Matrix(int n) { matrix = new double[n, n]; }
@@ -55,11 +58,13 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (n != m)
 					throw new MyException(EX_matrix_not_square);
-				Matrix Asy = new Matrix(n);
+				Matrix ans = new Matrix(n);
 				for (int i = 0; i < n; i++)
 					for (int j = 0; j < n; j++)
-						Asy[i, j] = Math.Max(this[i, j] - this[j, i], 0);
-				return Asy;
+					{// выдаёт 0.099999999999999978 вместо 0.1
+						ans[i, j] = Math.Max(Math.Round(this[i, j] - this[j, i], digits_precision), 0);
+					}
+				return ans;
 			}
 		}
 		/// <summary>
@@ -124,7 +129,7 @@ namespace Group_choice_algos_fuzzy
 					double a_ij = 0;
 					for (int k = 0; k < l; k++)
 						a_ij += M1[i, k] * M2[k, j];
-					R[i, j] = a_ij;
+					R[i, j] = Math.Round(a_ij, digits_precision);
 				}
 			return R;
 		}
@@ -137,7 +142,7 @@ namespace Group_choice_algos_fuzzy
 			var R = new Matrix(R1);
 			for (int i = 0; i < R.n; i++)
 				for (int j = 0; j < R.m; j++)
-					R[i, j] += R2[i, j];
+					R[i, j] = Math.Round(R[i, j] + R2[i, j], digits_precision);
 			return R;
 		}
 		public static Matrix operator -(Matrix R1, Matrix R2)
@@ -178,7 +183,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			int[] max_widths = new int[m];
 			for (int j = 0; j < m; j++)
-				max_widths[j] = 3;
+				max_widths[j] = 5;
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < m; j++)
 					if (this[i, j].ToString().Length > max_widths[j])
@@ -389,6 +394,9 @@ namespace Group_choice_algos_fuzzy
 	}
 
 
+	/// <summary>
+	/// матрицы нечётких отношений со специфичными для нечёткости операциями
+	/// </summary>
 	public class FuzzyRelation : Matrix
 	{// base - матрица нечёткого бинарного отношения
 	 //полагаем квадратными
@@ -570,6 +578,18 @@ namespace Group_choice_algos_fuzzy
 			return true;
 		}
 		/// <summary>
+		/// есть ли цикл в матрице принадлежности отношения
+		/// </summary>
+		/// <param name="trans_closured_matrix"></param>
+		/// <returns></returns>
+		public bool IsHasCycle(out FuzzyRelation trans_closured_matrix)
+		{
+			trans_closured_matrix = TransitiveClosure();
+			if (trans_closured_matrix.IsAsymmetric())
+				return false;
+			return true;
+		}
+		/// <summary>
 		/// преобразование списка FuzzyRelation в список Matrix
 		/// </summary>
 		/// <param name="R_list"></param>
@@ -737,6 +757,7 @@ namespace Group_choice_algos_fuzzy
 		public override int GetHashCode() => Path.GetHashCode();
 	}
 
+
 	/// <summary>
 	/// для каждого метода существуют выдаваемые им ранжирования и др. атрибуты
 	/// </summary>
@@ -899,6 +920,7 @@ namespace Group_choice_algos_fuzzy
 		}
 
 	}
+
 
 	/// <summary>
 	/// все методы
@@ -1118,7 +1140,7 @@ namespace Group_choice_algos_fuzzy
 					}
 			}
 			SchulzeWinners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
-			if(Ranking.Matrix2Rank(new Matrix(PD), out var rank))
+			if (Ranking.Matrix2Rank(new Matrix(PD), out var rank))
 				Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, rank));
 		}
 	}
