@@ -60,6 +60,27 @@ namespace Group_choice_algos_fuzzy
 			return C;
 		}
 
+		public static bool SetAsymmetricClosuredProfile(DataGridView d)
+		{
+			if (d.Rows.Count != d.Columns.Count)
+				throw new MyException(EX_matrix_not_square);
+			var n = d.Rows.Count;
+			//достраивается транзитивность
+			var input_matrix = new FuzzyRelation(n);
+			for (int ii = 0; ii < d.Rows.Count; ii++)
+				for (int jj = 0; jj < d.Columns.Count; jj++)
+					input_matrix[ii, jj] = (double)d[jj, ii].Value;
+			var trans_closured_input_matrix = input_matrix.TransitiveClosure();
+			if (trans_closured_input_matrix.IsAsymmetric())
+			{//транзитивное замыкание не должно содержать циклов
+				for (int ii = 0; ii < d.Rows.Count; ii++)
+					for (int jj = 0; jj < d.Columns.Count; jj++)
+						d[jj, ii].Value = trans_closured_input_matrix[ii, jj];
+				return true;
+			}
+			else
+				return false;
+		}
 		/// <summary>
 		/// веса данного пути
 		/// </summary>

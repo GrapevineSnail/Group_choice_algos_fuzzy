@@ -6,7 +6,6 @@ using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Algorithms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Form1;
-using static Group_choice_algos_fuzzy.Fuzzy;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -82,6 +81,23 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 		/// <summary>
+		/// из любой матрицы весов создаёт матрицу смежности
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public Matrix AdjacencyMatrix
+		{
+			get
+			{
+				Matrix R = new Matrix(n, m);
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < m; j++)
+						R[i, j] = (Math.Abs(this[i, j]) == INF || Math.Abs(this[i, j]) == 0) ? 0 : 1;
+				return R;
+			}
+		}
+
+		/// <summary>
 		/// превращает матрицу в нечёткое отношение
 		/// </summary>
 		/// <returns></returns>
@@ -127,6 +143,22 @@ namespace Group_choice_algos_fuzzy
 		public static Matrix operator -(Matrix R1, Matrix R2)
 		{
 			return R1 + (-1) * R2;
+		}
+		public static bool operator !=(Matrix R1, Matrix R2)
+		{
+			if (R1.n != R2.n || R1.m != R2.m)
+				return true;
+			for (int i = 0; i < R1.n; i++)
+				for (int j = 0; j < R1.m; j++)
+				{
+					if (R1[i, j] != R2[i, j])
+						return true;
+				}
+			return false;//если одинаковые размерности и все элементы
+		}
+		public static bool operator ==(Matrix R1, Matrix R2)
+		{
+			return !(R1 != R2);
 		}
 
 		/// <summary>
@@ -204,11 +236,11 @@ namespace Group_choice_algos_fuzzy
 		/// <param name="n"></param>
 		/// <param name="m"></param>
 		/// <returns></returns>
-		public static Matrix Eye(int n, int m)
+		public static Matrix Eye(int n)
 		{
-			var R = new Matrix(n, m);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
+			var R = new Matrix(n);
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < n; j++)
 					R[i, j] = (i == j) ? 1 : 0;
 			return R;
 		}
@@ -219,7 +251,7 @@ namespace Group_choice_algos_fuzzy
 		{//квадратная матрица
 			if (this.n != this.m)
 				throw new MyException(EX_matrix_not_square);
-			var R = Eye(this.n, this.m);
+			var R = Eye(this.n);
 			for (int i = 0; i < p; i++)
 				R *= this;
 			return R;
@@ -353,178 +385,201 @@ namespace Group_choice_algos_fuzzy
 				sum_dist += distance_function(this, other_R);
 			return sum_dist;
 		}
-		/// <summary>
-		/// из любой матрицы весов делает матрицу смежности
-		/// </summary>
-		/// <param name="M"></param>
-		/// <returns></returns>
-		public Matrix GetAdjacencyMatrix()
+
+	}
+
+
+	public class FuzzyRelation : Matrix
+	{// base - матрица нечёткого бинарного отношения
+	 //полагаем квадратными
+		public FuzzyRelation(int n) : base(n) { }
+		public FuzzyRelation(double[,] M) : base(M)
 		{
-			Matrix R = new Matrix(n, m);
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					R[i, j] = (Math.Abs(this[i, j]) == INF || Math.Abs(this[i, j]) == 0) ? 0 : 1;
+			if (M.GetLength(0) != M.GetLength(1))
+				throw new MyException(EX_matrix_not_square);
+		}
+		public FuzzyRelation(Matrix M) : base(M)
+		{
+			if (M.GetLength(0) != M.GetLength(1))
+				throw new MyException(EX_matrix_not_square);
+		}
+
+		public double this[Tuple<int, int> pair]
+		{
+			get { return base[pair.Item1, pair.Item2]; }
+			set { base[pair.Item1, pair.Item2] = value; }
+		}
+		/// <summary>
+		/// матрица принадлежности (= м. предпочтений, функция принадлжености)
+		/// </summary>
+		public Matrix ToMatrix
+		{
+			get { return base.Self; }
+		}
+		/// <summary>
+		/// все элементы (пары), в том числе с принадлежностью 0
+		/// </summary>
+		/// <returns></returns>
+		public Tuple<int, int>[] Elements()
+		{
+			Tuple<int, int>[] ans = new Tuple<int, int>[this.n * this.m];
+			for (int i = 0; i < this.n; i++)
+				for (int j = 0; j < this.m; j++)
+					ans[this.m * i + j] = new Tuple<int, int>(i, j);
+			return ans;
+		}
+		/// <summary>
+		/// возвращает альфа-срез нечёткого отношения
+		/// </summary>
+		/// <param name="alpha">уровень, на котором отсекаем принадлежность (\mu(x)>alpha => 1, иначе 0)</param>
+		/// <returns></returns>
+		public FuzzyRelation AlphaSlice(double alpha)
+		{
+			var R = new FuzzyRelation(this.n);
+			for (int i = 0; i < this.n; i++)
+				for (int j = 0; j < this.n; j++)
+					R[i, j] = this[i, j] >= alpha ? this[i, j] : 0;
 			return R;
 		}
-	}
-
-	public class Fuzzy
-	{
-		public class FuzzyRelation : Matrix
-		{// base - матрица нечёткого бинарного отношения
-		 //полагаем квадратными
-			public FuzzyRelation(int n) : base(n) { }
-			public FuzzyRelation(double[,] M) : base(M)
+		/// <summary>
+		/// дополнение
+		/// </summary>
+		/// <returns></returns>
+		public FuzzyRelation Negotate()//not A
+		{
+			var S = new FuzzyRelation(this.n);
+			foreach (var x in Elements())
+				S[x] = 1 - this[x];
+			return S;
+		}
+		/// <summary>
+		/// пересечение
+		/// </summary>
+		/// <param name="other"></param>
+		/// <returns></returns>
+		public FuzzyRelation Intersect(FuzzyRelation other)//A \intersect B
+		{
+			var S = new FuzzyRelation(this.n);
+			foreach (var x in Elements().Union(other.Elements()))
+				S[x] = Math.Min(this[x], other[x]);
+			return S;
+		}
+		/// <summary>
+		/// объединение
+		/// </summary>
+		/// <param name="other"></param>
+		/// <returns></returns>
+		public FuzzyRelation Union(FuzzyRelation other)//A U B
+		{
+			var S = new FuzzyRelation(this.n);
+			foreach (var x in Elements().Union(other.Elements()))
+				S[x] = Math.Max(this[x], other[x]);
+			return S;
+		}
+		public static FuzzyRelation Union(List<FuzzyRelation> list_rels)
+		{
+			var R = new FuzzyRelation(list_rels.First().n);//base матрица заполнена нулями
+			foreach (var r in list_rels)
+				R = R.Union(r);
+			return R;
+		}
+		/// <summary>
+		/// симметрическая разность
+		/// </summary>
+		/// <param name="other"></param>
+		/// <returns></returns>
+		public FuzzyRelation SetMinus1(FuzzyRelation other)//A \ B
+		{
+			var S = new FuzzyRelation(this.n);
+			foreach (var x in Elements().Union(other.Elements()))
+				S[x] = Math.Min(this[x], 1 - other[x]);
+			return S;
+		}
+		/// <summary>
+		/// симметрическая разность
+		/// </summary>
+		/// <param name="other"></param>
+		/// <returns></returns>
+		public FuzzyRelation SetMinus2(FuzzyRelation other)//A \ B
+		{
+			var S = new FuzzyRelation(this.n);
+			foreach (var x in Elements().Union(other.Elements()))
+				S[x] = Math.Max(this[x] - other[x], 0);
+			return S;
+		}
+		/// <summary>
+		/// обратное отношение
+		/// </summary>
+		/// <returns></returns>
+		public FuzzyRelation Inverse()
+		{
+			return this.Transpose().ToFuzzy;
+		}
+		/// <summary>
+		/// композиция нечётких бинарных отношений
+		/// </summary>
+		/// <returns></returns>
+		public FuzzyRelation Compose(FuzzyRelation other)
+		{
+			var R = new FuzzyRelation(this.n);
+			int[] Z = Enumerable.Range(0, this.n).ToArray();
+			for (int i = 0; i < this.n; i++)
+				for (int j = 0; j < this.m; j++)
+				{
+					R[i, j] = Z.Select(z => Math.Min(this[i, z], other[z, j])).Max();
+				}
+			return R;
+		}
+		/// <summary>
+		/// возведение отношения в степень
+		/// </summary>
+		public new FuzzyRelation Pow(int p)
+		{
+			//if (p == 0)
+			//	return Eye(n).ToFuzzy;
+			var R = new FuzzyRelation(this);
+			for (int k = 1; k < p; k++)
+				R = R.Compose(R);
+			return R;
+		}
+		/// <summary>
+		/// транзитивное замыкание нечеткого отношения
+		/// </summary>
+		public FuzzyRelation TransitiveClosure()
+		{
+			var ans = new List<FuzzyRelation>();
+			ans.Add(new FuzzyRelation(this));
+			for (int i = 1; i < n; i++)
 			{
-				if (M.GetLength(0) != M.GetLength(1))
-					throw new MyException(EX_matrix_not_square);
+				ans.Add(ans.Last().Compose(ans[0]));
+				if (ans[i] == ans[i - 1])
+					break;
 			}
-			public FuzzyRelation(Matrix M) : base(M)
-			{
-				if (M.GetLength(0) != M.GetLength(1))
-					throw new Exception(EX_matrix_not_square);
-			}
-
-			public double this[Tuple<int, int> pair]
-			{
-				get { return base[pair.Item1, pair.Item2]; }
-				set { base[pair.Item1, pair.Item2] = value; }
-			}
-			/// <summary>
-			/// матрица принадлежности (= м. предпочтений, функция принадлжености)
-			/// </summary>
-			public Matrix ToMatrix
-			{
-				get { return base.Self; }
-			}
-			/// <summary>
-			/// все элементы (пары), в том числе с принадлежностью 0
-			/// </summary>
-			/// <returns></returns>
-			public Tuple<int, int>[] Elements()
-			{
-				Tuple<int, int>[] ans = new Tuple<int, int>[this.n * this.m];
-				for (int i = 0; i < this.n; i++)
-					for (int j = 0; j < this.m; j++)
-						ans[this.m * i + j] = new Tuple<int, int>(i, j);
-				return ans;
-			}
-			/// <summary>
-			/// возвращает альфа-срез нечёткого отношения
-			/// </summary>
-			/// <param name="alpha">уровень, на котором отсекаем принадлежность (\mu(x)>alpha => 1, иначе 0)</param>
-			/// <returns></returns>
-			public FuzzyRelation AlphaSlice(double alpha)
-			{
-				var R = new FuzzyRelation(this.n);
-				for (int i = 0; i < this.n; i++)
-					for (int j = 0; j < this.n; j++)
-						R[i, j] = this[i, j] >= alpha ? this[i, j] : 0;
-				return R;
-			}
-			/// <summary>
-			/// дополнение
-			/// </summary>
-			/// <returns></returns>
-			public FuzzyRelation Negotate()//not A
-			{
-				var S = new FuzzyRelation(this.n);
-				foreach (var x in Elements())
-					S[x] = 1 - this[x];
-				return S;
-			}
-			/// <summary>
-			/// пересечение
-			/// </summary>
-			/// <param name="other"></param>
-			/// <returns></returns>
-			public FuzzyRelation Intersect(FuzzyRelation other)//A \intersect B
-			{
-				var S = new FuzzyRelation(this.n);
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Min(this[x], other[x]);
-				return S;
-			}
-			/// <summary>
-			/// объединение
-			/// </summary>
-			/// <param name="other"></param>
-			/// <returns></returns>
-			public FuzzyRelation Union(FuzzyRelation other)//A U B
-			{
-				var S = new FuzzyRelation(this.n);
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Max(this[x], other[x]);
-				return S;
-			}
-			/// <summary>
-			/// симметрическая разность
-			/// </summary>
-			/// <param name="other"></param>
-			/// <returns></returns>
-			public FuzzyRelation SetMinus1(FuzzyRelation other)//A \ B
-			{
-				var S = new FuzzyRelation(this.n);
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Min(this[x], 1 - other[x]);
-				return S;
-			}
-			/// <summary>
-			/// симметрическая разность
-			/// </summary>
-			/// <param name="other"></param>
-			/// <returns></returns>
-			public FuzzyRelation SetMinus2(FuzzyRelation other)//A \ B
-			{
-				var S = new FuzzyRelation(this.n);
-				foreach (var x in Elements().Union(other.Elements()))
-					S[x] = Math.Max(this[x] - other[x], 0);
-				return S;
-			}
-			/// <summary>
-			/// обратное отношение
-			/// </summary>
-			/// <returns></returns>
-			public FuzzyRelation Inverse()
-			{
-				return this.Transpose().ToFuzzy;
-			}
-			/// <summary>
-			/// композиция нечётких бинарных отношений
-			/// </summary>
-			/// <returns></returns>
-			public FuzzyRelation Compose(FuzzyRelation other)
-			{
-				var R = new FuzzyRelation(this.n);
-				int[] Z = Enumerable.Range(0, this.n).ToArray();
-				for (int i = 0; i < this.n; i++)
-					for (int j = 0; j < this.m; j++)
-					{
-						R[i, j] = Z.Select(z => Math.Min(this[i, z], other[z, j])).Max();
-					}
-				return R;
-			}
-			/// <summary>
-			/// возведение отношения в степень
-			/// </summary>
-			public new FuzzyRelation Pow(int p)
-			{
-				var R = this;
-				for (int k = 1; k < p; k++)
-					R = R.Compose(R);
-				return R;
-			}
-			/// <summary>
-			/// преобразование списка FuzzyRelation в список Matrix
-			/// </summary>
-			/// <param name="R_list"></param>
-			/// <returns></returns>
-			public static List<Matrix> ToMatrixList(List<FuzzyRelation> R_list)
-			{
-				return R_list.Select(x => x.ToMatrix).ToList();
-			}
+			return Union(ans);
+		}
+		/// <summary>
+		/// является ли нечеткое отношение асимметричным
+		/// </summary>
+		/// <returns></returns>
+		public bool IsAsymmetric()
+		{
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < n; j++)
+					if (this[i, j] > 0 && this[j, i] != 0)
+						return false;
+			return true;
+		}
+		/// <summary>
+		/// преобразование списка FuzzyRelation в список Matrix
+		/// </summary>
+		/// <param name="R_list"></param>
+		/// <returns></returns>
+		public static List<Matrix> ToMatrixList(List<FuzzyRelation> R_list)
+		{
+			return R_list.Select(x => x.ToMatrix).ToList();
 		}
 	}
+
 
 	/// <summary>
 	/// одно какое-то ранжирование (или путь) со всеми его свойствами
@@ -551,6 +606,8 @@ namespace Group_choice_algos_fuzzy
 				Rank2List = rank as List<int>;
 			else if (rank as int[] != null)
 				Rank2Array = rank as int[];
+			else if (rank as Ranking != null)
+				Rank2List = (rank as Ranking).Path;
 		}
 		#endregion CONSTRUCTORS
 
@@ -616,6 +673,32 @@ namespace Group_choice_algos_fuzzy
 			get { return Path.Count; }
 		}
 		#endregion PROPERTIES
+
+		/// <summary>
+		/// создаёт строгое ранжирование на основе матрицы: полного транзитивного отношения, выделяя асимметричную часть
+		/// </summary>
+		public static bool Matrix2Rank(Matrix M, out Ranking ans)
+		{
+			var MM = M.AsymmetricPart.AdjacencyMatrix.ToFuzzy.TransitiveClosure();
+			var ordering = Enumerable.Repeat(-1, n).ToArray();
+			for (int i = 0; i < MM.n; i++)
+			{
+				double wins = 0;
+				for (int j = 0; j < MM.n; j++)
+				{
+					wins += M[i, j];
+				}
+				if (wins < n && ordering[(int)wins] == -1)
+					ordering[(int)wins] = i;
+				else
+				{
+					ans = null;
+					return false;
+				}
+			}
+			ans = new Ranking(ordering.Reverse().ToArray());
+			return true;
+		}
 
 		/// <summary>
 		/// a0a1a2 -> 0, 1, 2
@@ -737,7 +820,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				((GroupBox)connectedFrame?.Parent).Text = MethodsInfo[ID];
 			}
-			catch (Exception ex) { }
+			catch (MyException ex) { }
 		}
 		/// <summary>
 		/// удаление ранжирований и их характеристик
@@ -988,9 +1071,9 @@ namespace Group_choice_algos_fuzzy
 		public static void Set_Schulze_method(int n, Matrix weight_matrix)
 		{
 			Schulze_method.ClearRankings();
-			double[,] PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
-			int[,] pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
-			List<(int, int)> O = new List<(int, int)>();
+			var PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
+			var pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
+			var O = new HashSet<(int, int)>();//множество пар - отношение доминирования
 			bool[] winner = Enumerable.Repeat(false, n).ToArray();
 
 			//initialization
@@ -1001,18 +1084,19 @@ namespace Group_choice_algos_fuzzy
 					pred[i, j] = i;
 				}
 			//calculation of the strengths of the strongest paths
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-					if (i != j)
+			for (int j = 0; j < n; j++)
+				for (int i = 0; i < n; i++)
+					if (j != i)//петли не смотрим
 					{
 						for (int k = 0; k < n; k++)
 						{
-							if (i != k && j != k)
+							if (j != k && i != k)//петли не смотрим
 							{
-								if (PD[j, k] < Math.Min(PD[j, i], PD[i, k]))
+								var tok = Math.Min(PD[i, j], PD[j, k]);
+								if (PD[i, k] < tok)
 								{
-									PD[j, k] = Math.Min(PD[j, i], PD[i, k]);
-									pred[j, k] = pred[i, k];
+									PD[i, k] = tok;//увеличиваем силу
+									pred[i, k] = pred[j, k];//записываем узел в пути от i до k
 								}
 							}
 						}
@@ -1030,163 +1114,12 @@ namespace Group_choice_algos_fuzzy
 							winner[i] = false;
 						}
 						else
-							O.RemoveAll(x => x == (j, i));
+							O.Remove((j, i));
 					}
 			}
-			SchulzeWinners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();
-
-			bool compare_MORETHAN(int A, int B)
-			{
-				if (PD[A, B] > PD[B, A])
-					return true;  // побеждает A. (A > B) т.е. morethan
-				return false;
-			}
-
-			bool compare_EQUIV(int A, int B)
-			{
-				if (!compare_MORETHAN(A, B) && !compare_MORETHAN(B, A))
-					return true;
-				return false;
-			}
-			// матрица строгих сравнений A>B <=> comparsion[A,B]=true
-			// должна быть транзитивна A>B && B>C => A>C
-			bool[,] comparsion = new bool[n, n];
-			int true_cnt = 0; // количество единиц при транзитивности
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-					if (compare_MORETHAN(i, j))
-					{
-						comparsion[i, j] = true;
-						true_cnt++;
-					}
-					else
-						comparsion[i, j] = false;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; i < n; i++)
-					if (i != j && PD[i, j] == 0)//сила == 0 <=> несравнимость
-						for (int k = 0; k < n; k++)
-							if (compare_MORETHAN(i, k) && compare_MORETHAN(k, j))
-							{
-								comparsion[i, j] = true;
-								true_cnt++;
-							}
-
-			if (true_cnt == n * (n - 1) / 2)
-			{
-				int[] r = Enumerable.Range(0, n).Reverse().ToArray();
-				for (int i = 0; i < n; i++)
-				{
-					var j = i;
-					while (j > 0 && comparsion[r[j], r[j - 1]])
-					{
-						var temp = r[j];
-						r[j] = r[j - 1];
-						r[j - 1] = temp;
-						j--;
-					}
-
-				}
-				Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, r));
-			}
+			SchulzeWinners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
+			if(Ranking.Matrix2Rank(new Matrix(PD), out var rank))
+				Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, rank));
 		}
 	}
-
-	/* def all_simple_paths_betweenAB(Adjacency_list, idA, idB):
-			   Paths = []  # simple - без циклов
-			   if idA != idB:
-				   n = len(Adjacency_list)
-				   cur_path = []
-				   visited = [False for i in range(n)]
-
-				   def enter_in_vertex(v):
-					   cur_path.append(v)
-					   visited[v] = True  # зашли в вершину
-
-				   def leave_vertex(v):
-					   cur_path.pop()
-					   visited[v] = False  # вышли - поднялись выше по цепочке
-
-				   def dfs(v):
-					   enter_in_vertex(v)
-					   if v == idB:  # нашли путь
-						   Paths.append(cur_path.copy())
-					   else:
-						   for next_v in Adjacency_list[v]:
-							   if visited[next_v] == False:
-								   dfs(next_v)  # идём туда, куда ещё не входили
-					   leave_vertex(v)
-					   return 0
-				   dfs(idA)
-			   return Paths
-
-		   def strongest_paths_betweenAB(Weights_matrix,
-										 All_paths_betweenAB, idA, idB):
-			   Paths = [path for path in All_paths_betweenAB]
-			   Weights = [weights_of_path(path, Weights_matrix) for path in Paths]
-			   Strongest_paths = []
-			   max_strength = -math.inf
-			   l = len(Paths)
-			   if l > 0:
-				   strengths = []
-				   for i in range(l):
-					   strengths.append(min(Weights[i]))
-				   max_strength = max(strengths)
-				   for i in range(l):
-					   if max_strength == strengths[i]:
-						   Strongest_paths.append(Paths[i])
-			   return (max_strength, Strongest_paths)
-
-		   Adjacency_list = matrix2adjacency_list(Weights_matrix)
-		   Paths_matrix = [[all_simple_paths_betweenAB(Adjacency_list, i, j)
-							for j in range(n)] for i in range(n)]
-		   # матрица сильнейших путей - strongest paths (SP)
-		   SP_matrix = [[0 for j in range(n)] for i in range(n)]
-		   # матрица сил сильнейших путей - Power
-		   Power = [[0 for j in range(n)] for i in range(n)]
-		   for i in range(n):
-			   for j in range(n):
-				   strength, S_paths = strongest_paths_betweenAB(
-					   Weights_matrix, Paths_matrix[i][j], i, j)
-				   SP_matrix[i][j] = S_paths
-				   Power[i][j] = strength
-
-		   def compare_MORETHAN(A, B):
-			   if Power[A][B] > Power[B][A]:
-				   return True  # побеждает A. (A > B) т.е. morethan
-			   return False
-
-		   def compare_EQUIV(A, B):
-			   if not compare_MORETHAN(A, B) && not compare_MORETHAN(B, A):
-				   return True
-			   return False
-
-		   def is_winner(A):
-			   for B in range(n):
-				   if B != A && Power[A][B] < Power[B][A]:
-					   return False
-			   return True
-		   S = [A for A in range(n) if is_winner(A)]  # set of winners
-		   # матрица строгих сравнений A>B <=> comparsion[A][B]=1
-		   # должна быть транзитивна A>B && B>C => A>C
-		   comparsion = [[1 if compare_MORETHAN(i, j) else 0
-						  for j in range(n)] for i in range(n)]
-		   for i in range(n):
-			   for j in range(n):
-				   if i != j && Power[i][j] == 0:
-					   for k in range(n):
-						   if compare_MORETHAN(i, k) && compare_MORETHAN(k, j):
-							   comparsion[i][j] = 1
-		   ranking = null
-		   if sum([sum(c) for c in comparsion]) == (n**2 - n)/2:  # количество единиц при транзитивности
-			   # результирующее ранжирование по Шульце
-			   ranking = [i for i in range(n)]
-			   ranking.reverse()
-			   for i in range(n):
-				   j = i
-				   while j > 0 && comparsion[ranking[j]][ranking[j-1]]:
-					   ranking[j], ranking[j-1] = ranking[j-1], ranking[j]
-					   j -= 1
-		   return S, ranking
-			*/
-
 }

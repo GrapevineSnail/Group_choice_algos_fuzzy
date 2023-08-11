@@ -9,7 +9,6 @@ using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Algorithms;
 using static System.IO.DirectoryInfo;
-using static Group_choice_algos_fuzzy.Fuzzy;
 
 
 namespace Group_choice_algos_fuzzy
@@ -27,15 +26,17 @@ namespace Group_choice_algos_fuzzy
 
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
+
 			foreach (Control c in flowLayoutPanel_input.Controls)
-			{
 				c.MouseEnter += flowLayoutPanel_input_MouseEnter;
-			}
+			foreach (Control c in flowLayoutPanel_output_info.Controls)
+				c.MouseEnter += flowLayoutPanel_output_info_MouseEnter;
 			foreach (Control c in flowLayoutPanel_output_tables.Controls)
 			{
-				c.MouseEnter += flowLayoutPanel_output_MouseEnter;
+				c.MouseEnter += flowLayoutPanel_output_tables_MouseEnter;
+				foreach (Control c1 in c.Controls)
+					c1.MouseEnter += flowLayoutPanel_output_tables_MouseEnter;
 			}
-
 			interface_coloring(this);
 			clear_output();
 		}
@@ -64,7 +65,7 @@ namespace Group_choice_algos_fuzzy
 		public static FuzzyRelation R;//агрегированная матрица матриц профилей
 		public static FuzzyRelation R_avg;//агрегированная матрица матриц профилей (среднее)
 		public static FuzzyRelation R_med;//агрегированная матрица матриц профилей (медианные)
-		
+
 		public static Matrix r;//общая матрица смежности
 		public static Matrix r_avg;
 		public static Matrix r_med;
@@ -113,7 +114,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				label3.Visible = false;
+				label3.Text = "";
 				foreach (var m in Methods.GetMethods())
 					m.ClearMethodOutput();
 			}
@@ -124,10 +125,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				label3.Visible = true;
 				foreach (var m in Methods.GetMethods())
 					m.ShowMethodOutput();
-				flowLayoutPanel_output_tables.Focus();
 			}
 			catch (MyException ex) { }
 		}
@@ -178,7 +177,6 @@ namespace Group_choice_algos_fuzzy
 			List<string> Intersect = new List<string>();//общие ранжирования для использованных методов
 			try
 			{
-				refresh_variables();
 				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
 				var frames = Methods.GetMethods().Select(x => x.connectedFrame);
 				if (checkbuttons.All(x => x == false))
@@ -189,9 +187,9 @@ namespace Group_choice_algos_fuzzy
 
 				R_list = ExpertsRelationsList;
 				R_avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
-				r_avg = R_avg.GetAdjacencyMatrix();
+				r_avg = R_avg.AdjacencyMatrix;
 				R_med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
-				r_med = R_med.GetAdjacencyMatrix();
+				r_med = R_med.AdjacencyMatrix;
 
 				if (rb_dist_square.Checked)
 				{
@@ -258,69 +256,90 @@ namespace Group_choice_algos_fuzzy
 			clear_output();
 			for (int expert = 0; expert < m; expert++)
 			{
-				DataGridView dgv = new DataGridView();
-				dgv.AllowUserToAddRows = false;
-				dgv.AllowUserToDeleteRows = false;
-				dgv.AllowUserToResizeRows = false;
-				dgv.AllowUserToResizeColumns = false;
-				dgv.AllowUserToOrderColumns = false;
-				dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
-				dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-				dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-				dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-				dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-				dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-				dgv.ShowEditingIcon = false;
-				dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
-				dgv.CellEndEdit += (object d, DataGridViewCellEventArgs ee) =>
+				try
 				{
-					var dd = d as DataGridView;
-					var cell = dd.CurrentCell;
-					double res;
-					if (!double.TryParse(cell.Value.ToString(), out res) || res > 1 || res < 0
-					|| cell.RowIndex == cell.ColumnIndex)
-						cell.Value = 0.0;
-					else // эксперт вводит асимметричное отношение
-						dd[cell.RowIndex, cell.ColumnIndex].Value = 0.0;
+					DataGridView dgv = new DataGridView();
+					dgv.AllowUserToAddRows = false;
+					dgv.AllowUserToDeleteRows = false;
+					dgv.AllowUserToResizeRows = false;
+					dgv.AllowUserToResizeColumns = false;
+					dgv.AllowUserToOrderColumns = false;
+					dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+					dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+					dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+					dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+					dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+					dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+					dgv.ShowEditingIcon = false;
+					dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
+					dgv.CellEndEdit += (object d, DataGridViewCellEventArgs ee) =>
+					{//что должно происходить при завершении редактирования ячейки
+						try
+						{
+							var dd = d as DataGridView;
+							var cell = dd.CurrentCell;
+							var i = cell.RowIndex;
+							var j = cell.ColumnIndex;
+							double res;
+							if (!double.TryParse(cell.Value.ToString(), out res) || res > 1 || res <= 0 || i == j)
+								cell.Value = 0.0;
+							else
+							{// эксперт вводит асимметричное отношение
+								dd[i, j].Value = 0.0;
+								if (!SetAsymmetricClosuredProfile(dd))
+								{
+									cell.Value = 0.0;
+									throw new MyException(EX_not_transitive_profile);
+								}
+							}
+						}
+						catch (MyException ex)
+						{
+							MessageBox.Show($"{ex.Message}");
+						}
+					};
+					flowLayoutPanel_input.Controls.Add(dgv);
 
-				};
-				flowLayoutPanel_input.Controls.Add(dgv);
-
-				for (int j = 0; j < n; j++)
-				{
-					DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
-					column.Name = j.ToString();
-					column.HeaderText = $"{ind2letter[j]}";
-					column.SortMode = DataGridViewColumnSortMode.NotSortable;
-					dgv.Columns.Add(column);
-				}
-				for (int i = 0; i < n; i++)
-				{
-					dgv.Rows.Add();
-					dgv.Rows[i].HeaderCell.Value = $"{ind2letter[i]}";
-				}
-
-				double[,] fill_values = new double[n, n];
-				for (int i = 0; i < n; i++)
-				{
 					for (int j = 0; j < n; j++)
-						fill_values[i, j] = 0.0;
-				}
-				if (list_of_matrices != null && list_of_matrices.Count != 0)
-				{
-					for (int i = 0; i < list_of_matrices[expert].n; i++)
-						for (int j = 0; j < list_of_matrices[expert].m; j++)
-							fill_values[i, j] = list_of_matrices[expert][i, j];
-				}
-				for (int i = 0; i < dgv.Rows.Count; i++)
-					for (int j = 0; j < dgv.Columns.Count; j++)
 					{
-						dgv[j, i].ReadOnly = false;
-						dgv[j, i].Value = fill_values[i, j];
-						dgv[j, i].ValueType = typeof(double);
+						DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
+						column.Name = j.ToString();
+						column.HeaderText = $"{ind2letter[j]}";
+						column.SortMode = DataGridViewColumnSortMode.NotSortable;
+						dgv.Columns.Add(column);
 					}
+					for (int i = 0; i < n; i++)
+					{
+						dgv.Rows.Add();
+						dgv.Rows[i].HeaderCell.Value = $"{ind2letter[i]}";
+					}
+
+					double[,] fill_values = new double[n, n];//инициализирован 0.0
+					if (list_of_matrices != null && list_of_matrices.Count != 0)
+					{
+						for (int i = 0; i < list_of_matrices[expert].n; i++)
+							for (int j = 0; j < list_of_matrices[expert].m; j++)
+								fill_values[i, j] = list_of_matrices[expert][i, j];
+					}
+					for (int i = 0; i < dgv.Rows.Count; i++)
+						for (int j = 0; j < dgv.Columns.Count; j++)
+						{
+							dgv[j, i].ReadOnly = false;
+							dgv[j, i].Value = fill_values[i, j];
+							dgv[j, i].ValueType = typeof(double);
+						}
+					if (!SetAsymmetricClosuredProfile(dgv))
+					{
+						throw new MyException(EX_not_transitive_profile);
+					}
+				}
+				catch (MyException ex) 
+				{ 
+					MessageBox.Show($"{ex.Message}"); 
+				}
 			}
 			activate_input();
+
 		}
 
 		/// <summary>
@@ -442,7 +461,6 @@ namespace Group_choice_algos_fuzzy
 			{
 				try
 				{
-					refresh_variables();
 					List<Matrix> matrices = new List<Matrix>();
 					string[] lines = File.ReadAllLines(textBox_file.Text)
 						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
@@ -468,6 +486,8 @@ namespace Group_choice_algos_fuzzy
 						throw new MyException(EX_bad_file);
 					m = matrices.Count;
 					n = nn;
+
+					refresh_variables();
 					set_input_datagrids(matrices);
 					Form1_SizeChanged(sender, e);
 				}
@@ -496,11 +516,11 @@ namespace Group_choice_algos_fuzzy
 				R_list = new List<FuzzyRelation>() { };
 				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
 				{
-					Matrix input_matrix = new Matrix(n, n);
+					var input_matrix = new FuzzyRelation(n);
 					for (int i = 0; i < dgv.Rows.Count; i++)
 						for (int j = 0; j < dgv.Columns.Count; j++)
 							input_matrix[i, j] = (double)dgv[j, i].Value;
-					R_list.Add(input_matrix.ToFuzzy);
+					R_list.Add(input_matrix);
 				}
 				R_list = R_list.Select(x => x.AsymmetricPart.ToFuzzy).ToList();
 				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
@@ -535,6 +555,8 @@ namespace Group_choice_algos_fuzzy
 						throw new MyException(EX_n_m_too_big);
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
+
+					refresh_variables();
 					set_input_datagrids(null);
 					Form1_SizeChanged(sender, e);
 				}
@@ -543,30 +565,6 @@ namespace Group_choice_algos_fuzzy
 			{
 				MessageBox.Show($"{ex.Message}");
 			}
-		}
-
-		private void Form1_SizeChanged(object sender, EventArgs e)
-		{
-			foreach (Method m in Methods.GetMethods())
-			{
-				if (m.connectedFrame?.Parent != null)
-					m.connectedFrame.Parent.Width = flowLayoutPanel_output_tables.Width - 30;
-			}
-			foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
-			{
-				dgv.Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
-				dgv.Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
-			}
-		}
-
-		private void flowLayoutPanel_output_MouseEnter(object sender, EventArgs e)
-		{
-			flowLayoutPanel_output_tables.Focus();
-		}
-
-		private void flowLayoutPanel_input_MouseEnter(object sender, EventArgs e)
-		{
-			flowLayoutPanel_input.Focus();
 		}
 
 		private void button_for_tests_Click(object sender, EventArgs e)
@@ -605,6 +603,33 @@ namespace Group_choice_algos_fuzzy
 
 				//вывод статистики в файл
 			}
+		}
+
+
+		private void Form1_SizeChanged(object sender, EventArgs e)
+		{
+			foreach (Method m in Methods.GetMethods())
+			{
+				if (m.connectedFrame?.Parent != null)
+					m.connectedFrame.Parent.Width = flowLayoutPanel_output_tables.Width - 30;
+			}
+			foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
+			{
+				dgv.Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
+				dgv.Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
+			}
+		}
+		private void flowLayoutPanel_input_MouseEnter(object sender, EventArgs e)
+		{
+			flowLayoutPanel_input.Focus();
+		}
+		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
+		{
+			flowLayoutPanel_output_tables.Focus();
+		}
+		private void flowLayoutPanel_output_info_MouseEnter(object sender, EventArgs e)
+		{
+			flowLayoutPanel_output_info.Focus();
 		}
 	}
 }
