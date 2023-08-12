@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -36,13 +37,14 @@ namespace Group_choice_algos_fuzzy
 		public const int HP_MAX_STRENGTH = 3;
 		public const int SCHULZE_METHOD = 4;
 		//название на ествественном языке для вывода в интерфейс
-		public static Dictionary<int,string> MethodsInfo = new Dictionary<int, string>{
+		public static Dictionary<int, string> MethodsInfo = new Dictionary<int, string>{
 			{ ALL_RANKINGS, "Всевозможные ранжирования" },
 			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
 			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
 			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" }
 		};
 		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		//символ альтернативы (a1,a2,A,B,a,b...) в индекс 
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
 		//индекс альтернативы в её символ a1, a2 и т.д.
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
@@ -58,6 +60,8 @@ namespace Group_choice_algos_fuzzy
 			{
 				sym2ind[$"{mark}{i}"] = i;
 				ind2sym[i] = $"{mark}{i}";
+				sym2ind[$"{letters[i]}"] = i;
+				sym2ind[$"{char.ToLower(letters[i])}"] = i;
 				ind2letter[i] = n > 26 ? ind2sym[i] : letters[i].ToString();
 			}
 		}
@@ -68,16 +72,19 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_matrix_multing_dim = "Размерности двух матриц не совпадают";
 		public static string EX_bad_matrix = "Некорректная матрица";
 		public static string EX_bad_file = "Некорректный файл";
-		public static string EX_n_m_too_big = "Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
-			$"n максимальное = {max_count_of_alternatives}\n" + 
-			$"m максимальное = {max_count_of_experts}\n"; 
+		public static string EX_n_m_too_big = 
+			"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
+			$"n максимальное = {max_count_of_alternatives}\n" +
+			$"m максимальное = {max_count_of_experts}\n";
 		public static string EX_choose_method = "Выберите метод агрегирования";
 		public static string EX_choose_distance_func = "Выберите способ подсчёта расстояния между отношениями";
 		public static string EX_bad_symbol = "Неверный символ";
 		public static string EX_not_transitive_profile = "Введённое отношение было не транзитивно (содержание цикла)";
 		public class MyException : Exception
 		{
-			public MyException(string s) : base(s) { }
+			public MyException(string message) : base(message) { }
+			public void Info() //выводить при catch
+			{ MessageBox.Show(this.Message.ToString()); }
 		}
 		#endregion EXCEPTIONS
 	}

@@ -14,52 +14,6 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Algorithms
 	{
-		/// <summary>
-		/// переводит буквенное обозначение альтернативы в её индекс (букв всего 26)
-		/// </summary>
-		/// <param name="symbol"></param>
-		/// <returns></returns>
-		public static int symbol2index(string symbol)
-		{
-			char s = symbol[0];
-			bool is_int = int.TryParse(symbol, out var index);
-			if (symbol.Length == 1 && char.IsLetter(s))
-			{
-				string symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-				//Dictionary<char, int> correspondence = new Dictionary<char, int>();
-				//for (int i = 0; i < symbol.Length; i++) { correspondence[symbols[i]] = i; }
-				return symbols.IndexOf(char.ToUpper(s));     //(int)correspondence[s];
-			}
-			else if (is_int && index > 0)
-			{
-				return index - 1;
-			}
-			else
-			{
-				throw new MyException(EX_bad_symbol);
-			}
-		}
-
-		/// <summary>
-		/// создаёт матрицу весов
-		/// </summary>
-		/// <param name="summarized_P_matrix"></param>
-		/// <returns></returns>
-		public static Matrix make_weight_C_matrix(Matrix summarized_P_matrix)
-		{
-			var n = summarized_P_matrix.n;
-			Matrix C = new Matrix(n, n);
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-				{
-					if (i == j || summarized_P_matrix[i, j] < summarized_P_matrix[j, i])
-						C[i, j] = -INF;
-					else
-						C[i, j] = summarized_P_matrix[i, j] - summarized_P_matrix[j, i];
-				}
-			return C;
-		}
-
 		public static bool SetAsymmetricClosuredProfile(DataGridView d)
 		{
 			if (d.Rows.Count != d.Columns.Count)
@@ -86,7 +40,7 @@ namespace Group_choice_algos_fuzzy
 		/// <param name="vertices_list"></param>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		public static List<double> weights_of_path(List<int> vertices_list, Matrix Weights_matrix)
+		public static List<double> WeightsOfPath(List<int> vertices_list, Matrix Weights_matrix)
 		{
 			List<double> weights_list = new List<double>();
 			var l = vertices_list.Count;
@@ -106,23 +60,21 @@ namespace Group_choice_algos_fuzzy
 		/// <param name="vertices_list"></param>
 		/// <param name="Weights_matrix"></param>
 		/// <returns></returns>
-		public static double path_cost(List<int> vertices_list, Matrix Weights_matrix)
+		public static double PathCost(List<int> vertices_list, Matrix Weights_matrix)
 		{
-			return weights_of_path(vertices_list, Weights_matrix).Sum();
+			return WeightsOfPath(vertices_list, Weights_matrix).Sum();
 		}
 
 		/// <summary>
-		/// сила пути
+		/// сила пути (пропускная способность)
 		/// </summary>
 		/// <param name=""></param>
 		/// <param name=""></param>
 		/// <returns></returns>
-		public static double path_strength(List<int> vertices_list, Matrix Weights_matrix)
+		public static double PathStrength(List<int> vertices_list, Matrix Weights_matrix)
 		{
-			var wp = weights_of_path(vertices_list, Weights_matrix);
-			if (wp.Count == 0)
-				return INF;
-			return Enumerable.Min(wp);
+			var wp = WeightsOfPath(vertices_list, Weights_matrix);
+			return wp.Count == 0 ? INF : wp.Min();
 		}
 
 		/// <summary>

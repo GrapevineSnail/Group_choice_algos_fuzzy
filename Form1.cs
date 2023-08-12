@@ -62,13 +62,12 @@ namespace Group_choice_algos_fuzzy
 			get { return _m; }
 		}
 		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
-		public static FuzzyRelation R;//агрегированная матрица матриц профилей
-		public static FuzzyRelation R_avg;//агрегированная матрица матриц профилей (среднее)
-		public static FuzzyRelation R_med;//агрегированная матрица матриц профилей (медианные)
-
-		public static Matrix r;//общая матрица смежности
-		public static Matrix r_avg;
-		public static Matrix r_med;
+		public struct R //агрегированная матрица матриц профилей
+		{
+			public static FuzzyRelation aggregated;
+			public static FuzzyRelation avg;//агрегированная матрица матриц профилей (среднее)
+			public static FuzzyRelation med;//агрегированная матрица матриц профилей (медианные)
+		}
 		#endregion GLOBALS
 
 
@@ -78,12 +77,9 @@ namespace Group_choice_algos_fuzzy
 		void refresh_variables()
 		{
 			R_list = new List<FuzzyRelation>();
-			R = new FuzzyRelation(n);
-			R_avg = new FuzzyRelation(n);
-			R_med = new FuzzyRelation(n);
-			r = new Matrix(n);
-			r_avg = new Matrix(n);
-			r_med = new Matrix(n);
+			R.aggregated = new FuzzyRelation(n);
+			R.avg = new FuzzyRelation(n);
+			R.med = new FuzzyRelation(n);
 			Methods.ClearMethods();
 		}
 
@@ -177,43 +173,32 @@ namespace Group_choice_algos_fuzzy
 			List<string> Intersect = new List<string>();//общие ранжирования для использованных методов
 			try
 			{
-				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
-				var frames = Methods.GetMethods().Select(x => x.connectedFrame);
-				if (checkbuttons.All(x => x == false))
-					throw new MyException(EX_choose_method);
-
 				if (ExpertsRelationsList.Count == 0)
 					throw new MyException(EX_bad_expert_profile);
-
 				R_list = ExpertsRelationsList;
-				R_avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
-				r_avg = R_avg.AdjacencyMatrix;
-				R_med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
-				r_med = R_med.AdjacencyMatrix;
-
+				R.avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
+				R.med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
 				if (rb_dist_square.Checked)
-				{
-					R = R_avg;
-					r = r_avg;
-				}
+					R.aggregated = R.avg;
 				else if (rb_dist_modulus.Checked)
-				{
-					R = R_med;
-					r = r_med;
-				}
+					R.aggregated = R.med;
 				else
 					throw new MyException(EX_choose_distance_func);
+
+				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
+				if (checkbuttons.All(x => x == false))
+					throw new MyException(EX_choose_method);
 
 				if (Methods.All_various_rankings.IsExecute)
 					Methods.Set_All_various_rankings(n);
 				if (Methods.All_Hamiltonian_paths.IsExecute)
-					Methods.Set_All_Hamiltonian_paths(R);
+					Methods.Set_All_Hamiltonian_paths(R.aggregated);
 				if (Methods.Hp_max_length.IsExecute)
-					Methods.Set_Hp_max_length(R);
+					Methods.Set_Hp_max_length(R.aggregated);
 				if (Methods.Hp_max_strength.IsExecute)
-					Methods.Set_Hp_max_strength(R);
+					Methods.Set_Hp_max_strength(R.aggregated);
 				if (Methods.Schulze_method.IsExecute)
-					Methods.Set_Schulze_method(n, R);
+					Methods.Set_Schulze_method(n, R.aggregated);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -234,10 +219,7 @@ namespace Group_choice_algos_fuzzy
 					}
 				}
 			}
-			catch (MyException ex)
-			{
-				MessageBox.Show($"{ex.Message}");
-			}
+			catch (MyException ex) { ex.Info(); }
 			return Intersect;
 		}
 
@@ -294,10 +276,7 @@ namespace Group_choice_algos_fuzzy
 								}
 							}
 						}
-						catch (MyException ex)
-						{
-							MessageBox.Show($"{ex.Message}");
-						}
+						catch (MyException ex) { ex.Info(); }
 					};
 					flowLayoutPanel_input.Controls.Add(dgv);
 
@@ -334,10 +313,7 @@ namespace Group_choice_algos_fuzzy
 						throw new MyException(EX_not_transitive_profile);
 					}
 				}
-				catch (MyException ex) 
-				{ 
-					MessageBox.Show($"{ex.Message}"); 
-				}
+				catch (MyException ex) { ex.Info(); }
 			}
 			activate_input();
 
@@ -356,8 +332,9 @@ namespace Group_choice_algos_fuzzy
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
-				tex += "\nАгрегированное отношение: \n" + R.Matrix2String();
-				tex += "\nМатрица смежности агрегированного отношения: \n" + r.Matrix2String();
+				tex += "\nАгрегированное отношение: \n" + R.aggregated?.Matrix2String();
+				tex += "\nМатрица смежности агрегированного отношения: \n"
+					+ R.aggregated?.AdjacencyMatrix.Matrix2String();
 				label3.Text = tex;
 				foreach (Method met in Methods.GetMethods())
 				{
@@ -404,10 +381,10 @@ namespace Group_choice_algos_fuzzy
 						}
 
 						var some_rank = met.Rankings.First();
-						add_row_with_characteristic(some_rank.PathLength.Label);
+						add_row_with_characteristic(some_rank.PathCost.Label);
 						add_row_with_characteristic(some_rank.PathStrength.Label);
-						add_row_with_characteristic(some_rank.PathSummaryDistance_modulus.Label);
-						add_row_with_characteristic(some_rank.PathSummaryDistance_square.Label);
+						add_row_with_characteristic(some_rank.PathSummaryDistance.modulus.Label);
+						add_row_with_characteristic(some_rank.PathSummaryDistance.square.Label);
 
 						for (int j = 0; j < r; j++)
 						{
@@ -423,13 +400,15 @@ namespace Group_choice_algos_fuzzy
 							}
 
 							display_characteristic(j, n, met.MinLength, met.MaxLength,
-								met.Rankings[j].PathLength);
+								met.Rankings[j].PathCost);
 							display_characteristic(j, n + 1, met.MinStrength, met.MaxStrength,
 								met.Rankings[j].PathStrength);
-							display_characteristic(j, n + 2, met.MinDistance_modulus, met.MaxDistance_modulus,
-								met.Rankings[j].PathSummaryDistance_modulus);
-							display_characteristic(j, n + 3, met.MinDistance_square, met.MaxDistance_square,
-								met.Rankings[j].PathSummaryDistance_square);
+							display_characteristic(j, n + 2, 
+								met.MinDistance.modulus.Value, met.MaxDistance.modulus.Value,
+								met.Rankings[j].PathSummaryDistance.modulus);
+							display_characteristic(j, n + 3, 
+								met.MinDistance.square.Value, met.MaxDistance.square.Value,
+								met.Rankings[j].PathSummaryDistance.square);
 						}
 					}
 
@@ -445,10 +424,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				show_output();
 			}
-			catch (MyException ex)
-			{
-				MessageBox.Show($"{ex.Message}");
-			}
+			catch (MyException ex) { ex.Info(); }
 		}
 
 		/// <summary>
@@ -497,10 +473,7 @@ namespace Group_choice_algos_fuzzy
 					throw new MyException($"{ex.Message}");
 				}
 			}
-			catch (MyException ex)
-			{
-				MessageBox.Show($"{ex.Message}");
-			}
+			catch (MyException ex) { ex.Info(); }
 		}
 
 		/// <summary>
@@ -523,7 +496,7 @@ namespace Group_choice_algos_fuzzy
 							input_matrix[i, j] = (double)dgv[j, i].Value;
 					R_list.Add(input_matrix);
 				}
-				R_list = R_list.Select(x => x.AsymmetricPart.ToFuzzy).ToList();
+				R_list = R_list.Select(x => x.AsymmetricPart.ToFuzzy.TransitiveClosure()).ToList();
 				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				if (R_list.Any(x => x.IsHasCycle(out _)))
 					throw new MyException(EX_not_transitive_profile);
@@ -532,10 +505,7 @@ namespace Group_choice_algos_fuzzy
 				// visualize_graph(C, null);//
 				Form1_SizeChanged(sender, e);
 			}
-			catch (MyException ex)
-			{
-				MessageBox.Show($"{ex.Message}");
-			}
+			catch (MyException ex) { ex.Info(); }
 		}
 
 		/// <summary>
@@ -564,10 +534,7 @@ namespace Group_choice_algos_fuzzy
 					Form1_SizeChanged(sender, e);
 				}
 			}
-			catch (MyException ex)
-			{
-				MessageBox.Show($"{ex.Message}");
-			}
+			catch (MyException ex) { ex.Info(); }
 		}
 
 		private void button_for_tests_Click(object sender, EventArgs e)

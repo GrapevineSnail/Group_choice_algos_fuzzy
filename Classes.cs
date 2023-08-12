@@ -400,6 +400,8 @@ namespace Group_choice_algos_fuzzy
 	public class FuzzyRelation : Matrix
 	{// base - матрица нечёткого бинарного отношения
 	 //полагаем квадратными
+
+		#region CONSTRUCTORS
 		public FuzzyRelation(int n) : base(n) { }
 		public FuzzyRelation(double[,] M) : base(M)
 		{
@@ -411,6 +413,7 @@ namespace Group_choice_algos_fuzzy
 			if (M.GetLength(0) != M.GetLength(1))
 				throw new MyException(EX_matrix_not_square);
 		}
+		#endregion CONSTRUCTORS
 
 		public double this[Tuple<int, int> pair]
 		{
@@ -615,6 +618,12 @@ namespace Group_choice_algos_fuzzy
 			public double Value;
 			public string Label;
 		}
+		public class PathSummaryDistanceType
+		{//суммарное расстояние до всех остальных входных ранжирований
+			public PathSummaryDistanceType() { }
+			public Characteristic modulus = new Characteristic("Сумм. расстояние 'модуль разности'");
+			public Characteristic square = new Characteristic("Сумм. расстояние 'квадрат разности'");
+		}
 
 		#region CONSTRUCTORS
 		public Ranking(int[] rank) { Rank2Array = rank; }
@@ -633,12 +642,9 @@ namespace Group_choice_algos_fuzzy
 
 		public int MethodID;//каким методом получено
 		private List<int> Path = new List<int>();//список вершин в пути-ранжировании
-		public Characteristic PathLength = new Characteristic("Стоимость"); //общая стоимость пути
+		public Characteristic PathCost = new Characteristic("Стоимость"); //общая стоимость пути
 		public Characteristic PathStrength = new Characteristic("Сила"); //сила пути (пропускная способность)
-		public Characteristic PathSummaryDistance_modulus = new Characteristic(
-			"Сумм. расстояние 'модуль разности'"); //суммарное расстояние до всех остальных входных ранжирований
-		public Characteristic PathSummaryDistance_square = new Characteristic(
-			"Сумм. расстояние 'квадрат разности'"); //суммарное расстояние до всех остальных входных ранжирований
+		public PathSummaryDistanceType PathSummaryDistance = new PathSummaryDistanceType();//суммарное расстояние до всех остальных входных ранжирований
 
 		#region PROPERTIES
 		public List<int> Rank2List
@@ -646,7 +652,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value;
-				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.aggregated);
 			}
 			get { return Path; }
 		}
@@ -655,7 +661,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value.ToList();
-				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.aggregated);
 			}
 			get { return Path.ToArray(); }
 		}
@@ -740,17 +746,17 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (Path.Count == 0)
 				{
-					PathLength.Value = INF;
+					PathCost.Value = INF;
 					PathStrength.Value = INF;
-					PathSummaryDistance_modulus.Value = INF;
-					PathSummaryDistance_square.Value = INF;
+					PathSummaryDistance.modulus.Value = INF;
+					PathSummaryDistance.square.Value = INF;
 				}
 				else
 				{
-					PathLength.Value = path_cost(Rank2List, weight_matrix);
-					PathStrength.Value = path_strength(Rank2List, weight_matrix);
-					PathSummaryDistance_modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
-					PathSummaryDistance_square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
+					PathCost.Value = PathCost(Rank2List, weight_matrix);
+					PathStrength.Value = PathStrength(Rank2List, weight_matrix);
+					PathSummaryDistance.modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
+					PathSummaryDistance.square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
 				}
 			}
 		}
@@ -768,6 +774,7 @@ namespace Group_choice_algos_fuzzy
 			ID = id;
 			Rankings = new List<Ranking>();
 		}
+
 		public int ID;//обозначение метода
 		private CheckBox connectedCheckBox = null;//чекбокс - будем ли запускать метод
 		public DataGridView connectedFrame = null;//в какой контейнер выводить результаты работы метода
@@ -777,11 +784,11 @@ namespace Group_choice_algos_fuzzy
 		public double MaxLength;//максимальная длина среди ранжирований метода
 		public double MinStrength;//минимальная сила среди ранжирований метода
 		public double MaxStrength;//максимальная сила среди ранжирований метода
-								  //минимальное и максимальное суммарные расстояние среди ранжирований метода
-		public double MinDistance_modulus;
-		public double MaxDistance_modulus;
-		public double MinDistance_square;
-		public double MaxDistance_square;
+		//минимальное и максимальное суммарные расстояние среди ранжирований метода
+		public Ranking.PathSummaryDistanceType MinDistance = new Ranking.PathSummaryDistanceType();
+		public Ranking.PathSummaryDistanceType MaxDistance = new Ranking.PathSummaryDistanceType();
+
+		#region PROPERTIES
 		public bool IsExecute
 		{
 			get
@@ -827,6 +834,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			get { return this.Rankings.Select(x => x.Rank2String).ToList(); }
 		}
+		#endregion PROPERTIES
+
 		/// <summary>
 		/// задаёт связанные с методом элементы управления
 		/// </summary>
@@ -837,11 +846,7 @@ namespace Group_choice_algos_fuzzy
 			connectedCheckBox = checkBox;
 			connectedFrame = frame;
 			connectedCheckBox.Text = MethodsInfo[ID];
-			try
-			{
-				((GroupBox)connectedFrame?.Parent).Text = MethodsInfo[ID];
-			}
-			catch (MyException ex) { }
+			((GroupBox)connectedFrame?.Parent).Text = MethodsInfo[ID];
 		}
 		/// <summary>
 		/// удаление ранжирований и их характеристик
@@ -853,10 +858,10 @@ namespace Group_choice_algos_fuzzy
 			MaxLength = INF;
 			MinStrength = INF;
 			MaxStrength = INF;
-			MinDistance_modulus = INF;
-			MaxDistance_modulus = INF;
-			MinDistance_square = INF;
-			MaxDistance_square = INF;
+			MinDistance.modulus.Value = INF;
+			MaxDistance.modulus.Value = INF;
+			MinDistance.square.Value = INF;
+			MaxDistance.square.Value = INF;
 		}
 		/// <summary>
 		/// находит минимум характеристики ранжирований
@@ -887,14 +892,14 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public void SetCharacteristicsMinsMaxes()
 		{
-			MinLength = min(Rankings.Select(x => x.PathLength.Value).ToList());
-			MaxLength = max(Rankings.Select(x => x.PathLength.Value).ToList());
+			MinLength = min(Rankings.Select(x => x.PathCost.Value).ToList());
+			MaxLength = max(Rankings.Select(x => x.PathCost.Value).ToList());
 			MinStrength = min(Rankings.Select(x => x.PathStrength.Value).ToList());
 			MaxStrength = max(Rankings.Select(x => x.PathStrength.Value).ToList());
-			MinDistance_modulus = min(Rankings.Select(x => x.PathSummaryDistance_modulus.Value).ToList());
-			MaxDistance_modulus = max(Rankings.Select(x => x.PathSummaryDistance_modulus.Value).ToList());
-			MinDistance_square = min(Rankings.Select(x => x.PathSummaryDistance_square.Value).ToList());
-			MaxDistance_square = max(Rankings.Select(x => x.PathSummaryDistance_square.Value).ToList());
+			MinDistance.modulus.Value = min(Rankings.Select(x => x.PathSummaryDistance.modulus.Value).ToList());
+			MaxDistance.modulus.Value = max(Rankings.Select(x => x.PathSummaryDistance.modulus.Value).ToList());
+			MinDistance.square.Value = min(Rankings.Select(x => x.PathSummaryDistance.square.Value).ToList());
+			MaxDistance.square.Value = max(Rankings.Select(x => x.PathSummaryDistance.square.Value).ToList());
 		}
 		/// <summary>
 		/// очищает весь вывод метода
@@ -1033,9 +1038,9 @@ namespace Group_choice_algos_fuzzy
 			}
 
 			MinSummaryModulusDistance = All_various_rankings.Rankings
-				.Select(x => x.PathSummaryDistance_modulus.Value).Min();
+				.Select(x => x.PathSummaryDistance.modulus.Value).Min();
 			MinSummarySquareDistance = All_various_rankings.Rankings
-				.Select(x => x.PathSummaryDistance_square.Value).Min();
+				.Select(x => x.PathSummaryDistance.square.Value).Min();
 		}
 
 		/// <summary>
@@ -1063,9 +1068,9 @@ namespace Group_choice_algos_fuzzy
 			Hp_max_length.ClearRankings();
 			if (All_Hamiltonian_paths.Rankings.Count == 0)
 				Set_All_Hamiltonian_paths(weight_matrix);
-			MaxHamPathLength = All_Hamiltonian_paths.Rankings.Select(x => x.PathLength.Value).Max();
+			MaxHamPathLength = All_Hamiltonian_paths.Rankings.Select(x => x.PathCost.Value).Max();
 			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
-				if (r.PathLength.Value == MaxHamPathLength)
+				if (r.PathCost.Value == MaxHamPathLength)
 					Hp_max_length.Rankings.Add(r);
 		}
 
