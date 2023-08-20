@@ -23,6 +23,7 @@ namespace Group_choice_algos_fuzzy
 			Methods.Hp_max_strength.SetConnectedControls(cb_HP_max_strength, dg_HP_max_strength);
 			Methods.Schulze_method.SetConnectedControls(cb_Schulze_method, dg_Schulze_method);
 			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
+			Methods.Smerchinskaya_Yashina_method.SetConnectedControls(cb_SY, dg_SY);
 
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
@@ -199,6 +200,8 @@ namespace Group_choice_algos_fuzzy
 					Methods.Set_Hp_max_strength(R.aggregated);
 				if (Methods.Schulze_method.IsExecute)
 					Methods.Set_Schulze_method(n, R.aggregated);
+				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
+					Methods.Set_Smerchinskaya_Yashina_method(R.aggregated);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -338,87 +341,90 @@ namespace Group_choice_algos_fuzzy
 				label3.Text = tex;
 				foreach (Method met in Methods.GetMethods())
 				{
-					if (met.IsExecute == true && met.Rankings.Count != 0)
+					if (met.IsExecute == true)
 					{
-						var r = met.Rankings.Count;
-						for (int j = 0; j < r; j++)
+						if (met.Rankings == null || met.Rankings.Count == 0)
+							met.ConnectedLabel = "Ранжирование невозможно. ";
+						else if (met.Rankings.Count > 0)
 						{
-							DataGridViewColumn column = new DataGridViewColumn();
-							column.CellTemplate = new DataGridViewTextBoxCell();
-							column.HeaderText = $"Ранжиро-\nвание {j + 1}";
-							column.Name = j.ToString();
-							column.HeaderCell.Style.BackColor = window_background;
-							column.FillWeight = 1;
-							met.connectedFrame.Columns.Add(column);
-						}
-						for (int i = 0; i < n; i++)
-						{
-							met.connectedFrame.Rows.Add();
-							met.connectedFrame.Rows[i].HeaderCell.Value = $"Место {i + 1}";
-						}
-
-						//добавить в конец datagrid-а строку с характеристикой ранжирования
-						int add_row_with_characteristic(string label)
-						{
-							met.connectedFrame.Rows.Add();
-							int i = met.connectedFrame.Rows.Count - 1;
-							met.connectedFrame.Rows[i].HeaderCell.Value = label;
-							return i;
-						}
-						//задать значение характеристики ранжирования и раскрасить
-						void display_characteristic(int j, int i, double min, double max,
-							Ranking.Characteristic characteristic)
-						{
-							met.connectedFrame[j, i].Value = characteristic.Value;
-							met.connectedFrame[j, i].Style.BackColor = output_characteristics_bg_color;
-							if (min < max)
+							var r = met.Rankings.Count;
+							for (int j = 0; j < r; j++)
 							{
-								if (characteristic.Value == min)
-									met.connectedFrame[j, i].Style.BackColor = color_min;
-								else if (characteristic.Value == max)
-									met.connectedFrame[j, i].Style.BackColor = color_max;
+								DataGridViewColumn column = new DataGridViewColumn();
+								column.CellTemplate = new DataGridViewTextBoxCell();
+								column.HeaderText = $"Ранжиро-\nвание {j + 1}";
+								column.Name = j.ToString();
+								column.HeaderCell.Style.BackColor = window_background;
+								column.FillWeight = 1;
+								met.connectedFrame.Columns.Add(column);
 							}
-						}
-
-						var some_rank = met.Rankings.First();
-						add_row_with_characteristic(some_rank.PathCost.Label);
-						add_row_with_characteristic(some_rank.PathStrength.Label);
-						add_row_with_characteristic(some_rank.PathSummaryDistance.modulus.Label);
-						add_row_with_characteristic(some_rank.PathSummaryDistance.square.Label);
-
-						for (int j = 0; j < r; j++)
-						{
 							for (int i = 0; i < n; i++)
 							{
-								met.connectedFrame[j, i].ReadOnly = true;
-								met.connectedFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
-							}
-							if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
-							{
-								for (int i = 0; i < n; i++)
-									met.connectedFrame[j, i].Style.BackColor = color_mutual;
+								met.connectedFrame.Rows.Add();
+								met.connectedFrame.Rows[i].HeaderCell.Value = $"Место {i + 1}";
 							}
 
-							display_characteristic(j, n, met.MinLength, met.MaxLength,
-								met.Rankings[j].PathCost);
-							display_characteristic(j, n + 1, met.MinStrength, met.MaxStrength,
-								met.Rankings[j].PathStrength);
-							display_characteristic(j, n + 2, 
-								met.MinDistance.modulus.Value, met.MaxDistance.modulus.Value,
-								met.Rankings[j].PathSummaryDistance.modulus);
-							display_characteristic(j, n + 3, 
-								met.MinDistance.square.Value, met.MaxDistance.square.Value,
-								met.Rankings[j].PathSummaryDistance.square);
+							//добавить в конец datagrid-а строку с характеристикой ранжирования
+							int add_row_with_characteristic(string label)
+							{
+								met.connectedFrame.Rows.Add();
+								int i = met.connectedFrame.Rows.Count - 1;
+								met.connectedFrame.Rows[i].HeaderCell.Value = label;
+								return i;
+							}
+							//задать значение характеристики ранжирования и раскрасить
+							void display_characteristic(int j, int i, double min, double max,
+								Ranking.Characteristic characteristic)
+							{
+								met.connectedFrame[j, i].Value = characteristic.Value;
+								met.connectedFrame[j, i].Style.BackColor = output_characteristics_bg_color;
+								if (min < max)
+								{
+									if (characteristic.Value == min)
+										met.connectedFrame[j, i].Style.BackColor = color_min;
+									else if (characteristic.Value == max)
+										met.connectedFrame[j, i].Style.BackColor = color_max;
+								}
+							}
+
+							var some_rank = met.Rankings.First();
+							add_row_with_characteristic(some_rank.PathCost.Label);
+							add_row_with_characteristic(some_rank.PathStrength.Label);
+							add_row_with_characteristic(some_rank.PathSummaryDistance.modulus.Label);
+							add_row_with_characteristic(some_rank.PathSummaryDistance.square.Label);
+
+							for (int j = 0; j < r; j++)
+							{
+								for (int i = 0; i < n; i++)
+								{
+									met.connectedFrame[j, i].ReadOnly = true;
+									met.connectedFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
+								}
+								if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
+								{
+									for (int i = 0; i < n; i++)
+										met.connectedFrame[j, i].Style.BackColor = color_mutual;
+								}
+
+								display_characteristic(j, n, met.MinLength, met.MaxLength,
+									met.Rankings[j].PathCost);
+								display_characteristic(j, n + 1, met.MinStrength, met.MaxStrength,
+									met.Rankings[j].PathStrength);
+								display_characteristic(j, n + 2,
+									met.MinDistance.modulus.Value, met.MaxDistance.modulus.Value,
+									met.Rankings[j].PathSummaryDistance.modulus);
+								display_characteristic(j, n + 3,
+									met.MinDistance.square.Value, met.MaxDistance.square.Value,
+									met.Rankings[j].PathSummaryDistance.square);
+							}
 						}
 					}
 
-					// вывести на экран победителей по методу Шульце
-					if (met.ID == SCHULZE_METHOD && Methods.SchulzeWinners != null)
+					// вывести на экран победителей
+					if (met.Winners != null && met.Winners.Count > 0)
 					{
-						string text = "";
-						if (met.Rankings == null || met.Rankings.Count == 0)
-							text += "Ранжирование невозможно. ";
-						text += $"Победители: {string.Join(",", Methods.SchulzeWinners.Select(x => ind2letter[x]))}";
+						string text = met.ConnectedLabel;
+						text += $"Победители: {string.Join(",", met.Winners.Select(x => ind2letter[x]))}";
 						met.ConnectedLabel = text;
 					}
 				}
@@ -601,5 +607,6 @@ namespace Group_choice_algos_fuzzy
 		{
 			flowLayoutPanel_output_info.Focus();
 		}
+
 	}
 }

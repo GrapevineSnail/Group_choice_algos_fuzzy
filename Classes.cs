@@ -327,6 +327,34 @@ namespace Group_choice_algos_fuzzy
 			return ans;
 		}
 		/// <summary>
+		/// минимальный элемент матрицы
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public double MinElemNotZero()
+		{
+			double ans = INF;
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					if (this[i, j] < ans && this[i, j] != 0)
+						ans = this[i, j];
+			return ans;
+		}
+		/// <summary>
+		/// максимальный элемент матрицы
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		public double MaxElem()
+		{
+			double ans = -INF;
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					if (this[i, j] > ans)
+						ans = this[i, j];
+			return ans;
+		}
+		/// <summary>
 		/// расстояние между матрицами на основании выбранной функции расстояния для отдельных элементов
 		/// </summary>
 		/// <param name="M1"></param>
@@ -601,6 +629,22 @@ namespace Group_choice_algos_fuzzy
 		{
 			return R_list.Select(x => x.ToMatrix).ToList();
 		}
+		/// <summary>
+		/// индексы недоминируемых альтернатив
+		/// </summary>
+		/// <returns></returns>
+		public HashSet<int> UndominatedAlternatives()
+		{
+			var ans = Enumerable.Range(0, n).ToHashSet();
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < n; j++)
+					if (i != j && this[j, i] > this[i, j])
+					{
+						ans.Remove(i);
+						break;
+					}
+			return ans;
+		}
 	}
 
 
@@ -705,7 +749,10 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public static bool Matrix2Rank(Matrix M, out Ranking ans)
 		{
-			var MM = M.AsymmetricPart.AdjacencyMatrix.ToFuzzy.TransitiveClosure();
+			//если сначала брать асимметричную часть, а потом вычислять транзитивное замыкание, то можно 
+			//потерять информацию о равнозначных альтерантивах, на основании которой можно было бы 
+			//делать выводы о доминировании других альтернатив, не из равноценной пары
+			var MM = M.AdjacencyMatrix.ToFuzzy.TransitiveClosure().AsymmetricPart;
 			var ordering = Enumerable.Repeat(-1, n).ToArray();
 			for (int i = 0; i < MM.n; i++)
 			{
@@ -780,11 +827,13 @@ namespace Group_choice_algos_fuzzy
 		public DataGridView connectedFrame = null;//в какой контейнер выводить результаты работы метода
 		private Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
 		public List<Ranking> Rankings = null;//выдаваемые методом ранжирования
+		public List<int> Winners = null;//победители - недоминируемые альтернативы
+
 		public double MinLength;//минимальная длина среди ранжирований метода
 		public double MaxLength;//максимальная длина среди ранжирований метода
 		public double MinStrength;//минимальная сила среди ранжирований метода
 		public double MaxStrength;//максимальная сила среди ранжирований метода
-		//минимальное и максимальное суммарные расстояние среди ранжирований метода
+								  //минимальное и максимальное суммарные расстояние среди ранжирований метода
 		public Ranking.PathSummaryDistanceType MinDistance = new Ranking.PathSummaryDistanceType();
 		public Ranking.PathSummaryDistanceType MaxDistance = new Ranking.PathSummaryDistanceType();
 
@@ -854,6 +903,7 @@ namespace Group_choice_algos_fuzzy
 		public void ClearRankings()
 		{
 			Rankings = new List<Ranking>();
+			Winners = new List<int>();
 			MinLength = INF;
 			MaxLength = INF;
 			MinStrength = INF;
@@ -908,9 +958,9 @@ namespace Group_choice_algos_fuzzy
 		{
 			connectedFrame?.Rows.Clear();
 			connectedFrame?.Columns.Clear();
+			ConnectedLabel = "";
 			connectedFrame?.Hide();
 			connectedFrame?.Parent?.Hide();
-			ConnectedLabel = "";
 		}
 		/// <summary>
 		/// отображает весь вывод метода
@@ -937,8 +987,7 @@ namespace Group_choice_algos_fuzzy
 		public static Method Hp_max_length = new Method(HP_MAX_LENGTH);
 		public static Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
 		public static Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
-
-		public static List<int> SchulzeWinners = null;//победители по методу Шульце
+		public static Method Smerchinskaya_Yashina_method = new Method(SMERCHINSKAYA_YASHINA_METHOD);
 
 		public static double MinSummaryModulusDistance;//расстояние наиближайшего ко всем агрегированного ранжирования (модули) - лин. медианы
 		public static double MinSummarySquareDistance;//расстояние наиближайшего ко всем агрегированного ранжирования (квадраты)
@@ -956,7 +1005,6 @@ namespace Group_choice_algos_fuzzy
 			MinSummarySquareDistance = INF;
 			MaxHamPathLength = INF;
 			MaxHamPathStrength = INF;
-			SchulzeWinners = null;
 		}
 
 		/// <summary>
@@ -1144,9 +1192,39 @@ namespace Group_choice_algos_fuzzy
 							O.Remove((j, i));
 					}
 			}
-			SchulzeWinners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
+			Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
 			if (Ranking.Matrix2Rank(new Matrix(PD), out var rank))
 				Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, rank));
 		}
+
+		/// <summary>
+		/// Нахождение ранжирований из агрегированной матрицы - минимальное расстояние
+		/// </summary>
+		/// <param name="weight_matrix"></param>
+		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix)
+		{
+			Smerchinskaya_Yashina_method.ClearRankings();
+			var M = new FuzzyRelation(weight_matrix);
+			var r = weight_matrix.AdjacencyMatrix.ToFuzzy;
+			Matrix RK = Matrix.Eye(1); //матрица контуров
+			while (RK.ElemSum() != 0)
+			{//если ещё остались контуры
+
+				var min_elem = M.MinElemNotZero();
+				for (int i = 0; i < M.n; i++)
+					for (int j = 0; j < M.m; j++)
+						if (M[i, j] == min_elem)
+						{
+							M[i, j] = 0;
+							r[i, j] = 0;
+						}
+				RK = r.TransitiveClosure().Intersect(r.TransitiveClosure().Transpose().ToFuzzy).Intersect(r);
+			}
+			M = M.TransitiveClosure();
+			Smerchinskaya_Yashina_method.Winners = M.UndominatedAlternatives().ToList();
+			if (Ranking.Matrix2Rank(M, out var rank))
+				Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rank));
+		}
+
 	}
 }

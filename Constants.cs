@@ -36,12 +36,14 @@ namespace Group_choice_algos_fuzzy
 		public const int HP_MAX_LENGTH = 2;
 		public const int HP_MAX_STRENGTH = 3;
 		public const int SCHULZE_METHOD = 4;
+		public const int SMERCHINSKAYA_YASHINA_METHOD = 5;
 		//название на ествественном языке для вывода в интерфейс
 		public static Dictionary<int, string> MethodsInfo = new Dictionary<int, string>{
 			{ ALL_RANKINGS, "Всевозможные ранжирования" },
 			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
 			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
-			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" }
+			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
+			{ SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию (Смерчинская-Яшина)" }
 		};
 		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		//символ альтернативы (a1,a2,A,B,a,b...) в индекс 
