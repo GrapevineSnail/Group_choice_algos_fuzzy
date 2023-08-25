@@ -326,18 +326,28 @@ namespace Group_choice_algos_fuzzy
 		/// вывести на экран результирующие ранжирования
 		/// </summary>
 		/// <param name="Mutual_rankings"></param>
-		private void set_output_results(List<string> Mutual_rankings)
+		private async void set_output_results(List<string> Mutual_rankings)
 		{
 			clear_output();
 			deactivate_input();
 			try
 			{
+				//создание чистого файла для вывода ранжирований в виде матриц
+				using (StreamWriter writer = new StreamWriter(out_file, false))
+				{
+					await writer.WriteLineAsync("");
+				}
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
-				tex += "\nАгрегированное отношение: \n" + R.aggregated?.Matrix2String();
-				tex += "\nМатрица смежности агрегированного отношения: \n"
-					+ R.aggregated?.AdjacencyMatrix.Matrix2String();
+				tex += CR_LF + "Агрегированное отношение R: \n" 
+					+ R.aggregated?.Matrix2String(true);
+				tex += CR_LF + "Матрица смежности агрегированного отношения: \n"
+					+ R.aggregated?.AdjacencyMatrix.Matrix2String(true);
+				tex += CR_LF + "Асимметричная часть As R агрегированного отношения R: \n"
+					+ R.aggregated?.AsymmetricPart.Matrix2String(true);
+				tex += CR_LF + "Матрица смежности агрегированного отношения: \n"
+					+ R.aggregated?.AsymmetricPart.AdjacencyMatrix.Matrix2String(true);
 				label3.Text = tex;
 				foreach (Method met in Methods.GetMethods())
 				{
@@ -347,6 +357,14 @@ namespace Group_choice_algos_fuzzy
 							met.ConnectedLabel = "Ранжирование невозможно. ";
 						else if (met.Rankings.Count > 0)
 						{
+							//запись в файл всех полученных ранжирований метода
+							using (StreamWriter writer = new StreamWriter(out_file, true))
+							{
+								var text = string.Join(CR_LF+CR_LF+CR_LF,
+									met.Rankings.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
+								await writer.WriteLineAsync(text);
+							}
+
 							var r = met.Rankings.Count;
 							for (int j = 0; j < r; j++)
 							{
@@ -385,6 +403,11 @@ namespace Group_choice_algos_fuzzy
 									else if (characteristic.Value == max)
 										met.connectedFrame[j, i].Style.BackColor = color_max;
 								}
+								else if (characteristic.ValuesList != null && characteristic.ValuesList.Count != 0)
+								{
+									met.connectedFrame[j, i].Value = string.Join(CR_LF,
+										characteristic.ValuesList);
+								}
 							}
 
 							var some_rank = met.Rankings.First();
@@ -392,6 +415,7 @@ namespace Group_choice_algos_fuzzy
 							add_row_with_characteristic(some_rank.PathStrength.Label);
 							add_row_with_characteristic(some_rank.PathSummaryDistance.modulus.Label);
 							add_row_with_characteristic(some_rank.PathSummaryDistance.square.Label);
+							add_row_with_characteristic(some_rank.PathExpertCosts.Label);
 
 							for (int j = 0; j < r; j++)
 							{
@@ -416,6 +440,9 @@ namespace Group_choice_algos_fuzzy
 								display_characteristic(j, n + 3,
 									met.MinDistance.square.Value, met.MaxDistance.square.Value,
 									met.Rankings[j].PathSummaryDistance.square);
+								display_characteristic(j, n + 4,
+									INF,INF,
+									met.Rankings[j].PathExpertCosts);
 							}
 						}
 					}

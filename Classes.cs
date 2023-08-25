@@ -167,11 +167,11 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
-		/// для удобства печати матриц
+		///  для удобства печати матриц
 		/// </summary>
-		/// <param name="Matrix"></param>
+		/// <param name="use_separator"></param>
 		/// <returns></returns>
-		public string Matrix2String()
+		public string Matrix2String(bool use_separator)
 		{
 			/// удаляет последние cnt символов из строки
 			string trim_end(string s, int cnt)
@@ -189,6 +189,13 @@ namespace Group_choice_algos_fuzzy
 					if (this[i, j].ToString().Length > max_widths[j])
 						max_widths[j] = this[i, j].ToString().Length;
 			var str = "";
+			var lef_bnd = "";
+			var rig_bnd = "";
+			if (use_separator)
+			{
+				lef_bnd = "[";
+				rig_bnd = "]";
+			}
 			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < m; j++)
@@ -197,9 +204,9 @@ namespace Group_choice_algos_fuzzy
 					//var align = "^";
 					int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
 					//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
-					str += string.Format($"[{{0,{width}}}]", this[i, j], width);
+					str += string.Format($"{lef_bnd}{{0,{width}}}{rig_bnd}", this[i, j]);
 				}
-				str += "\n";
+				str += CR_LF;
 			}
 			return trim_end(str, 1);
 		}
@@ -660,6 +667,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			public Characteristic(string label) { Label = label; }
 			public double Value;
+			public List<double> ValuesList;
 			public string Label;
 		}
 		public class PathSummaryDistanceType
@@ -689,6 +697,7 @@ namespace Group_choice_algos_fuzzy
 		public Characteristic PathCost = new Characteristic("Стоимость"); //общая стоимость пути
 		public Characteristic PathStrength = new Characteristic("Сила"); //сила пути (пропускная способность)
 		public PathSummaryDistanceType PathSummaryDistance = new PathSummaryDistanceType();//суммарное расстояние до всех остальных входных ранжирований
+		public Characteristic PathExpertCosts = new Characteristic("Вектор стоимостей по экспертам"); //вектор стоимостей по каждому эксперту-характеристике
 
 		#region PROPERTIES
 		public List<int> Rank2List
@@ -797,6 +806,7 @@ namespace Group_choice_algos_fuzzy
 					PathStrength.Value = INF;
 					PathSummaryDistance.modulus.Value = INF;
 					PathSummaryDistance.square.Value = INF;
+					PathExpertCosts.ValuesList = Enumerable.Repeat(INF, other_matrices.Count).ToList();
 				}
 				else
 				{
@@ -804,6 +814,9 @@ namespace Group_choice_algos_fuzzy
 					PathStrength.Value = PathStrength(Rank2List, weight_matrix);
 					PathSummaryDistance.modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
 					PathSummaryDistance.square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
+					PathExpertCosts.ValuesList = new List<double>();
+					foreach (var expert_matrix in other_matrices)
+						PathExpertCosts.ValuesList.Add(PathCost(Rank2List, expert_matrix));
 				}
 			}
 		}

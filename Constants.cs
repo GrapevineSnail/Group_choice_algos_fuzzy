@@ -22,6 +22,8 @@ namespace Group_choice_algos_fuzzy
 		public static Color button_background = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
 		public static Color disabled_button_background = ColorTranslator.FromHtml("#D9D9D9");
 
+		public const string out_file = "result.txt";
+		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
 		public const int max_count_of_alternatives = 9;
 		public const int max_count_of_experts = 50;
 		public const double INF = double.PositiveInfinity;
@@ -89,5 +91,7 @@ namespace Group_choice_algos_fuzzy
 			{ MessageBox.Show(this.Message.ToString()); }
 		}
 		#endregion EXCEPTIONS
+
+
 	}
 }
