@@ -371,7 +371,7 @@ namespace Group_choice_algos_fuzzy
 		private static double Distance(Matrix M1, Matrix M2, Func<double, double, double> elem_diff)
 		{// вход: матрицы одинаковой размерности только из чисел \in [0;1]
 			if (M1.n != M2.n || M1.m != M2.m)
-				throw new MyException(EX_matrix_multing_dim);
+				throw new MyException(EX_bad_dimensions);
 			double ans = 0;
 			for (int i = 0; i < M1.n; i++)
 				for (int j = 0; j < M1.m; j++)
@@ -839,7 +839,9 @@ namespace Group_choice_algos_fuzzy
 		private CheckBox connectedCheckBox = null;//чекбокс - будем ли запускать метод
 		public DataGridView connectedFrame = null;//в какой контейнер выводить результаты работы метода
 		private Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
+
 		public List<Ranking> Rankings = null;//выдаваемые методом ранжирования
+		public bool[] IsInPareto = null;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
 		public List<int> Winners = null;//победители - недоминируемые альтернативы
 
 		public double MinLength;//минимальная длина среди ранжирований метода
@@ -899,6 +901,33 @@ namespace Group_choice_algos_fuzzy
 		#endregion PROPERTIES
 
 		/// <summary>
+		/// отношение Парето
+		/// </summary>
+		/// <param name="R1"></param>
+		/// <param name="R2"></param>
+		/// <returns></returns>
+		public static bool ParetoMORETHAN(List<double> R1, List<double> R2)
+		{
+			bool ans = false;
+			if (R1.Count != R2.Count)
+				throw new MyException(EX_bad_dimensions);
+			for (int i = 0; i < R1.Count; i++)
+			{
+				if (R1[i] < R2[i])
+					return false;
+				if (R1[i] > R2[i])//если есть хотя бы один элемент, который больше
+					ans = true;
+			}
+			return ans;
+		}
+		public static bool ParetoEQUALS(List<double> R1, List<double> R2)
+		{
+			if (!ParetoMORETHAN(R1, R2) && !ParetoMORETHAN(R2, R1))
+				return true;
+			return false;
+		}
+
+		/// <summary>
 		/// задаёт связанные с методом элементы управления
 		/// </summary>
 		/// <param name="checkBox"></param>
@@ -917,6 +946,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			Rankings = new List<Ranking>();
 			Winners = new List<int>();
+			IsInPareto = new bool[] { };
 			MinLength = INF;
 			MaxLength = INF;
 			MinStrength = INF;
@@ -951,9 +981,31 @@ namespace Group_choice_algos_fuzzy
 			return Enumerable.Max(L);
 		}
 		/// <summary>
-		/// находит минимумы и максимумы по каждой характеристике ранжирований
+		/// задаёт индексы ранжирований, входящих в Парето-множество
 		/// </summary>
-		public void SetCharacteristicsMinsMaxes()
+		/// <param name="R"></param>
+		/// <returns></returns>
+		private bool[] set_Pareto_signs(List<Ranking.Characteristic> R)
+		{
+			var r = R.Count;
+			var ans = new bool[r];
+			var Pareto_indices = Enumerable.Range(0, r).ToHashSet();
+
+			foreach (int pi in Pareto_indices)
+				foreach (int pj in Pareto_indices)
+					if (pi != pj && ParetoMORETHAN(R[pj].ValuesList, R[pi].ValuesList))
+					{
+						Pareto_indices.Remove(pi);
+						break;
+					}
+			foreach (int pi in Pareto_indices)
+				ans[pi] = true;
+			return ans;///////////////////ПРОВЕРИТЬ
+		}
+		/// <summary>
+		/// выбирает лучшие по каждой характеристике ранжирований
+		/// </summary>
+		public void SetCharacteristicsBestWorst()
 		{
 			MinLength = min(Rankings.Select(x => x.PathCost.Value).ToList());
 			MaxLength = max(Rankings.Select(x => x.PathCost.Value).ToList());
@@ -963,6 +1015,7 @@ namespace Group_choice_algos_fuzzy
 			MaxDistance.modulus.Value = max(Rankings.Select(x => x.PathSummaryDistance.modulus.Value).ToList());
 			MinDistance.square.Value = min(Rankings.Select(x => x.PathSummaryDistance.square.Value).ToList());
 			MaxDistance.square.Value = max(Rankings.Select(x => x.PathSummaryDistance.square.Value).ToList());
+			IsInPareto = set_Pareto_signs(Rankings.Select(x=>x.PathExpertCosts).ToList());
 		}
 		/// <summary>
 		/// очищает весь вывод метода

@@ -205,13 +205,13 @@ namespace Group_choice_algos_fuzzy
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
-					met.SetCharacteristicsMinsMaxes();
+					met.SetCharacteristicsBestWorst();
 				if (is_rankings_of_method_exist.Count() > 1)
 				{
 					bool enter_intersect = false;
 					foreach (Method met in is_rankings_of_method_exist)
 					{
-						met.SetCharacteristicsMinsMaxes();
+						met.SetCharacteristicsBestWorst();
 						if (enter_intersect == false)
 						{
 							Intersect = met.Ranks2Strings;
@@ -407,6 +407,8 @@ namespace Group_choice_algos_fuzzy
 								{
 									met.connectedFrame[j, i].Value = string.Join(CR_LF,
 										characteristic.ValuesList);
+									if (met.IsInPareto[j])
+										met.connectedFrame[j, i].Style.BackColor = color_max;
 								}
 							}
 

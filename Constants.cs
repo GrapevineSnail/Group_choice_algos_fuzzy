@@ -73,7 +73,7 @@ namespace Group_choice_algos_fuzzy
 		#region EXCEPTIONS
 		public static string EX_bad_expert_profile = "Введите корректные профили экспертов";
 		public static string EX_matrix_not_square = "Матрица должна быть квадратной";
-		public static string EX_matrix_multing_dim = "Размерности двух матриц не совпадают";
+		public static string EX_bad_dimensions = "Размерности двух объектов не совпадают";
 		public static string EX_bad_matrix = "Некорректная матрица";
 		public static string EX_bad_file = "Некорректный файл";
 		public static string EX_n_m_too_big = 
