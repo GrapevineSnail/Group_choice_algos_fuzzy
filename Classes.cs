@@ -991,16 +991,21 @@ namespace Group_choice_algos_fuzzy
 			var ans = new bool[r];
 			var Pareto_indices = Enumerable.Range(0, r).ToHashSet();
 
-			foreach (int pi in Pareto_indices)
-				foreach (int pj in Pareto_indices)
-					if (pi != pj && ParetoMORETHAN(R[pj].ValuesList, R[pi].ValuesList))
+			for (int i = 0; i < r; i++)
+				foreach (int j in Pareto_indices)//(int j = 0; j < r; j++)
+				{
+					var Vj = R[j].ValuesList;
+					var Vi = R[i].ValuesList;
+					var K = Vj.Count;
+					if (i != j && ParetoMORETHAN(Vj, Vi))
 					{
-						Pareto_indices.Remove(pi);
+						Pareto_indices.Remove(i);
 						break;
 					}
-			foreach (int pi in Pareto_indices)
-				ans[pi] = true;
-			return ans;///////////////////ПРОВЕРИТЬ
+				}
+			foreach (int i in Pareto_indices)
+				ans[i] = true;
+			return ans;
 		}
 		/// <summary>
 		/// выбирает лучшие по каждой характеристике ранжирований

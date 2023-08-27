@@ -239,9 +239,10 @@ namespace Group_choice_algos_fuzzy
 			}
 			clear_input();
 			clear_output();
-			for (int expert = 0; expert < m; expert++)
+			try
 			{
-				try
+				bool some_contradictory_profiles = false;
+				for (int expert = 0; expert < m; expert++)
 				{
 					DataGridView dgv = new DataGridView();
 					dgv.AllowUserToAddRows = false;
@@ -271,7 +272,7 @@ namespace Group_choice_algos_fuzzy
 								cell.Value = 0.0;
 							else
 							{// эксперт вводит асимметричное отношение
-								dd[i, j].Value = 0.0;
+							 //dd[i, j].Value = 0.0;
 								if (!SetAsymmetricClosuredProfile(dd))
 								{
 									cell.Value = 0.0;
@@ -312,12 +313,12 @@ namespace Group_choice_algos_fuzzy
 							dgv[j, i].ValueType = typeof(double);
 						}
 					if (!SetAsymmetricClosuredProfile(dgv))
-					{
-						throw new MyException(EX_not_transitive_profile);
-					}
+						some_contradictory_profiles = true;
 				}
-				catch (MyException ex) { ex.Info(); }
+				if (some_contradictory_profiles)
+					throw new MyException(EX_not_transitive_profile);
 			}
+			catch (MyException ex) { ex.Info(); }
 			activate_input();
 
 		}
@@ -340,7 +341,7 @@ namespace Group_choice_algos_fuzzy
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
-				tex += CR_LF + "Агрегированное отношение R: \n" 
+				tex += CR_LF + "Агрегированное отношение R: \n"
 					+ R.aggregated?.Matrix2String(true);
 				tex += CR_LF + "Матрица смежности агрегированного отношения: \n"
 					+ R.aggregated?.AdjacencyMatrix.Matrix2String(true);
@@ -360,7 +361,7 @@ namespace Group_choice_algos_fuzzy
 							//запись в файл всех полученных ранжирований метода
 							using (StreamWriter writer = new StreamWriter(out_file, true))
 							{
-								var text = string.Join(CR_LF+CR_LF+CR_LF,
+								var text = string.Join(CR_LF + CR_LF + CR_LF,
 									met.Rankings.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
 								await writer.WriteLineAsync(text);
 							}
@@ -443,7 +444,7 @@ namespace Group_choice_algos_fuzzy
 									met.MinDistance.square.Value, met.MaxDistance.square.Value,
 									met.Rankings[j].PathSummaryDistance.square);
 								display_characteristic(j, n + 4,
-									INF,INF,
+									INF, INF,
 									met.Rankings[j].PathExpertCosts);
 							}
 						}
@@ -474,6 +475,12 @@ namespace Group_choice_algos_fuzzy
 				try
 				{
 					List<Matrix> matrices = new List<Matrix>();
+					string projectDirectory = new DirectoryInfo(
+						AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
+					string file_name = Path.GetFileName(textBox_file.Text);
+					string[] allFoundFiles = Directory.GetFiles(
+						projectDirectory, file_name, SearchOption.AllDirectories);
+					textBox_file.Text = allFoundFiles[0];
 					string[] lines = File.ReadAllLines(textBox_file.Text)
 						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 					var chars_for_split = new char[] { ' ', '	' };
@@ -531,10 +538,10 @@ namespace Group_choice_algos_fuzzy
 							input_matrix[i, j] = (double)dgv[j, i].Value;
 					R_list.Add(input_matrix);
 				}
-				R_list = R_list.Select(x => x.AsymmetricPart.ToFuzzy.TransitiveClosure()).ToList();
-				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				if (R_list.Any(x => x.IsHasCycle(out _)))
 					throw new MyException(EX_not_transitive_profile);
+				R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
+				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
