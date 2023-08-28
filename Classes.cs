@@ -837,8 +837,8 @@ namespace Group_choice_algos_fuzzy
 
 		public int ID;//обозначение метода
 		private CheckBox connectedCheckBox = null;//чекбокс - будем ли запускать метод
-		public DataGridView connectedFrame = null;//в какой контейнер выводить результаты работы метода
-		private Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
+		public DataGridView connectedTableFrame = null;//в какой контейнер выводить результаты работы метода
+		public Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
 
 		public List<Ranking> Rankings = null;//выдаваемые методом ранжирования
 		public bool[] IsInPareto = null;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
@@ -868,14 +868,17 @@ namespace Group_choice_algos_fuzzy
 				{
 					connectedLabel?.ResetText();
 					connectedLabel?.Hide();
+					//connectedLabel?.Dispose();
 				}
 				else
 				{
 					if (connectedLabel == null)
 					{
 						connectedLabel = new Label();
-						connectedLabel.Dock = DockStyle.Bottom;
-						connectedFrame?.Parent?.Controls.Add(connectedLabel);
+						connectedLabel.AutoSize = true;
+						connectedLabel.Location = new System.Drawing.Point(
+							0, connectedTableFrame.Location.Y + connectedTableFrame.Height);
+						connectedTableFrame?.Parent?.Controls.Add(connectedLabel);
 					}
 					connectedLabel.Text = value;
 					connectedLabel.Show();
@@ -931,13 +934,13 @@ namespace Group_choice_algos_fuzzy
 		/// задаёт связанные с методом элементы управления
 		/// </summary>
 		/// <param name="checkBox"></param>
-		/// <param name="frame"></param>
-		public void SetConnectedControls(CheckBox checkBox, DataGridView frame)
-		{
+		/// <param name="dgv"></param>
+		public void SetConnectedControls(CheckBox checkBox, DataGridView dgv)
+		{	
 			connectedCheckBox = checkBox;
-			connectedFrame = frame;
+			connectedTableFrame = dgv;
 			connectedCheckBox.Text = MethodsInfo[ID];
-			((GroupBox)connectedFrame?.Parent).Text = MethodsInfo[ID];
+			((GroupBox)connectedTableFrame?.Parent).Text = MethodsInfo[ID];
 		}
 		/// <summary>
 		/// удаление ранжирований и их характеристик
@@ -1027,11 +1030,11 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public void ClearMethodOutput()
 		{
-			connectedFrame?.Rows.Clear();
-			connectedFrame?.Columns.Clear();
+			connectedTableFrame?.Rows.Clear();
+			connectedTableFrame?.Columns.Clear();
 			ConnectedLabel = "";
-			connectedFrame?.Hide();
-			connectedFrame?.Parent?.Hide();
+			connectedTableFrame?.Hide();
+			connectedTableFrame?.Parent?.Hide();
 		}
 		/// <summary>
 		/// отображает весь вывод метода
@@ -1040,8 +1043,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			if (IsExecute)
 			{
-				connectedFrame?.Show();
-				connectedFrame?.Parent.Show();
+				connectedTableFrame?.Show();
+				connectedTableFrame?.Parent.Show();
 			}
 		}
 

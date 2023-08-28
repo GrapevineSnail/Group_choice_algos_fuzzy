@@ -28,7 +28,7 @@ namespace Group_choice_algos_fuzzy
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
 
-			foreach (Control c in flowLayoutPanel_input.Controls)
+			foreach (Control c in flowLayoutPanel_input_tables.Controls)
 				c.MouseEnter += flowLayoutPanel_input_MouseEnter;
 			foreach (Control c in flowLayoutPanel_output_info.Controls)
 				c.MouseEnter += flowLayoutPanel_output_info_MouseEnter;
@@ -132,7 +132,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				flowLayoutPanel_input.Controls.Clear();
+				flowLayoutPanel_input_tables.Controls.Clear();
 			}
 			catch (MyException ex) { }
 		}
@@ -141,7 +141,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
+				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
 				{
 					dgv.ReadOnly = false;
 					foreach (DataGridViewColumn column in dgv.Columns)
@@ -155,7 +155,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
+				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
 				{
 					dgv.ReadOnly = true;
 					foreach (DataGridViewColumn column in dgv.Columns)
@@ -282,7 +282,7 @@ namespace Group_choice_algos_fuzzy
 						}
 						catch (MyException ex) { ex.Info(); }
 					};
-					flowLayoutPanel_input.Controls.Add(dgv);
+					flowLayoutPanel_input_tables.Controls.Add(dgv);
 
 					for (int j = 0; j < n; j++)
 					{
@@ -375,41 +375,41 @@ namespace Group_choice_algos_fuzzy
 								column.Name = j.ToString();
 								column.HeaderCell.Style.BackColor = window_background;
 								column.FillWeight = 1;
-								met.connectedFrame.Columns.Add(column);
+								met.connectedTableFrame.Columns.Add(column);
 							}
 							for (int i = 0; i < n; i++)
 							{
-								met.connectedFrame.Rows.Add();
-								met.connectedFrame.Rows[i].HeaderCell.Value = $"Место {i + 1}";
+								met.connectedTableFrame.Rows.Add();
+								met.connectedTableFrame.Rows[i].HeaderCell.Value = $"Место {i + 1}";
 							}
 
 							//добавить в конец datagrid-а строку с характеристикой ранжирования
 							int add_row_with_characteristic(string label)
 							{
-								met.connectedFrame.Rows.Add();
-								int i = met.connectedFrame.Rows.Count - 1;
-								met.connectedFrame.Rows[i].HeaderCell.Value = label;
+								met.connectedTableFrame.Rows.Add();
+								int i = met.connectedTableFrame.Rows.Count - 1;
+								met.connectedTableFrame.Rows[i].HeaderCell.Value = label;
 								return i;
 							}
 							//задать значение характеристики ранжирования и раскрасить
 							void display_characteristic(int j, int i, double min, double max,
 								Ranking.Characteristic characteristic)
 							{
-								met.connectedFrame[j, i].Value = characteristic.Value;
-								met.connectedFrame[j, i].Style.BackColor = output_characteristics_bg_color;
+								met.connectedTableFrame[j, i].Value = characteristic.Value;
+								met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_bg_color;
 								if (min < max)
 								{
 									if (characteristic.Value == min)
-										met.connectedFrame[j, i].Style.BackColor = color_min;
+										met.connectedTableFrame[j, i].Style.BackColor = color_min;
 									else if (characteristic.Value == max)
-										met.connectedFrame[j, i].Style.BackColor = color_max;
+										met.connectedTableFrame[j, i].Style.BackColor = color_max;
 								}
 								else if (characteristic.ValuesList != null && characteristic.ValuesList.Count != 0)
 								{
-									met.connectedFrame[j, i].Value = string.Join(CR_LF,
+									met.connectedTableFrame[j, i].Value = string.Join(CR_LF,
 										characteristic.ValuesList);
 									if (met.IsInPareto[j])
-										met.connectedFrame[j, i].Style.BackColor = color_max;
+										met.connectedTableFrame[j, i].Style.BackColor = color_max;
 								}
 							}
 
@@ -424,13 +424,13 @@ namespace Group_choice_algos_fuzzy
 							{
 								for (int i = 0; i < n; i++)
 								{
-									met.connectedFrame[j, i].ReadOnly = true;
-									met.connectedFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
+									met.connectedTableFrame[j, i].ReadOnly = true;
+									met.connectedTableFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
 								}
 								if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
 								{
 									for (int i = 0; i < n; i++)
-										met.connectedFrame[j, i].Style.BackColor = color_mutual;
+										met.connectedTableFrame[j, i].Style.BackColor = color_mutual;
 								}
 
 								display_characteristic(j, n, met.MinLength, met.MaxLength,
@@ -508,7 +508,7 @@ namespace Group_choice_algos_fuzzy
 
 					refresh_variables();
 					set_input_datagrids(matrices);
-					Form1_SizeChanged(sender, e);
+					set_controls_size();
 				}
 				catch (FileNotFoundException ex)
 				{
@@ -530,7 +530,7 @@ namespace Group_choice_algos_fuzzy
 				if (n > max_count_of_alternatives)
 					throw new MyException(EX_n_m_too_big);
 				R_list = new List<FuzzyRelation>() { };
-				foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
+				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
 				{
 					var input_matrix = new FuzzyRelation(n);
 					for (int i = 0; i < dgv.Rows.Count; i++)
@@ -545,7 +545,7 @@ namespace Group_choice_algos_fuzzy
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
-				Form1_SizeChanged(sender, e);
+				set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
@@ -573,10 +573,51 @@ namespace Group_choice_algos_fuzzy
 
 					refresh_variables();
 					set_input_datagrids(null);
-					Form1_SizeChanged(sender, e);
+					set_controls_size();
 				}
 			}
 			catch (MyException ex) { ex.Info(); }
+		}
+
+		private void set_controls_size()
+		{
+			Size get_table_size(DataGridView dgv)
+			{
+				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
+				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
+				return new Size(Width, Height);
+			}
+
+			foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
+			{
+				dgv.Dock = DockStyle.None;
+				dgv.Size = get_table_size(dgv);
+			}
+
+			foreach (Method m in Methods.GetMethods())
+			{
+				DataGridView dgv = m?.connectedTableFrame;
+
+				if (dgv != null)
+				{
+					GroupBox frame = (GroupBox)dgv?.Parent;
+					if (frame != null)
+					{
+						frame.Dock = DockStyle.Top;
+						frame.AutoSize = true;
+					}
+					dgv.Dock = DockStyle.None;
+					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+					dgv.AutoSize = true;
+					dgv.Size = get_table_size(dgv);
+
+					Label lab = m?.connectedLabel;
+					if (lab != null)
+					{
+						lab.Location = new Point(0, dgv.Location.Y + dgv.Height);
+					}
+				}
+			}
 		}
 
 		private void button_for_tests_Click(object sender, EventArgs e)
@@ -620,20 +661,11 @@ namespace Group_choice_algos_fuzzy
 
 		private void Form1_SizeChanged(object sender, EventArgs e)
 		{
-			foreach (Method m in Methods.GetMethods())
-			{
-				if (m.connectedFrame?.Parent != null)
-					m.connectedFrame.Parent.Width = flowLayoutPanel_output_tables.Width - 30;
-			}
-			foreach (DataGridView dgv in flowLayoutPanel_input.Controls)
-			{
-				dgv.Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
-				dgv.Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
-			}
+			set_controls_size();
 		}
 		private void flowLayoutPanel_input_MouseEnter(object sender, EventArgs e)
 		{
-			flowLayoutPanel_input.Focus();
+			flowLayoutPanel_input_tables.Focus();
 		}
 		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
 		{
@@ -643,6 +675,9 @@ namespace Group_choice_algos_fuzzy
 		{
 			flowLayoutPanel_output_info.Focus();
 		}
+
+
+
 
 	}
 }
