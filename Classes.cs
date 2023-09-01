@@ -14,37 +14,37 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Matrix
 	{
-		public Matrix(int n) { matrix = new double[n, n]; }
-		public Matrix(int n, int m) { matrix = new double[n, m]; }
-		public Matrix(double[,] M) { matrix = (double[,])M.Clone(); }
+		public Matrix(int n) { matrix_base = new double[n, n]; }
+		public Matrix(int n, int m) { matrix_base = new double[n, m]; }
+		public Matrix(double[,] M) { matrix_base = (double[,])M.Clone(); }
 		public Matrix(int[,] M)
 		{
-			matrix = new double[M.GetLength(0), M.GetLength(1)];
+			matrix_base = new double[M.GetLength(0), M.GetLength(1)];
 			for (int i = 0; i < this.n; i++)
 				for (int j = 0; j < this.m; j++)
-					matrix[i, j] = M[i, j];
+					matrix_base[i, j] = M[i, j];
 		}
-		public Matrix(Matrix M) { matrix = (double[,])M.matrix.Clone(); }
+		public Matrix(Matrix M) { matrix_base = (double[,])M.matrix_base.Clone(); }
 
-		private double[,] matrix = new double[,] { }; //"основа" матрицы - двумерный массив
+		public double[,] matrix_base = new double[,] { }; //"основа" матрицы - двумерный массив
 		public double this[int i, int j]
 		{
-			get { return matrix[i, j]; }
-			set { matrix[i, j] = value; }
+			get { return matrix_base[i, j]; }
+			set { matrix_base[i, j] = value; }
 		}
 		/// <summary>
 		/// количество строк матрицы
 		/// </summary>
 		public int n
 		{
-			get { return matrix.GetLength(0); }
+			get { return matrix_base.GetLength(0); }
 		}
 		/// <summary>
 		/// количество столбцов матрицы
 		/// </summary>
 		public int m
 		{
-			get { return matrix.GetLength(1); }
+			get { return matrix_base.GetLength(1); }
 		}
 		public Matrix Self { get { return this; } }
 		/// <summary>
@@ -101,7 +101,6 @@ namespace Group_choice_algos_fuzzy
 				return R;
 			}
 		}
-
 		/// <summary>
 		/// превращает матрицу в нечёткое отношение
 		/// </summary>
@@ -112,7 +111,7 @@ namespace Group_choice_algos_fuzzy
 			var R = new Matrix(R1);
 			for (int i = 0; i < R.n; i++)
 				for (int j = 0; j < R.m; j++)
-					R[i, j] *= c;
+					R[i, j] = Math.Round(c * R[i, j], digits_precision);
 			return R;
 		}
 		public static Matrix operator *(Matrix R1, double c)
@@ -167,6 +166,36 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
+		/// выводит список смежности матрицы на основании того, какое значение элемента матрицы считать отсутствие  ребра
+		/// </summary>
+		/// <param name="condition_of_no_edge_symbol">
+		/// какое значение элемента матрицы считать отсутствием ребра - условие, лямбда-функция
+		/// </param>
+		/// <returns></returns>
+		public List<List<int>> AdjacencyList(Func<double, bool> condition_of_no_edge_symbol)
+		{
+			var ans = new List<List<int>>();
+			for (int i = 0; i < n; i++)
+			{
+				ans.Add(new List<int>());
+				for (int j = 0; j < m; j++)
+					if (!condition_of_no_edge_symbol(this[i, j]))
+						ans[i].Add(j);
+			}
+			return ans;
+		}
+		/// <summary>
+		/// выводит список смежности матрицы на основаноо того, какое значение элемента матрицы считать отсутствием ребра
+		/// </summary>
+		/// <param name="no_edge_symbol">
+		/// какое значение элемента матрицы считать отсутствием ребра (0, INF, -INF и т.д.)
+		/// </param>
+		/// <returns></returns>
+		public List<List<int>> AdjacencyList(double no_edge_symbol)
+		{
+			return AdjacencyList(x => x == no_edge_symbol);
+		}
+		/// <summary>
 		///  для удобства печати матриц
 		/// </summary>
 		/// <param name="use_separator"></param>
@@ -212,7 +241,7 @@ namespace Group_choice_algos_fuzzy
 		}
 		public int GetLength(int dimension)
 		{
-			return matrix.GetLength(dimension);
+			return matrix_base.GetLength(dimension);
 		}
 		/// <summary>
 		/// возвращает транспонированую матрицу
@@ -334,7 +363,7 @@ namespace Group_choice_algos_fuzzy
 			return ans;
 		}
 		/// <summary>
-		/// минимальный элемент матрицы
+		/// минимальный ненулевой элемент матрицы
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
@@ -425,7 +454,68 @@ namespace Group_choice_algos_fuzzy
 				sum_dist += distance_function(this, other_R);
 			return sum_dist;
 		}
-
+		/// <summary>
+		/// является ли асимметричной (предполагает антирефлексивность)
+		/// </summary>
+		/// <returns></returns>
+		public bool IsAsymmetric()
+		{
+			for (int i = 0; i < n; i++)
+				for (int j = i; j < n; j++)
+					if (this[i, j] != 0 && this[j, i] != 0)
+						return false;
+			return true;
+		}
+		/// <summary>
+		/// есть ли в графе цикл
+		/// </summary>
+		/// <param name="AdjacencyList">список смежности</param>
+		/// <returns></returns>
+		public static bool IsHasCycle(List<List<int>> AdjacencyList)
+		{
+			int n = AdjacencyList.Count;//количество вершин
+			int[] color = Enumerable.Repeat(0, n).ToArray();
+			bool is_cycle_from_vertex(int v)
+			{
+				color[v] = 1;//зашли в вершину
+				for (int i = 0; i < AdjacencyList[v].Count; ++i)//перебрать исхоящие рёбра
+				{
+					int to = AdjacencyList[v][i];
+					if (color[to] == 0)//not visited
+						return is_cycle_from_vertex(to);
+					else if (color[to] == 1)//уже заходили в to
+						return true;//нашли цикл
+				}
+				color[v] = 2;//вышли из вершины
+				return false;
+			}
+			var vertices = Enumerable.Range(0, n).ToArray();
+			return vertices.Any(v => is_cycle_from_vertex(v));
+		}
+		/// <summary>
+		/// достаёт матрицу из элемента DataGridView
+		/// </summary>
+		/// <param name="dgv"></param>
+		/// <returns></returns>
+		public static Matrix GetFromDataGridView(DataGridView dgv)
+		{
+			var input_matrix = new Matrix(dgv.Rows.Count, dgv.Columns.Count);
+			for (int i = 0; i < input_matrix.n; i++)
+				for (int j = 0; j < input_matrix.m; j++)
+					input_matrix[i, j] = (double)dgv[j, i].Value;
+			return input_matrix;
+		}
+		/// <summary>
+		/// кладёт матрицу в DataGridView
+		/// </summary>
+		/// <param name="M"></param>
+		/// <param name="dgv"></param>
+		public static void SetToDataGridView(Matrix M, DataGridView dgv)
+		{
+			for (int i = 0; i < M.n; i++)
+				for (int j = 0; j < M.m; j++)
+					dgv[j, i].Value = M[i, j];
+		}
 	}
 
 
@@ -436,24 +526,70 @@ namespace Group_choice_algos_fuzzy
 	{// base - матрица нечёткого бинарного отношения
 	 //полагаем квадратными
 
+		#region CONSTRAINTS
+		/// <summary>
+		/// ограничение на элементы матрицы принадлежности
+		/// </summary>
+		/// <param name="mu_ij"></param>
+		/// <returns></returns>
+		private bool is_value_of_membership_func(double mu_ij)
+		{
+			if (0 <= mu_ij && mu_ij <= 1)
+				return true;
+			return false;
+		}
+		/// <summary>
+		/// проверка - является ли это функцией принадлежности нечёткого отношения
+		/// </summary>
+		/// <param name="M"></param>
+		/// <returns></returns>
+		private bool is_fuzzy_relation(double[,] M)
+		{
+			var n = M.GetLength(0);
+			var m = M.GetLength(1);
+			if (n != m)
+				return false;
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					if (!is_value_of_membership_func(M[i, j]))
+						return false;
+			return true;
+		}
+		#endregion CONSTRAINTS
+
 		#region CONSTRUCTORS
 		public FuzzyRelation(int n) : base(n) { }
 		public FuzzyRelation(double[,] M) : base(M)
 		{
-			if (M.GetLength(0) != M.GetLength(1))
-				throw new MyException(EX_matrix_not_square);
+			if (!is_fuzzy_relation(M))
+				throw new MyException(EX_bad_fuzzy_relation_matrix);
 		}
 		public FuzzyRelation(Matrix M) : base(M)
 		{
-			if (M.GetLength(0) != M.GetLength(1))
-				throw new MyException(EX_matrix_not_square);
+			if (!is_fuzzy_relation(M.matrix_base))
+				throw new MyException(EX_bad_fuzzy_relation_matrix);
 		}
 		#endregion CONSTRUCTORS
 
+		public new double this[int i, int j]
+		{
+			get { return base[i, j]; }
+			set
+			{
+				if (!is_value_of_membership_func(value))
+					throw new MyException(EX_bad_fuzzy_relation_matrix);
+				base[i, j] = value;
+			}
+		}
 		public double this[Tuple<int, int> pair]
 		{
 			get { return base[pair.Item1, pair.Item2]; }
-			set { base[pair.Item1, pair.Item2] = value; }
+			set
+			{
+				if (!is_value_of_membership_func(value))
+					throw new MyException(EX_bad_fuzzy_relation_matrix);
+				base[pair.Item1, pair.Item2] = value;
+			}
 		}
 		/// <summary>
 		/// матрица принадлежности (= м. предпочтений, функция принадлжености)
@@ -604,28 +740,13 @@ namespace Group_choice_algos_fuzzy
 			return Union(ans);
 		}
 		/// <summary>
-		/// является ли нечеткое отношение асимметричным
-		/// </summary>
-		/// <returns></returns>
-		public bool IsAsymmetric()
-		{
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-					if (this[i, j] > 0 && this[j, i] != 0)
-						return false;
-			return true;
-		}
-		/// <summary>
 		/// есть ли цикл в матрице принадлежности отношения
 		/// </summary>
 		/// <param name="trans_closured_matrix"></param>
 		/// <returns></returns>
-		public bool IsHasCycle(out FuzzyRelation trans_closured_matrix)
+		public bool IsHasCycle()
 		{
-			trans_closured_matrix = TransitiveClosure();
-			if (trans_closured_matrix.IsAsymmetric())
-				return false;
-			return true;
+			return Matrix.IsHasCycle(this.AdjacencyList(0.0));
 		}
 		/// <summary>
 		/// преобразование списка FuzzyRelation в список Matrix
@@ -756,19 +877,84 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// создаёт строгое ранжирование на основе матрицы: полного транзитивного отношения, выделяя асимметричную часть
 		/// </summary>
-		public static bool Matrix2Rank(Matrix M, out Ranking ans)
+		public static bool Matrix2RanksDemukron(Matrix M, out List<Ranking> ans)
 		{
 			//если сначала брать асимметричную часть, а потом вычислять транзитивное замыкание, то можно 
 			//потерять информацию о равнозначных альтерантивах, на основании которой можно было бы 
 			//делать выводы о доминировании других альтернатив, не из равноценной пары
+			if (Matrix.IsHasCycle(M.AdjacencyList(x => x == 0.0 || Math.Abs(x) == INF)))
+				throw new MyException(EX_bad_matrix);
 			var MM = M.AdjacencyMatrix.ToFuzzy.TransitiveClosure().AsymmetricPart;
+			List<List<int>> levels = new List<List<int>>();
+			var wins = new double[M.n];//инициализирован нулями
+			int mark = -1;
+			while (true)
+			{
+				for (int i = 0; i < MM.n; i++)
+				{
+					if (wins[i] != mark)
+					{
+						wins[i] = 0;
+						for (int j = 0; j < MM.m; j++)
+							wins[i] += MM[i, j];
+					}
+				}
+				var last_level_vertices = new List<int>();
+				for (int i = 0; i < MM.n; i++)
+				{
+					if (wins[i] == 0)
+					{
+						last_level_vertices.Add(i);
+						wins[i] = mark;
+						for (int k = 0; k < MM.n; k++)
+							MM[k, i] = 0;
+					}
+				}
+				levels.Add(last_level_vertices);
+				if (wins.Where(x => x == mark).Count() == wins.Count())
+					break;
+			}
+			levels.Reverse();
+			
+			ans = new List<Ranking>();
+			void add_next_variants(int next_lvl, List<int> cur_path)
+			{
+				if(next_lvl == levels.Count-1)
+				foreach (int v in levels[next_lvl])
+				{
+					var ordering = new List<int>(cur_path);
+					ordering.Add(v);
+					ans.Add(new Ranking(ordering));
+				}
+				else
+				{
+					foreach (int v in levels[next_lvl])
+					{
+						var ordering = new List<int>(cur_path);
+						ordering.Add(v);
+						add_next_variants(next_lvl + 1, ordering);
+					}
+				}
+			}
+			for(int lev = 0; lev<levels.Count; lev++)
+			{
+				foreach (int v in levels[lev])
+				{
+					cur_path.Add(v);
+
+				}
+
+				cur_path.Add(levels[lev]);
+				ans.Add
+			}
+
 			var ordering = Enumerable.Repeat(-1, n).ToArray();
 			for (int i = 0; i < MM.n; i++)
 			{
 				double wins = 0;
 				for (int j = 0; j < MM.n; j++)
 				{
-					wins += M[i, j];
+					wins += MM[i, j];
 				}
 				if (wins < n && ordering[(int)wins] == -1)
 					ordering[(int)wins] = i;
@@ -936,7 +1122,7 @@ namespace Group_choice_algos_fuzzy
 		/// <param name="checkBox"></param>
 		/// <param name="dgv"></param>
 		public void SetConnectedControls(CheckBox checkBox, DataGridView dgv)
-		{	
+		{
 			connectedCheckBox = checkBox;
 			connectedTableFrame = dgv;
 			connectedCheckBox.Text = MethodsInfo[ID];
@@ -1023,7 +1209,7 @@ namespace Group_choice_algos_fuzzy
 			MaxDistance.modulus.Value = max(Rankings.Select(x => x.PathSummaryDistance.modulus.Value).ToList());
 			MinDistance.square.Value = min(Rankings.Select(x => x.PathSummaryDistance.square.Value).ToList());
 			MaxDistance.square.Value = max(Rankings.Select(x => x.PathSummaryDistance.square.Value).ToList());
-			IsInPareto = set_Pareto_signs(Rankings.Select(x=>x.PathExpertCosts).ToList());
+			IsInPareto = set_Pareto_signs(Rankings.Select(x => x.PathExpertCosts).ToList());
 		}
 		/// <summary>
 		/// очищает весь вывод метода
@@ -1267,7 +1453,7 @@ namespace Group_choice_algos_fuzzy
 					}
 			}
 			Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
-			if (Ranking.Matrix2Rank(new Matrix(PD), out var rank))
+			if (Ranking.Matrix2RanksDemukron(new Matrix(PD), out var rank))
 				Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, rank));
 		}
 
@@ -1278,25 +1464,31 @@ namespace Group_choice_algos_fuzzy
 		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix)
 		{
 			Smerchinskaya_Yashina_method.ClearRankings();
-			var M = new FuzzyRelation(weight_matrix);
+			var R = new FuzzyRelation(weight_matrix);
 			var r = weight_matrix.AdjacencyMatrix.ToFuzzy;
 			Matrix RK = Matrix.Eye(1); //матрица контуров
-			while (RK.ElemSum() != 0)
+			while (true)
 			{//если ещё остались контуры
+				RK = r.TransitiveClosure().Intersect(r.TransitiveClosure().Transpose().ToFuzzy).Intersect(r);
+				if (RK.ElemSum() == 0)
+					break;
+				for (int i = 0; i < RK.n; i++)
+					for (int j = 0; j < RK.m; j++)
+						if (RK[i, j] != 0)
+							RK[i, j] = R[i, j];
 
-				var min_elem = M.MinElemNotZero();
-				for (int i = 0; i < M.n; i++)
-					for (int j = 0; j < M.m; j++)
-						if (M[i, j] == min_elem)
+				var min_elem = RK.MinElemNotZero();
+				for (int i = 0; i < R.n; i++)
+					for (int j = 0; j < R.m; j++)
+						if (RK[i, j] != 0 && R[i, j] == min_elem)
 						{
-							M[i, j] = 0;
+							R[i, j] = 0;
 							r[i, j] = 0;
 						}
-				RK = r.TransitiveClosure().Intersect(r.TransitiveClosure().Transpose().ToFuzzy).Intersect(r);
 			}
-			M = M.TransitiveClosure();
-			Smerchinskaya_Yashina_method.Winners = M.UndominatedAlternatives().ToList();
-			if (Ranking.Matrix2Rank(M, out var rank))
+			R = R.TransitiveClosure();
+			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
+			if (Ranking.Matrix2RanksDemukron(R, out var rank))
 				Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rank));
 		}
 

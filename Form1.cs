@@ -166,6 +166,50 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
+		/// обновление размеров визуальных элементов после их изменения...
+		/// </summary>
+		private void set_controls_size()
+		{
+			Size get_table_size(DataGridView dgv)
+			{
+				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
+				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
+				return new Size(Width, Height);
+			}
+
+			foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
+			{
+				dgv.Dock = DockStyle.None;
+				dgv.Size = get_table_size(dgv);
+			}
+
+			foreach (Method m in Methods.GetMethods())
+			{
+				DataGridView dgv = m?.connectedTableFrame;
+
+				if (dgv != null)
+				{
+					GroupBox frame = (GroupBox)dgv?.Parent;
+					if (frame != null)
+					{
+						frame.Dock = DockStyle.Top;
+						frame.AutoSize = true;
+					}
+					dgv.Dock = DockStyle.None;
+					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+					dgv.AutoSize = true;
+					dgv.Size = get_table_size(dgv);
+
+					Label lab = m?.connectedLabel;
+					if (lab != null)
+					{
+						lab.Location = new Point(0, dgv.Location.Y + dgv.Height);
+					}
+				}
+			}
+		}
+
+		/// <summary>
 		/// запускает выполнение выбранных алгоритмов
 		/// </summary>
 		/// <param name="list_of_profiles"></param>
@@ -245,20 +289,7 @@ namespace Group_choice_algos_fuzzy
 				for (int expert = 0; expert < m; expert++)
 				{
 					DataGridView dgv = new DataGridView();
-					dgv.AllowUserToAddRows = false;
-					dgv.AllowUserToDeleteRows = false;
-					dgv.AllowUserToResizeRows = false;
-					dgv.AllowUserToResizeColumns = false;
-					dgv.AllowUserToOrderColumns = false;
-					dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
-					dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-					dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-					dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-					dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-					dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-					dgv.ShowEditingIcon = false;
-					dgv.DefaultCellStyle.Format = $"0.{new string('#', digits_precision)}";
-					dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
+					SetDataGridViewDefaults(dgv);
 					dgv.CellEndEdit += (object d, DataGridViewCellEventArgs ee) =>
 					{//что должно происходить при завершении редактирования ячейки
 						try
@@ -268,14 +299,20 @@ namespace Group_choice_algos_fuzzy
 							var i = cell.RowIndex;
 							var j = cell.ColumnIndex;
 							double res;
-							if (!double.TryParse(cell.Value.ToString(), out res) || res > 1 || res <= 0 || i == j)
+							if (!double.TryParse(cell.Value.ToString(), out res) || res > 1 || res < 0 || i == j)
 								cell.Value = 0.0;
 							else
-							{// эксперт вводит асимметричное отношение
-							 //dd[i, j].Value = 0.0;
-								if (!SetAsymmetricClosuredProfile(dd))
+							{
+								//dd[i, j].Value = 0.0;// эксперт вводит асимметричное отношение
+								var input_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
+								//транзитивное замыкание не должно содержать циклов
+								if (!input_matrix.IsHasCycle())
 								{
-									cell.Value = 0.0;
+									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), dd);
+								}
+								else
+								{
+									//cell.Value = 0.0;
 									throw new MyException(EX_not_transitive_profile);
 								}
 							}
@@ -312,7 +349,7 @@ namespace Group_choice_algos_fuzzy
 							dgv[j, i].Value = fill_values[i, j];
 							dgv[j, i].ValueType = typeof(double);
 						}
-					if (!SetAsymmetricClosuredProfile(dgv))
+					if (Matrix.GetFromDataGridView(dgv).ToFuzzy.IsHasCycle())
 						some_contradictory_profiles = true;
 				}
 				if (some_contradictory_profiles)
@@ -320,7 +357,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { ex.Info(); }
 			activate_input();
-
+			set_controls_size();
 		}
 
 		/// <summary>
@@ -458,9 +495,10 @@ namespace Group_choice_algos_fuzzy
 						met.ConnectedLabel = text;
 					}
 				}
-				show_output();
 			}
 			catch (MyException ex) { ex.Info(); }
+			show_output();
+			set_controls_size();
 		}
 
 		/// <summary>
@@ -508,7 +546,6 @@ namespace Group_choice_algos_fuzzy
 
 					refresh_variables();
 					set_input_datagrids(matrices);
-					set_controls_size();
 				}
 				catch (FileNotFoundException ex)
 				{
@@ -529,23 +566,24 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (n > max_count_of_alternatives)
 					throw new MyException(EX_n_m_too_big);
-				R_list = new List<FuzzyRelation>() { };
+				R_list = new List<FuzzyRelation>();
 				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
 				{
-					var input_matrix = new FuzzyRelation(n);
-					for (int i = 0; i < dgv.Rows.Count; i++)
-						for (int j = 0; j < dgv.Columns.Count; j++)
-							input_matrix[i, j] = (double)dgv[j, i].Value;
+					var input_matrix = Matrix.GetFromDataGridView(dgv).ToFuzzy;
 					R_list.Add(input_matrix);
 				}
-				if (R_list.Any(x => x.IsHasCycle(out _)))
+			
+				if (R_list.Any(x => x.IsHasCycle()))
+					new MyException(EX_not_transitive_profile).Info();
+				/*
+				if (R_list.Any(x => x.IsHasCycle()))
 					throw new MyException(EX_not_transitive_profile);
 				R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
 				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
+				*/
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
-				set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
@@ -573,52 +611,11 @@ namespace Group_choice_algos_fuzzy
 
 					refresh_variables();
 					set_input_datagrids(null);
-					set_controls_size();
 				}
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
 
-		private void set_controls_size()
-		{
-			Size get_table_size(DataGridView dgv)
-			{
-				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
-				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
-				return new Size(Width, Height);
-			}
-
-			foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
-			{
-				dgv.Dock = DockStyle.None;
-				dgv.Size = get_table_size(dgv);
-			}
-
-			foreach (Method m in Methods.GetMethods())
-			{
-				DataGridView dgv = m?.connectedTableFrame;
-
-				if (dgv != null)
-				{
-					GroupBox frame = (GroupBox)dgv?.Parent;
-					if (frame != null)
-					{
-						frame.Dock = DockStyle.Top;
-						frame.AutoSize = true;
-					}
-					dgv.Dock = DockStyle.None;
-					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-					dgv.AutoSize = true;
-					dgv.Size = get_table_size(dgv);
-
-					Label lab = m?.connectedLabel;
-					if (lab != null)
-					{
-						lab.Location = new Point(0, dgv.Location.Y + dgv.Height);
-					}
-				}
-			}
-		}
 
 		private void button_for_tests_Click(object sender, EventArgs e)
 		{

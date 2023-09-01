@@ -14,26 +14,25 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Algorithms
 	{
-		public static bool SetAsymmetricClosuredProfile(DataGridView d)
+		public static void SetDataGridViewDefaults(DataGridView dgv)
 		{
-			if (d.Rows.Count != d.Columns.Count)
-				throw new MyException(EX_matrix_not_square);
-			var n = d.Rows.Count;
-			//достраивается транзитивность
-			var input_matrix = new FuzzyRelation(n);
-			for (int ii = 0; ii < d.Rows.Count; ii++)
-				for (int jj = 0; jj < d.Columns.Count; jj++)
-					input_matrix[ii, jj] = (double)d[jj, ii].Value;
-			if (!input_matrix.IsHasCycle(out var trans_closured_input_matrix))
-			{//транзитивное замыкание не должно содержать циклов
-				for (int ii = 0; ii < d.Rows.Count; ii++)
-					for (int jj = 0; jj < d.Columns.Count; jj++)
-						d[jj, ii].Value = trans_closured_input_matrix[ii, jj];
-				return true;
-			}
-			else
-				return false;
+			dgv.AllowUserToAddRows = false;
+			dgv.AllowUserToDeleteRows = false;
+			dgv.AllowUserToResizeRows = false;
+			dgv.AllowUserToResizeColumns = false;
+			dgv.AllowUserToOrderColumns = false;
+			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+			dgv.ShowEditingIcon = false;
+			dgv.DefaultCellStyle.Format = $"0.{new string('#', digits_precision)}";
+			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 		}
+		
 		/// <summary>
 		/// веса данного пути
 		/// </summary>

@@ -76,6 +76,7 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_matrix_not_square = "Матрица должна быть квадратной";
 		public static string EX_bad_dimensions = "Размерности двух объектов не совпадают";
 		public static string EX_bad_matrix = "Некорректная матрица";
+		public static string EX_bad_fuzzy_relation_matrix = "Некорректная матрица принадлежности нечёткого отношения";
 		public static string EX_bad_file = "Некорректный файл";
 		public static string EX_n_m_too_big = 
 			"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
