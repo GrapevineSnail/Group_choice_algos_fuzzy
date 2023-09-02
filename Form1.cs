@@ -306,14 +306,14 @@ namespace Group_choice_algos_fuzzy
 								//dd[i, j].Value = 0.0;// эксперт вводит асимметричное отношение
 								var input_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
 								//транзитивное замыкание не должно содержать циклов
-								if (!input_matrix.IsHasCycle())
-								{
-									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), dd);
-								}
-								else
+								if (input_matrix.IsHasCycle())
 								{
 									//cell.Value = 0.0;
 									throw new MyException(EX_not_transitive_profile);
+								}
+								else if (cb_do_transitive_closure.Checked)
+								{
+									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), dd);
 								}
 							}
 						}
@@ -378,14 +378,24 @@ namespace Group_choice_algos_fuzzy
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
-				tex += CR_LF + "Агрегированное отношение R: \n"
-					+ R.aggregated?.Matrix2String(true);
-				tex += CR_LF + "Матрица смежности агрегированного отношения: \n"
-					+ R.aggregated?.AdjacencyMatrix.Matrix2String(true);
-				tex += CR_LF + "Асимметричная часть As R агрегированного отношения R: \n"
-					+ R.aggregated?.AsymmetricPart.Matrix2String(true);
-				tex += CR_LF + "Матрица смежности агрегированного отношения: \n"
-					+ R.aggregated?.AsymmetricPart.AdjacencyMatrix.Matrix2String(true);
+				var Rag = R.aggregated;
+				if (Rag != null)
+				{
+					tex += CR_LF + "Агрегированное отношение R: \n"
+						+ Rag.Matrix2String(true);
+					tex += CR_LF + "Матрица смежности: \n"
+						+ Rag.AdjacencyMatrix.Matrix2String(true);
+
+					tex += CR_LF + "Асимметричная часть As R агрегированного отношения R: \n"
+						+ Rag.AsymmetricPart.Matrix2String(true);
+					tex += CR_LF + "Матрица смежности: \n"
+						+ Rag.AsymmetricPart.AdjacencyMatrix.Matrix2String(true);
+
+					tex += CR_LF + "Транзитивное замыкание Tr R агрегированного отношения R: \n"
+						+ Rag.TransitiveClosure().Matrix2String(true);
+					tex += CR_LF + "Матрица смежности: \n"
+						+ Rag.TransitiveClosure().AdjacencyMatrix.Matrix2String(true);
+				}
 				label3.Text = tex;
 				foreach (Method met in Methods.GetMethods())
 				{
@@ -575,12 +585,13 @@ namespace Group_choice_algos_fuzzy
 			
 				if (R_list.Any(x => x.IsHasCycle()))
 					new MyException(EX_not_transitive_profile).Info();
-				/*
-				if (R_list.Any(x => x.IsHasCycle()))
-					throw new MyException(EX_not_transitive_profile);
-				R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
-				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
-				*/
+
+				if (cb_do_transitive_closure.Checked)
+				{
+					R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
+					set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
+				}
+				
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
@@ -672,9 +683,6 @@ namespace Group_choice_algos_fuzzy
 		{
 			flowLayoutPanel_output_info.Focus();
 		}
-
-
-
 
 	}
 }

@@ -150,6 +150,8 @@ namespace Group_choice_algos_fuzzy
 		}
 		public static bool operator !=(Matrix R1, Matrix R2)
 		{
+			if (R1 is null || R2 is null)
+				return true;
 			if (R1.n != R2.n || R1.m != R2.m)
 				return true;
 			for (int i = 0; i < R1.n; i++)
@@ -166,7 +168,8 @@ namespace Group_choice_algos_fuzzy
 		}
 
 		/// <summary>
-		/// выводит список смежности матрицы на основании того, какое значение элемента матрицы считать отсутствие  ребра
+		/// выводит список смежности матрицы на основании того, 
+		/// какое значение элемента матрицы считать отсутствием ребра
 		/// </summary>
 		/// <param name="condition_of_no_edge_symbol">
 		/// какое значение элемента матрицы считать отсутствием ребра - условие, лямбда-функция
@@ -474,15 +477,22 @@ namespace Group_choice_algos_fuzzy
 		public static bool IsHasCycle(List<List<int>> AdjacencyList)
 		{
 			int n = AdjacencyList.Count;//количество вершин
-			int[] color = Enumerable.Repeat(0, n).ToArray();
-			bool is_cycle_from_vertex(int v)
+			bool is_cycle(int start_vertex_for_search)
+			{
+				int[] color = Enumerable.Repeat(0, n).ToArray();
+				return dfs(start_vertex_for_search, color);
+			}
+			bool dfs(int v, int[] color)
 			{
 				color[v] = 1;//зашли в вершину
 				for (int i = 0; i < AdjacencyList[v].Count; ++i)//перебрать исхоящие рёбра
 				{
 					int to = AdjacencyList[v][i];
 					if (color[to] == 0)//not visited
-						return is_cycle_from_vertex(to);
+					{
+						if (dfs(to, color))
+							return true;
+					}
 					else if (color[to] == 1)//уже заходили в to
 						return true;//нашли цикл
 				}
@@ -490,7 +500,7 @@ namespace Group_choice_algos_fuzzy
 				return false;
 			}
 			var vertices = Enumerable.Range(0, n).ToArray();
-			return vertices.Any(v => is_cycle_from_vertex(v));
+			return vertices.Any(v => is_cycle(v));
 		}
 		/// <summary>
 		/// достаёт матрицу из элемента DataGridView
@@ -879,35 +889,33 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public static bool Matrix2RanksDemukron(Matrix M, out List<Ranking> ans)
 		{
-			//если сначала брать асимметричную часть, а потом вычислять транзитивное замыкание, то можно 
-			//потерять информацию о равнозначных альтерантивах, на основании которой можно было бы 
-			//делать выводы о доминировании других альтернатив, не из равноценной пары
+			//если матрица не асимметричная, то она имеет цикл из двух вершин. Поэтому матрица будет асимметрична
 			if (Matrix.IsHasCycle(M.AdjacencyList(x => x == 0.0 || Math.Abs(x) == INF)))
 				throw new MyException(EX_bad_matrix);
-			var MM = M.AdjacencyMatrix.ToFuzzy.TransitiveClosure().AsymmetricPart;
+			var AM = M.AdjacencyMatrix;
 			List<List<int>> levels = new List<List<int>>();
 			var wins = new double[M.n];//инициализирован нулями
 			int mark = -1;
 			while (true)
 			{
-				for (int i = 0; i < MM.n; i++)
+				for (int i = 0; i < AM.n; i++)
 				{
 					if (wins[i] != mark)
 					{
 						wins[i] = 0;
-						for (int j = 0; j < MM.m; j++)
-							wins[i] += MM[i, j];
+						for (int j = 0; j < AM.m; j++)
+							wins[i] += AM[i, j];
 					}
 				}
 				var last_level_vertices = new List<int>();
-				for (int i = 0; i < MM.n; i++)
+				for (int i = 0; i < AM.n; i++)
 				{
 					if (wins[i] == 0)
 					{
 						last_level_vertices.Add(i);
 						wins[i] = mark;
-						for (int k = 0; k < MM.n; k++)
-							MM[k, i] = 0;
+						for (int k = 0; k < AM.n; k++)
+							AM[k, i] = 0;
 					}
 				}
 				levels.Add(last_level_vertices);
@@ -915,7 +923,7 @@ namespace Group_choice_algos_fuzzy
 					break;
 			}
 			levels.Reverse();
-			
+			/*
 			ans = new List<Ranking>();
 			void add_next_variants(int next_lvl, List<int> cur_path)
 			{
@@ -947,24 +955,24 @@ namespace Group_choice_algos_fuzzy
 				cur_path.Add(levels[lev]);
 				ans.Add
 			}
-
+			*/
 			var ordering = Enumerable.Repeat(-1, n).ToArray();
-			for (int i = 0; i < MM.n; i++)
+			for (int i = 0; i < AM.n; i++)
 			{
-				double wins = 0;
-				for (int j = 0; j < MM.n; j++)
+				double cwins = 0;
+				for (int j = 0; j < AM.n; j++)
 				{
-					wins += MM[i, j];
+					cwins += AM[i, j];
 				}
-				if (wins < n && ordering[(int)wins] == -1)
-					ordering[(int)wins] = i;
+				if (cwins < n && ordering[(int)cwins] == -1)
+					ordering[(int)cwins] = i;
 				else
 				{
 					ans = null;
 					return false;
 				}
 			}
-			ans = new Ranking(ordering.Reverse().ToArray());
+			ans = new List<Ranking> { new Ranking(ordering.Reverse().ToArray()) };
 			return true;
 		}
 

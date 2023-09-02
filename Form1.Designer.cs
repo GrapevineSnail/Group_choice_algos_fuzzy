@@ -75,6 +75,7 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_info = new System.Windows.Forms.FlowLayoutPanel();
 			this.label3 = new System.Windows.Forms.Label();
 			this.button_for_tests = new System.Windows.Forms.Button();
+			this.cb_do_transitive_closure = new System.Windows.Forms.CheckBox();
 			this.tableLayoutPanel1.SuspendLayout();
 			this.flowLayoutPanel_output_tables.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
@@ -100,19 +101,21 @@ namespace Group_choice_algos_fuzzy
 			// tableLayoutPanel1
 			// 
 			this.tableLayoutPanel1.AutoScroll = true;
-			this.tableLayoutPanel1.ColumnCount = 3;
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 350F));
+			this.tableLayoutPanel1.ColumnCount = 4;
+			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 280F));
+			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 80F));
 			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
 			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output_tables, 2, 2);
+			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output_tables, 3, 2);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox4, 0, 2);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox2, 0, 0);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox1, 0, 1);
-			this.tableLayoutPanel1.Controls.Add(this.button_run_program, 1, 0);
-			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 4);
+			this.tableLayoutPanel1.Controls.Add(this.button_run_program, 2, 0);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox5, 0, 3);
-			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output_info, 2, 0);
-			this.tableLayoutPanel1.Controls.Add(this.button_for_tests, 1, 1);
+			this.tableLayoutPanel1.Controls.Add(this.flowLayoutPanel_output_info, 3, 0);
+			this.tableLayoutPanel1.Controls.Add(this.button_for_tests, 2, 1);
+			this.tableLayoutPanel1.Controls.Add(this.cb_do_transitive_closure, 1, 3);
+			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 4);
 			this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
 			this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -135,10 +138,10 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_SY);
 			this.flowLayoutPanel_output_tables.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.flowLayoutPanel_output_tables.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-			this.flowLayoutPanel_output_tables.Location = new System.Drawing.Point(413, 149);
+			this.flowLayoutPanel_output_tables.Location = new System.Drawing.Point(423, 149);
 			this.flowLayoutPanel_output_tables.Name = "flowLayoutPanel_output_tables";
 			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_tables, 3);
-			this.flowLayoutPanel_output_tables.Size = new System.Drawing.Size(558, 339);
+			this.flowLayoutPanel_output_tables.Size = new System.Drawing.Size(679, 359);
 			this.flowLayoutPanel_output_tables.TabIndex = 24;
 			this.flowLayoutPanel_output_tables.WrapContents = false;
 			this.flowLayoutPanel_output_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_tables_MouseEnter);
@@ -352,7 +355,6 @@ namespace Group_choice_algos_fuzzy
 			// groupBox4
 			// 
 			this.groupBox4.AutoSize = true;
-			this.tableLayoutPanel1.SetColumnSpan(this.groupBox4, 2);
 			this.groupBox4.Controls.Add(this.cb_SY);
 			this.groupBox4.Controls.Add(this.cb_All_rankings);
 			this.groupBox4.Controls.Add(this.cb_Schulze_method);
@@ -361,7 +363,7 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.groupBox4.Location = new System.Drawing.Point(3, 149);
 			this.groupBox4.Name = "groupBox4";
-			this.groupBox4.Size = new System.Drawing.Size(404, 104);
+			this.groupBox4.Size = new System.Drawing.Size(274, 104);
 			this.groupBox4.TabIndex = 5;
 			this.groupBox4.TabStop = false;
 			this.groupBox4.Text = "Выбор метода";
@@ -372,7 +374,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_SY.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_SY.Location = new System.Drawing.Point(3, 84);
 			this.cb_SY.Name = "cb_SY";
-			this.cb_SY.Size = new System.Drawing.Size(398, 17);
+			this.cb_SY.Size = new System.Drawing.Size(268, 17);
 			this.cb_SY.TabIndex = 5;
 			this.cb_SY.Text = "Смерчинская-Яшина";
 			this.cb_SY.UseVisualStyleBackColor = true;
@@ -383,7 +385,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_All_rankings.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_All_rankings.Location = new System.Drawing.Point(3, 67);
 			this.cb_All_rankings.Name = "cb_All_rankings";
-			this.cb_All_rankings.Size = new System.Drawing.Size(398, 17);
+			this.cb_All_rankings.Size = new System.Drawing.Size(268, 17);
 			this.cb_All_rankings.TabIndex = 4;
 			this.cb_All_rankings.Text = "Всевозможные ранжирования";
 			this.cb_All_rankings.UseVisualStyleBackColor = true;
@@ -394,7 +396,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_Schulze_method.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_Schulze_method.Location = new System.Drawing.Point(3, 50);
 			this.cb_Schulze_method.Name = "cb_Schulze_method";
-			this.cb_Schulze_method.Size = new System.Drawing.Size(398, 17);
+			this.cb_Schulze_method.Size = new System.Drawing.Size(268, 17);
 			this.cb_Schulze_method.TabIndex = 2;
 			this.cb_Schulze_method.Text = "Ранжирование по Алгоритму Шульце";
 			this.cb_Schulze_method.UseVisualStyleBackColor = true;
@@ -405,7 +407,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_HP_max_strength.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_HP_max_strength.Location = new System.Drawing.Point(3, 33);
 			this.cb_HP_max_strength.Name = "cb_HP_max_strength";
-			this.cb_HP_max_strength.Size = new System.Drawing.Size(398, 17);
+			this.cb_HP_max_strength.Size = new System.Drawing.Size(268, 17);
 			this.cb_HP_max_strength.TabIndex = 1;
 			this.cb_HP_max_strength.Text = "Гамильтоновы пути наибольшей силы";
 			this.cb_HP_max_strength.UseVisualStyleBackColor = true;
@@ -416,19 +418,20 @@ namespace Group_choice_algos_fuzzy
 			this.cb_HP_max_length.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_HP_max_length.Location = new System.Drawing.Point(3, 16);
 			this.cb_HP_max_length.Name = "cb_HP_max_length";
-			this.cb_HP_max_length.Size = new System.Drawing.Size(398, 17);
+			this.cb_HP_max_length.Size = new System.Drawing.Size(268, 17);
 			this.cb_HP_max_length.TabIndex = 0;
 			this.cb_HP_max_length.Text = "Гамильтоновы пути максимальной стоимости";
 			this.cb_HP_max_length.UseVisualStyleBackColor = true;
 			// 
 			// groupBox2
 			// 
+			this.tableLayoutPanel1.SetColumnSpan(this.groupBox2, 2);
 			this.groupBox2.Controls.Add(this.textBox_file);
 			this.groupBox2.Controls.Add(this.button_read_file);
 			this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.groupBox2.Location = new System.Drawing.Point(3, 3);
 			this.groupBox2.Name = "groupBox2";
-			this.groupBox2.Size = new System.Drawing.Size(344, 44);
+			this.groupBox2.Size = new System.Drawing.Size(354, 44);
 			this.groupBox2.TabIndex = 2;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Импорт из txt-файла";
@@ -439,14 +442,14 @@ namespace Group_choice_algos_fuzzy
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.textBox_file.Location = new System.Drawing.Point(6, 17);
 			this.textBox_file.Name = "textBox_file";
-			this.textBox_file.Size = new System.Drawing.Size(240, 20);
+			this.textBox_file.Size = new System.Drawing.Size(250, 20);
 			this.textBox_file.TabIndex = 1;
 			this.textBox_file.Text = "test.txt";
 			// 
 			// button_read_file
 			// 
 			this.button_read_file.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.button_read_file.Location = new System.Drawing.Point(245, 16);
+			this.button_read_file.Location = new System.Drawing.Point(255, 16);
 			this.button_read_file.Name = "button_read_file";
 			this.button_read_file.Size = new System.Drawing.Size(93, 22);
 			this.button_read_file.TabIndex = 0;
@@ -465,7 +468,7 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.groupBox1.Location = new System.Drawing.Point(3, 53);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(344, 90);
+			this.groupBox1.Size = new System.Drawing.Size(274, 90);
 			this.groupBox1.TabIndex = 1;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Выбор n и m";
@@ -539,7 +542,7 @@ namespace Group_choice_algos_fuzzy
 			this.button_run_program.AutoSize = true;
 			this.button_run_program.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.button_run_program.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button_run_program.Location = new System.Drawing.Point(353, 3);
+			this.button_run_program.Location = new System.Drawing.Point(363, 3);
 			this.button_run_program.Name = "button_run_program";
 			this.button_run_program.Size = new System.Drawing.Size(54, 44);
 			this.button_run_program.TabIndex = 6;
@@ -552,11 +555,11 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.tableLayoutPanel1.SetColumnSpan(this.groupBox3, 2);
+			this.tableLayoutPanel1.SetColumnSpan(this.groupBox3, 3);
 			this.groupBox3.Controls.Add(this.flowLayoutPanel_input_tables);
-			this.groupBox3.Location = new System.Drawing.Point(3, 315);
+			this.groupBox3.Location = new System.Drawing.Point(3, 311);
 			this.groupBox3.Name = "groupBox3";
-			this.groupBox3.Size = new System.Drawing.Size(404, 173);
+			this.groupBox3.Size = new System.Drawing.Size(414, 197);
 			this.groupBox3.TabIndex = 3;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Ввод матриц предпочтений экспертов";
@@ -568,7 +571,7 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_input_tables.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
 			this.flowLayoutPanel_input_tables.Location = new System.Drawing.Point(3, 16);
 			this.flowLayoutPanel_input_tables.Name = "flowLayoutPanel_input_tables";
-			this.flowLayoutPanel_input_tables.Size = new System.Drawing.Size(398, 154);
+			this.flowLayoutPanel_input_tables.Size = new System.Drawing.Size(408, 178);
 			this.flowLayoutPanel_input_tables.TabIndex = 25;
 			this.flowLayoutPanel_input_tables.WrapContents = false;
 			this.flowLayoutPanel_input_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_MouseEnter);
@@ -581,7 +584,8 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox5.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.groupBox5.Location = new System.Drawing.Point(3, 259);
 			this.groupBox5.Name = "groupBox5";
-			this.groupBox5.Size = new System.Drawing.Size(344, 50);
+			this.groupBox5.Padding = new System.Windows.Forms.Padding(0);
+			this.groupBox5.Size = new System.Drawing.Size(274, 46);
 			this.groupBox5.TabIndex = 25;
 			this.groupBox5.TabStop = false;
 			this.groupBox5.Text = "Выбор расстояния";
@@ -590,7 +594,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			this.rb_dist_square.AutoSize = true;
 			this.rb_dist_square.Checked = true;
-			this.rb_dist_square.Location = new System.Drawing.Point(125, 14);
+			this.rb_dist_square.Location = new System.Drawing.Point(122, 13);
 			this.rb_dist_square.Name = "rb_dist_square";
 			this.rb_dist_square.Size = new System.Drawing.Size(117, 17);
 			this.rb_dist_square.TabIndex = 1;
@@ -601,7 +605,7 @@ namespace Group_choice_algos_fuzzy
 			// rb_dist_modulus
 			// 
 			this.rb_dist_modulus.AutoSize = true;
-			this.rb_dist_modulus.Location = new System.Drawing.Point(6, 14);
+			this.rb_dist_modulus.Location = new System.Drawing.Point(3, 13);
 			this.rb_dist_modulus.Name = "rb_dist_modulus";
 			this.rb_dist_modulus.Size = new System.Drawing.Size(113, 17);
 			this.rb_dist_modulus.TabIndex = 0;
@@ -614,10 +618,10 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_info.AutoScroll = true;
 			this.flowLayoutPanel_output_info.Controls.Add(this.label3);
 			this.flowLayoutPanel_output_info.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.flowLayoutPanel_output_info.Location = new System.Drawing.Point(413, 3);
+			this.flowLayoutPanel_output_info.Location = new System.Drawing.Point(423, 3);
 			this.flowLayoutPanel_output_info.Name = "flowLayoutPanel_output_info";
 			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_info, 2);
-			this.flowLayoutPanel_output_info.Size = new System.Drawing.Size(558, 140);
+			this.flowLayoutPanel_output_info.Size = new System.Drawing.Size(679, 140);
 			this.flowLayoutPanel_output_info.TabIndex = 3;
 			this.flowLayoutPanel_output_info.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_info_MouseEnter);
 			// 
@@ -637,13 +641,26 @@ namespace Group_choice_algos_fuzzy
 			this.button_for_tests.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.button_for_tests.Enabled = false;
 			this.button_for_tests.Font = new System.Drawing.Font("Calibri", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			this.button_for_tests.Location = new System.Drawing.Point(353, 53);
+			this.button_for_tests.Location = new System.Drawing.Point(363, 53);
 			this.button_for_tests.Name = "button_for_tests";
 			this.button_for_tests.Size = new System.Drawing.Size(54, 90);
 			this.button_for_tests.TabIndex = 26;
 			this.button_for_tests.Text = "ПРОГНАТЬ ВСЕ ТЕСТЫ В ПАПКЕ (для разработчика)";
 			this.button_for_tests.UseVisualStyleBackColor = true;
 			this.button_for_tests.Click += new System.EventHandler(this.button_for_tests_Click);
+			// 
+			// cb_do_transitive_closure
+			// 
+			this.cb_do_transitive_closure.Checked = true;
+			this.cb_do_transitive_closure.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.tableLayoutPanel1.SetColumnSpan(this.cb_do_transitive_closure, 2);
+			this.cb_do_transitive_closure.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.cb_do_transitive_closure.Location = new System.Drawing.Point(283, 259);
+			this.cb_do_transitive_closure.Name = "cb_do_transitive_closure";
+			this.cb_do_transitive_closure.Size = new System.Drawing.Size(134, 46);
+			this.cb_do_transitive_closure.TabIndex = 27;
+			this.cb_do_transitive_closure.Text = "Дополнять по транзитивности";
+			this.cb_do_transitive_closure.UseVisualStyleBackColor = true;
 			// 
 			// Form1
 			// 
@@ -713,7 +730,6 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.DataGridView dg_Schulze_method;
 		private System.Windows.Forms.GroupBox groupBox_All_rankings;
 		private System.Windows.Forms.DataGridView dg_All_rankings;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input_tables;
 		private System.Windows.Forms.NumericUpDown numericUpDown_n;
 		private System.Windows.Forms.NumericUpDown numericUpDown_m;
 		private System.Windows.Forms.GroupBox groupBox5;
@@ -724,6 +740,8 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.GroupBox groupBox_SY;
 		private System.Windows.Forms.DataGridView dg_SY;
 		private System.Windows.Forms.CheckBox cb_SY;
+		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input_tables;
+		private System.Windows.Forms.CheckBox cb_do_transitive_closure;
 	}
 }
 
