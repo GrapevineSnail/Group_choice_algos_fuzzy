@@ -189,6 +189,7 @@ namespace Group_choice_algos_fuzzy
 
 				if (dgv != null)
 				{
+					dgv.AutoResizeColumnHeadersHeight();
 					GroupBox frame = (GroupBox)dgv?.Parent;
 					if (frame != null)
 					{
@@ -371,7 +372,7 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				//создание чистого файла для вывода ранжирований в виде матриц
-				using (StreamWriter writer = new StreamWriter(out_file, false))
+				using (StreamWriter writer = new StreamWriter(OUT_FILE, false))
 				{
 					await writer.WriteLineAsync("");
 				}
@@ -406,7 +407,7 @@ namespace Group_choice_algos_fuzzy
 						else if (met.Rankings.Count > 0)
 						{
 							//запись в файл всех полученных ранжирований метода
-							using (StreamWriter writer = new StreamWriter(out_file, true))
+							using (StreamWriter writer = new StreamWriter(OUT_FILE, true))
 							{
 								var text = string.Join(CR_LF + CR_LF + CR_LF,
 									met.Rankings.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
@@ -523,14 +524,12 @@ namespace Group_choice_algos_fuzzy
 				try
 				{
 					List<Matrix> matrices = new List<Matrix>();
-					string projectDirectory = new DirectoryInfo(
-						AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
-					string file_name = Path.GetFileName(textBox_file.Text);
-					string[] allFoundFiles = Directory.GetFiles(
-						projectDirectory, file_name, SearchOption.AllDirectories);
-					textBox_file.Text = allFoundFiles[0];
-					string[] lines = File.ReadAllLines(textBox_file.Text)
-						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+					string file_name = Path.GetFileNameWithoutExtension(textBox_file.Text) + MAINTAINED_EXTENSION;
+					string absolute_file_name = FindFile(file_name);
+
+					string[] lines = File.ReadAllLines(absolute_file_name)
+						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
+					textBox_file.Text = absolute_file_name;
 					var chars_for_split = new char[] { ' ', '	' };
 					var nn = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
 					Matrix cur_matrix = new Matrix(nn, nn);
@@ -582,7 +581,7 @@ namespace Group_choice_algos_fuzzy
 					var input_matrix = Matrix.GetFromDataGridView(dgv).ToFuzzy;
 					R_list.Add(input_matrix);
 				}
-			
+
 				if (R_list.Any(x => x.IsHasCycle()))
 					new MyException(EX_not_transitive_profile).Info();
 
@@ -591,7 +590,7 @@ namespace Group_choice_algos_fuzzy
 					R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
 					set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				}
-				
+
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//

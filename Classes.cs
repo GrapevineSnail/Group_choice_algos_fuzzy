@@ -62,7 +62,7 @@ namespace Group_choice_algos_fuzzy
 				for (int i = 0; i < n; i++)
 					for (int j = 0; j < n; j++)
 					{// выдаёт 0.099999999999999978 вместо 0.1
-						ans[i, j] = Math.Max(Math.Round(this[i, j] - this[j, i], digits_precision), 0);
+						ans[i, j] = Math.Max(Math.Round(this[i, j] - this[j, i], DIGITS_PRECISION), 0);
 					}
 				return ans;
 			}
@@ -111,7 +111,7 @@ namespace Group_choice_algos_fuzzy
 			var R = new Matrix(R1);
 			for (int i = 0; i < R.n; i++)
 				for (int j = 0; j < R.m; j++)
-					R[i, j] = Math.Round(c * R[i, j], digits_precision);
+					R[i, j] = Math.Round(c * R[i, j], DIGITS_PRECISION);
 			return R;
 		}
 		public static Matrix operator *(Matrix R1, double c)
@@ -128,7 +128,7 @@ namespace Group_choice_algos_fuzzy
 					double a_ij = 0;
 					for (int k = 0; k < l; k++)
 						a_ij += M1[i, k] * M2[k, j];
-					R[i, j] = Math.Round(a_ij, digits_precision);
+					R[i, j] = Math.Round(a_ij, DIGITS_PRECISION);
 				}
 			return R;
 		}
@@ -141,7 +141,7 @@ namespace Group_choice_algos_fuzzy
 			var R = new Matrix(R1);
 			for (int i = 0; i < R.n; i++)
 				for (int j = 0; j < R.m; j++)
-					R[i, j] = Math.Round(R[i, j] + R2[i, j], digits_precision);
+					R[i, j] = Math.Round(R[i, j] + R2[i, j], DIGITS_PRECISION);
 			return R;
 		}
 		public static Matrix operator -(Matrix R1, Matrix R2)
@@ -983,7 +983,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public List<int> String2List(string s)
 		{
-			return s.Split(mark).ToList()
+			return s.Split(MARK).ToList()
 				.Where(x => int.TryParse(x, out var _))
 				.Select(x => int.Parse(x)).ToList();
 		}

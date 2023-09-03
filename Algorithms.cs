@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,30 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Algorithms
 	{
+		public static string FindFile(string file_name)
+		{
+			string absolute_file_name = file_name;
+			//сначала пробуем искать в заданной директории
+			if (!new object[] { null, "" }.Contains(DIRECTORY_WITH_TESTS))
+			{
+				var path_and_filename = Path.Combine(
+					Path.Combine(PROJECT_DIRECTORY, DIRECTORY_WITH_TESTS)
+					, file_name);
+				if (File.Exists(path_and_filename))
+				{
+					absolute_file_name = path_and_filename;
+				}
+			}
+			//если не нашли, то поищем по всем каталогам внутри, берём первый попавшийся
+			if (absolute_file_name == file_name)
+			{
+				string[] allFoundFiles = Directory.GetFiles(
+					PROJECT_DIRECTORY, file_name, SearchOption.AllDirectories);
+				if (allFoundFiles.Length != 0)
+					absolute_file_name = allFoundFiles.First();
+			}
+			return absolute_file_name;
+		}
 		public static void SetDataGridViewDefaults(DataGridView dgv)
 		{
 			dgv.AllowUserToAddRows = false;
@@ -28,7 +53,7 @@ namespace Group_choice_algos_fuzzy
 			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 			dgv.ShowEditingIcon = false;
-			dgv.DefaultCellStyle.Format = $"0.{new string('#', digits_precision)}";
+			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
 			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
 			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 		}
@@ -90,7 +115,7 @@ namespace Group_choice_algos_fuzzy
 				int n1 = M1.GetLength(0);
 				int n2 = M2.GetLength(1);
 				int m = M1.GetLength(1); // = M2.GetLength(0);
-				var sep = new char[] { mark };
+				var sep = new char[] { MARK };
 				string[,] ans = new string[n1, n2];
 				for (int i = 0; i < n1; i++)
 					for (int j = 0; j < n2; j++)
@@ -181,7 +206,7 @@ namespace Group_choice_algos_fuzzy
 							some_sym_paths = some_sym_paths.Concat(Q[i, j].Split(PLS)).ToList();
 							foreach (string sym_path in some_sym_paths)
 							{
-								var inds_str = (ind2sym[i] + sym_path + ind2sym[j]).TrimStart(mark).Split(mark);
+								var inds_str = (ind2sym[i] + sym_path + ind2sym[j]).TrimStart(MARK).Split(MARK);
 								Paths_matrix[i, j].Add(inds_str.Select(x => int.Parse(x)).ToList());
 							}
 						}

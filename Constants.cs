@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 namespace Group_choice_algos_fuzzy
 {
 	public class Constants
 	{
+		#region VISUAL_INTERFACE
 		public const float button_borderwidth = 5;
 		public const string font = "Book Antiqua";
 		public const string font_mono = "Courier New";
@@ -21,19 +23,29 @@ namespace Group_choice_algos_fuzzy
 		public static Color window_background = Color.AntiqueWhite; //ColorTranslator.FromHtml("#FAEBD7");
 		public static Color button_background = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
 		public static Color disabled_button_background = ColorTranslator.FromHtml("#D9D9D9");
+		#endregion VISUAL_INTERFACE
 
-		public const string directory_with_tests = "tests";//для прогона тестов
-		public const string out_file = "result.txt";
-		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
 		public const int max_count_of_alternatives = 9;
 		public const int max_count_of_experts = 50;
+
+		#region FILE_OPERATIONS
+		//для прогона тестов
+		public static string PROJECT_DIRECTORY = new DirectoryInfo(
+			AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
+		public static string DIRECTORY_WITH_TESTS = "Manual_tests";
+		public static string OUT_FILE = "result.txt";
+		public const string MAINTAINED_EXTENSION = ".txt";
+		#endregion FILE_OPERATIONS
+
+		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
 		public const double INF = double.PositiveInfinity;
-		public const int digits_precision = 12;//насколько точными будут вычисления на double
+		public const int DIGITS_PRECISION = 12;//насколько точными будут вычисления на double
 		public const string ZER = "0";
 		public const string ONE = "1";
 		public const char PLS = '+';
-		public const char mark = 'a';
-		//IDs
+		public const char MARK = 'a';
+
+		#region IDs
 		public const int ALL_RANKINGS = 0;
 		public const int ALL_HP = 1;
 		public const int HP_MAX_LENGTH = 2;
@@ -46,8 +58,10 @@ namespace Group_choice_algos_fuzzy
 			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
 			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
 			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
-			{ SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию (Смерчинская-Яшина)" }
+			{ SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию, с разбиением контуров" }
 		};
+		#endregion IDs
+
 		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		//символ альтернативы (a1,a2,A,B,a,b...) в индекс 
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
@@ -63,8 +77,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			for (int i = 0; i < n; i++)
 			{
-				sym2ind[$"{mark}{i}"] = i;
-				ind2sym[i] = $"{mark}{i}";
+				sym2ind[$"{MARK}{i}"] = i;
+				ind2sym[i] = $"{MARK}{i}";
 				sym2ind[$"{letters[i]}"] = i;
 				sym2ind[$"{char.ToLower(letters[i])}"] = i;
 				ind2letter[i] = n > 26 ? ind2sym[i] : letters[i].ToString();
@@ -78,7 +92,7 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_bad_matrix = "Некорректная матрица";
 		public static string EX_bad_fuzzy_relation_matrix = "Некорректная матрица принадлежности нечёткого отношения";
 		public static string EX_bad_file = "Некорректный файл";
-		public static string EX_n_m_too_big = 
+		public static string EX_n_m_too_big =
 			"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
 			$"n максимальное = {max_count_of_alternatives}\n" +
 			$"m максимальное = {max_count_of_experts}\n";
