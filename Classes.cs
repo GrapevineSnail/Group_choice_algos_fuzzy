@@ -854,21 +854,22 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public Matrix Rank2Matrix
 		{//ранжирование - как полный строгий порядок (полное, антирефлексивное, асимметричное, транзитивное)
+			//но может быть не полным - тогда будут нули в матрице смежности
 			get
 			{
 				var node_list = Rank2Array;
 				var l = Rank2Array.Length;
-				if (l != Rank2Array.Distinct().Count())
+				if (l != node_list.Distinct().Count() || node_list.Max() >= n)
 					throw new MyException(EX_bad_expert_profile);
-				Matrix Rj = new Matrix(l);
-				for (int i = 0; i < l; i++)
-					for (int j = 0; j < l; j++)
+				Matrix AM = Matrix.Zeros(n,n);//матрица смежности инициализирована нулями
+				for (int i = 0; i < l-1; i++)
+					for (int j = i+1; j < l; j++)
 					{
 						var candidate1 = node_list[i];
 						var candidate2 = node_list[j];
-						Rj[candidate1, candidate2] = (i < j) ? 1 : 0;//дуга i->j, левый лучше
+						AM[candidate1, candidate2] = 1;//левый лучше
 					}
-				return Rj;
+				return AM;
 			}
 		}
 		public string Rank2String
@@ -885,95 +886,72 @@ namespace Group_choice_algos_fuzzy
 		#endregion PROPERTIES
 
 		/// <summary>
-		/// создаёт строгое ранжирование на основе матрицы: полного транзитивного отношения, выделяя асимметричную часть
+		/// создаёт строгое ранжирование на основе матрицы: 
+		/// полного транзитивного отношения, выделяя асимметричную часть
+		/// алг. Демукрона, начиная с конца - со стока
 		/// </summary>
-		public static bool Matrix2RanksDemukron(Matrix M, out List<Ranking> ans)
+		public static bool Matrix2RanksDemukron(Matrix M, out List<List<int>> levels, out List<Ranking> rankings)
 		{
+			levels = new List<List<int>>();
+			rankings = new List<Ranking>();
 			//если матрица не асимметричная, то она имеет цикл из двух вершин. Поэтому матрица будет асимметрична
 			if (Matrix.IsHasCycle(M.AdjacencyList(x => x == 0.0 || Math.Abs(x) == INF)))
-				throw new MyException(EX_bad_matrix);
-			var AM = M.AdjacencyMatrix;
-			List<List<int>> levels = new List<List<int>>();
-			var wins = new double[M.n];//инициализирован нулями
-			int mark = -1;
+				return false;
+			var AM = M.AdjacencyMatrix;//из нулей и единиц
+			int n = AM.n;
+			var wins = new double[n];//инициализирован нулями
+			int mark = -1;//отметка о том, что этот уровень больше не рассматриваем
 			while (true)
 			{
-				for (int i = 0; i < AM.n; i++)
+				var last_level_vertices = new List<int>();
+				for (int i = 0; i < n; i++)
 				{
 					if (wins[i] != mark)
 					{
 						wins[i] = 0;
-						for (int j = 0; j < AM.m; j++)
+						for (int j = 0; j < AM.m; j++)//сумма элементов строки
 							wins[i] += AM[i, j];
 					}
 				}
-				var last_level_vertices = new List<int>();
-				for (int i = 0; i < AM.n; i++)
+				for (int i = 0; i < n; i++)
 				{
 					if (wins[i] == 0)
 					{
 						last_level_vertices.Add(i);
 						wins[i] = mark;
-						for (int k = 0; k < AM.n; k++)
+						for (int k = 0; k < n; k++)//удалим все рёбра к нему
 							AM[k, i] = 0;
 					}
 				}
 				levels.Add(last_level_vertices);
-				if (wins.Where(x => x == mark).Count() == wins.Count())
+				if (wins.Where(x => x == mark).Count() == n)
 					break;
 			}
 			levels.Reverse();
-			/*
-			ans = new List<Ranking>();
-			void add_next_variants(int next_lvl, List<int> cur_path)
+			var levels_cnt = levels.Count;
+			Queue<List<int>> Q = new Queue<List<int>>();
+			foreach (var v in levels.First())
+				Q.Enqueue(new List<int> { v});
+			while(Q.Count > 0)
 			{
-				if(next_lvl == levels.Count-1)
-				foreach (int v in levels[next_lvl])
+				List<int> constructed_ranking = Q.Dequeue();
+				int next_lvl_index = constructed_ranking.Count;
+				if(next_lvl_index < levels_cnt)//последний возможный индекс уровня - это (n-1)
 				{
-					var ordering = new List<int>(cur_path);
-					ordering.Add(v);
-					ans.Add(new Ranking(ordering));
-				}
-				else
-				{
-					foreach (int v in levels[next_lvl])
+					foreach (int v in levels[next_lvl_index])
 					{
-						var ordering = new List<int>(cur_path);
-						ordering.Add(v);
-						add_next_variants(next_lvl + 1, ordering);
+						Q.Enqueue(constructed_ranking.Append(v).ToList());
 					}
 				}
-			}
-			for(int lev = 0; lev<levels.Count; lev++)
-			{
-				foreach (int v in levels[lev])
-				{
-					cur_path.Add(v);
-
-				}
-
-				cur_path.Add(levels[lev]);
-				ans.Add
-			}
-			*/
-			var ordering = Enumerable.Repeat(-1, n).ToArray();
-			for (int i = 0; i < AM.n; i++)
-			{
-				double cwins = 0;
-				for (int j = 0; j < AM.n; j++)
-				{
-					cwins += AM[i, j];
-				}
-				if (cwins < n && ordering[(int)cwins] == -1)
-					ordering[(int)cwins] = i;
 				else
 				{
-					ans = null;
-					return false;
+					rankings.Add(new Ranking(constructed_ranking));
 				}
 			}
-			ans = new List<Ranking> { new Ranking(ordering.Reverse().ToArray()) };
-			return true;
+			if(levels_cnt < n)
+				return false;//если это не ранжирование, а разбиение на уровни
+			else
+				return true;
 		}
 
 		/// <summary>
@@ -994,7 +972,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			if (Path != null)
 			{
-				if (Path.Count == 0)
+				if (Path.Count < n)
 				{
 					PathCost.Value = INF;
 					PathStrength.Value = INF;
@@ -1029,7 +1007,7 @@ namespace Group_choice_algos_fuzzy
 			Rankings = new List<Ranking>();
 		}
 
-		public int ID;//обозначение метода
+		public int ID = -1;//обозначение метода
 		private CheckBox connectedCheckBox = null;//чекбокс - будем ли запускать метод
 		public DataGridView connectedTableFrame = null;//в какой контейнер выводить результаты работы метода
 		public Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
@@ -1037,6 +1015,7 @@ namespace Group_choice_algos_fuzzy
 		public List<Ranking> Rankings = null;//выдаваемые методом ранжирования
 		public bool[] IsInPareto = null;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
 		public List<int> Winners = null;//победители - недоминируемые альтернативы
+		public List<List<int>> Levels = null;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
 
 		public double MinLength;//минимальная длина среди ранжирований метода
 		public double MaxLength;//максимальная длина среди ранжирований метода
@@ -1143,6 +1122,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			Rankings = new List<Ranking>();
 			Winners = new List<int>();
+			Levels = new List<List<int>>();
 			IsInPareto = new bool[] { };
 			MinLength = INF;
 			MaxLength = INF;
@@ -1461,15 +1441,18 @@ namespace Group_choice_algos_fuzzy
 					}
 			}
 			Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
-			if (Ranking.Matrix2RanksDemukron(new Matrix(PD), out var rank))
-				Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, rank));
+			//победители - это, буквально, недоминируемые альтернативы
+			var pair_dominant_matrix = new Matrix(PD);
+			if (Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out Schulze_method.Levels, out var ranks))
+				foreach(var r in ranks)
+					Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, r));
 		}
 
 		/// <summary>
 		/// Нахождение ранжирований из агрегированной матрицы - минимальное расстояние
 		/// </summary>
 		/// <param name="weight_matrix"></param>
-		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix)
+		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix, out FuzzyRelation R_without_cycles)
 		{
 			Smerchinskaya_Yashina_method.ClearRankings();
 			var R = new FuzzyRelation(weight_matrix);
@@ -1494,10 +1477,12 @@ namespace Group_choice_algos_fuzzy
 							r[i, j] = 0;
 						}
 			}
+			R_without_cycles = new FuzzyRelation(R);
 			R = R.TransitiveClosure();
 			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
-			if (Ranking.Matrix2RanksDemukron(R, out var rank))
-				Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rank));
+			if (Ranking.Matrix2RanksDemukron(R, out Smerchinskaya_Yashina_method.Levels, out var ranks))
+				foreach(var rr in ranks)
+					Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rr));
 		}
 
 	}

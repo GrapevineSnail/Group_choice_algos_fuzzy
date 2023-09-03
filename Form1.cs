@@ -65,9 +65,12 @@ namespace Group_choice_algos_fuzzy
 		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
 		public struct R //агрегированная матрица матриц профилей
 		{
-			public static FuzzyRelation aggregated;
 			public static FuzzyRelation avg;//агрегированная матрица матриц профилей (среднее)
 			public static FuzzyRelation med;//агрегированная матрица матриц профилей (медианные)
+			public static FuzzyRelation aggregated;
+			public static FuzzyRelation aggregated_trans_closured;
+			public static FuzzyRelation aggregated_asymmetric;
+			public static FuzzyRelation aggregated_destroyed_cycles;
 		}
 		#endregion GLOBALS
 
@@ -231,6 +234,9 @@ namespace Group_choice_algos_fuzzy
 				else
 					throw new MyException(EX_choose_distance_func);
 
+				R.aggregated_trans_closured = R.aggregated.TransitiveClosure();
+				R.aggregated_asymmetric = R.aggregated.AsymmetricPart.ToFuzzy;
+
 				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
 				if (checkbuttons.All(x => x == false))
 					throw new MyException(EX_choose_method);
@@ -246,7 +252,7 @@ namespace Group_choice_algos_fuzzy
 				if (Methods.Schulze_method.IsExecute)
 					Methods.Set_Schulze_method(n, R.aggregated);
 				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
-					Methods.Set_Smerchinskaya_Yashina_method(R.aggregated);
+					Methods.Set_Smerchinskaya_Yashina_method(R.aggregated, out R.aggregated_destroyed_cycles);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -379,31 +385,65 @@ namespace Group_choice_algos_fuzzy
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
-				var Rag = R.aggregated;
-				if (Rag != null)
+				string for_print_matrices(Matrix M)
 				{
-					tex += CR_LF + "Агрегированное отношение R: \n"
-						+ Rag.Matrix2String(true);
-					tex += CR_LF + "Матрица смежности: \n"
-						+ Rag.AdjacencyMatrix.Matrix2String(true);
+					return M?.Matrix2String(true) + CR_LF + "Матрица смежности: \n" 
+						+ M?.AdjacencyMatrix.Matrix2String(true);
+				}
+				if (R.aggregated != null)
+				{
+					tex += CR_LF + "Агрегированное отношение R: \n"	
+						+ for_print_matrices(R.aggregated);
 
 					tex += CR_LF + "Асимметричная часть As R агрегированного отношения R: \n"
-						+ Rag.AsymmetricPart.Matrix2String(true);
-					tex += CR_LF + "Матрица смежности: \n"
-						+ Rag.AsymmetricPart.AdjacencyMatrix.Matrix2String(true);
+						+ for_print_matrices(R.aggregated_asymmetric);
 
 					tex += CR_LF + "Транзитивное замыкание Tr R агрегированного отношения R: \n"
-						+ Rag.TransitiveClosure().Matrix2String(true);
-					tex += CR_LF + "Матрица смежности: \n"
-						+ Rag.TransitiveClosure().AdjacencyMatrix.Matrix2String(true);
+						+ for_print_matrices(R.aggregated_trans_closured);
+
+					tex += CR_LF + "Агрегированное отношение R с разбитыми циклами: \n"
+						+ for_print_matrices(R.aggregated_destroyed_cycles);
 				}
 				label3.Text = tex;
+				void set_column(DataGridView dgv, int j)
+				{
+					DataGridViewColumn column = new DataGridViewColumn();
+					column.CellTemplate = new DataGridViewTextBoxCell();
+					column.HeaderText = $"Ранжиро-\nвание {j + 1}";
+					column.Name = j.ToString();
+					column.HeaderCell.Style.BackColor = window_background;
+					column.FillWeight = 1;
+					dgv.Columns.Add(column);
+				}
+				void set_row(DataGridView dgv, int i)
+				{
+					dgv.Rows.Add();
+					dgv.Rows[i].HeaderCell.Value = $"Место {i + 1}";
+				}
 				foreach (Method met in Methods.GetMethods())
 				{
 					if (met.IsExecute == true)
 					{
 						if (met.Rankings == null || met.Rankings.Count == 0)
+						{
 							met.ConnectedLabel = "Ранжирование невозможно. ";
+							if(met.Levels != null && met.Levels.Count != 0)
+							{//ранжирований нет, но можно задать разбиение на уровни
+								int col = 0;
+								set_column(met.connectedTableFrame,col);
+								met.connectedTableFrame.Columns[col].HeaderText = $"Разбиение\nна уровни";
+								for (int i = 0; i < met.Levels.Count; i++)
+								{
+									set_row(met.connectedTableFrame, i);
+								}
+								for (int i = 0; i < met.Levels.Count; i++)
+								{
+									met.connectedTableFrame[col, i].ReadOnly = true;
+									met.connectedTableFrame[col, i].Value = 
+										string.Join(",", met.Levels[i].Select(x => ind2letter[x]).ToArray()) ;
+								}
+							}
+						}
 						else if (met.Rankings.Count > 0)
 						{
 							//запись в файл всех полученных ранжирований метода
@@ -417,18 +457,11 @@ namespace Group_choice_algos_fuzzy
 							var r = met.Rankings.Count;
 							for (int j = 0; j < r; j++)
 							{
-								DataGridViewColumn column = new DataGridViewColumn();
-								column.CellTemplate = new DataGridViewTextBoxCell();
-								column.HeaderText = $"Ранжиро-\nвание {j + 1}";
-								column.Name = j.ToString();
-								column.HeaderCell.Style.BackColor = window_background;
-								column.FillWeight = 1;
-								met.connectedTableFrame.Columns.Add(column);
+								set_column(met.connectedTableFrame, j);
 							}
 							for (int i = 0; i < n; i++)
 							{
-								met.connectedTableFrame.Rows.Add();
-								met.connectedTableFrame.Rows[i].HeaderCell.Value = $"Место {i + 1}";
+								set_row(met.connectedTableFrame, i);
 							}
 
 							//добавить в конец datagrid-а строку с характеристикой ранжирования
@@ -470,7 +503,7 @@ namespace Group_choice_algos_fuzzy
 
 							for (int j = 0; j < r; j++)
 							{
-								for (int i = 0; i < n; i++)
+								for (int i = 0; i < met.Rankings[j].Count; i++)
 								{
 									met.connectedTableFrame[j, i].ReadOnly = true;
 									met.connectedTableFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
@@ -502,7 +535,7 @@ namespace Group_choice_algos_fuzzy
 					if (met.Winners != null && met.Winners.Count > 0)
 					{
 						string text = met.ConnectedLabel;
-						text += $"Победители: {string.Join(",", met.Winners.Select(x => ind2letter[x]))}";
+						text += $"Недоминируемые альтернативы: {string.Join(",", met.Winners.Select(x => ind2letter[x]))}";
 						met.ConnectedLabel = text;
 					}
 				}
@@ -581,16 +614,12 @@ namespace Group_choice_algos_fuzzy
 					var input_matrix = Matrix.GetFromDataGridView(dgv).ToFuzzy;
 					R_list.Add(input_matrix);
 				}
-
-				if (R_list.Any(x => x.IsHasCycle()))
-					new MyException(EX_not_transitive_profile).Info();
-
 				if (cb_do_transitive_closure.Checked)
 				{
 					R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
-					set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				}
-
+				//выполняет проверку и выводит уведомления о наличии циклов
+				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
