@@ -68,9 +68,10 @@ namespace Group_choice_algos_fuzzy
 			public static FuzzyRelation avg;//агрегированная матрица матриц профилей (среднее)
 			public static FuzzyRelation med;//агрегированная матрица матриц профилей (медианные)
 			public static FuzzyRelation aggregated;
-			public static FuzzyRelation aggregated_trans_closured;
-			public static FuzzyRelation aggregated_asymmetric;
-			public static FuzzyRelation aggregated_destroyed_cycles;
+			public static FuzzyRelation aggregated_TransClosured;
+			public static FuzzyRelation aggregated_Asymmetric;
+			public static FuzzyRelation aggregated_DestroyedCycles;
+			public static FuzzyRelation aggregated_DestroyedCycles_TransClosured;
 		}
 		#endregion GLOBALS
 
@@ -234,8 +235,8 @@ namespace Group_choice_algos_fuzzy
 				else
 					throw new MyException(EX_choose_distance_func);
 
-				R.aggregated_trans_closured = R.aggregated.TransitiveClosure();
-				R.aggregated_asymmetric = R.aggregated.AsymmetricPart.ToFuzzy;
+				R.aggregated_TransClosured = R.aggregated.TransitiveClosure();
+				R.aggregated_Asymmetric = R.aggregated.AsymmetricPart.ToFuzzy;
 
 				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
 				if (checkbuttons.All(x => x == false))
@@ -252,7 +253,7 @@ namespace Group_choice_algos_fuzzy
 				if (Methods.Schulze_method.IsExecute)
 					Methods.Set_Schulze_method(n, R.aggregated);
 				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
-					Methods.Set_Smerchinskaya_Yashina_method(R.aggregated, out R.aggregated_destroyed_cycles);
+					Methods.Set_Smerchinskaya_Yashina_method(R.aggregated);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -377,32 +378,30 @@ namespace Group_choice_algos_fuzzy
 			deactivate_input();
 			try
 			{
-				//создание чистого файла для вывода ранжирований в виде матриц
-				using (StreamWriter writer = new StreamWriter(OUT_FILE, false))
-				{
-					await writer.WriteLineAsync("");
-				}
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
 					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
 				string for_print_matrices(Matrix M)
 				{
-					return M?.Matrix2String(true) + CR_LF + "Матрица смежности: \n" 
+					return M?.Matrix2String(true) + CR_LF + "Матрица смежности:\n" 
 						+ M?.AdjacencyMatrix.Matrix2String(true);
 				}
 				if (R.aggregated != null)
 				{
-					tex += CR_LF + "Агрегированное отношение R: \n"	
+					tex += CR_LF + "Агрегированное отношение R:\n"	
 						+ for_print_matrices(R.aggregated);
 
-					tex += CR_LF + "Асимметричная часть As R агрегированного отношения R: \n"
-						+ for_print_matrices(R.aggregated_asymmetric);
+					tex += CR_LF + "Асимметричная часть As(R) агрегированного отношения R:\n"
+						+ for_print_matrices(R.aggregated_Asymmetric);
 
-					tex += CR_LF + "Транзитивное замыкание Tr R агрегированного отношения R: \n"
-						+ for_print_matrices(R.aggregated_trans_closured);
+					tex += CR_LF + "Транзитивное замыкание Tr(R) агрегированного отношения R:\n"
+						+ for_print_matrices(R.aggregated_TransClosured);
 
-					tex += CR_LF + "Агрегированное отношение R с разбитыми циклами: \n"
-						+ for_print_matrices(R.aggregated_destroyed_cycles);
+					tex += CR_LF + "Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
+						+ for_print_matrices(R.aggregated_DestroyedCycles);
+
+					tex += CR_LF + "Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
+						+ for_print_matrices(R.aggregated_DestroyedCycles_TransClosured);
 				}
 				label3.Text = tex;
 				void set_column(DataGridView dgv, int j)
@@ -419,6 +418,11 @@ namespace Group_choice_algos_fuzzy
 				{
 					dgv.Rows.Add();
 					dgv.Rows[i].HeaderCell.Value = $"Место {i + 1}";
+				}
+				//создание чистого файла для вывода ранжирований в виде матриц
+				using (StreamWriter writer = new StreamWriter(OUT_FILE, false))
+				{
+					await writer.WriteLineAsync("");
 				}
 				foreach (Method met in Methods.GetMethods())
 				{
@@ -448,9 +452,12 @@ namespace Group_choice_algos_fuzzy
 						{
 							//запись в файл всех полученных ранжирований метода
 							using (StreamWriter writer = new StreamWriter(OUT_FILE, true))
-							{
-								var text = string.Join(CR_LF + CR_LF + CR_LF,
-									met.Rankings.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
+							{//если есть ранжирование и оно действительно включает все альтернативы
+								await writer.WriteLineAsync(CR_LF);
+								var text = string.Join(CR_LF+CR_LF,
+									met.Rankings
+									.Where(x => x.Count == n)
+									.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
 								await writer.WriteLineAsync(text);
 							}
 
@@ -558,7 +565,8 @@ namespace Group_choice_algos_fuzzy
 				{
 					List<Matrix> matrices = new List<Matrix>();
 					string file_name = Path.GetFileNameWithoutExtension(textBox_file.Text) + MAINTAINED_EXTENSION;
-					string absolute_file_name = FindFile(file_name);
+					string path_to_file = Path.GetDirectoryName(textBox_file.Text);
+					string absolute_file_name = FindFile(path_to_file, file_name);
 
 					string[] lines = File.ReadAllLines(absolute_file_name)
 						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException

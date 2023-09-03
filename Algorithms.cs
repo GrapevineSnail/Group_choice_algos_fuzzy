@@ -15,14 +15,14 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Algorithms
 	{
-		public static string FindFile(string file_name)
+		public static string FindFile(string directory_with_file, string file_name)
 		{
 			string absolute_file_name = file_name;
 			//сначала пробуем искать в заданной директории
-			if (!new object[] { null, "" }.Contains(DIRECTORY_WITH_TESTS))
+			if (!new object[] { null, "" }.Contains(directory_with_file))
 			{
 				var path_and_filename = Path.Combine(
-					Path.Combine(PROJECT_DIRECTORY, DIRECTORY_WITH_TESTS)
+					Path.Combine(PROJECT_DIRECTORY, directory_with_file)
 					, file_name);
 				if (File.Exists(path_and_filename))
 				{

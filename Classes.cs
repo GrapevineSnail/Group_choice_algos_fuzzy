@@ -1452,7 +1452,7 @@ namespace Group_choice_algos_fuzzy
 		/// Нахождение ранжирований из агрегированной матрицы - минимальное расстояние
 		/// </summary>
 		/// <param name="weight_matrix"></param>
-		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix, out FuzzyRelation R_without_cycles)
+		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix)
 		{
 			Smerchinskaya_Yashina_method.ClearRankings();
 			var R = new FuzzyRelation(weight_matrix);
@@ -1477,8 +1477,9 @@ namespace Group_choice_algos_fuzzy
 							r[i, j] = 0;
 						}
 			}
-			R_without_cycles = new FuzzyRelation(R);
+			Form1.R.aggregated_DestroyedCycles = new FuzzyRelation(R);
 			R = R.TransitiveClosure();
+			Form1.R.aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(R);
 			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
 			if (Ranking.Matrix2RanksDemukron(R, out Smerchinskaya_Yashina_method.Levels, out var ranks))
 				foreach(var rr in ranks)
