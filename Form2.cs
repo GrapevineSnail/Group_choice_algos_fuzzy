@@ -16,6 +16,11 @@ using GraphX.Logic.Algorithms.OverlapRemoval;
 using GraphX.Logic.Models;
 using GraphX.Controls.Models;
 using static Group_choice_algos_fuzzy.Constants;
+using static Microsoft.Msagl.Drawing.Graph;
+using System.Drawing.Imaging;
+/// <summary>
+/// /////////////
+/// </summary>
 
 
 namespace Group_choice_algos_fuzzy
@@ -25,8 +30,30 @@ namespace Group_choice_algos_fuzzy
 		public Form2(double[,] matrix)
 		{
 			InitializeComponent();
-			Load += Form1_Load;
+			//Load += Form1_Load;
 			weight_matrix = matrix;
+
+
+
+			Microsoft.Msagl.Drawing.Graph graph = new
+Microsoft.Msagl.Drawing.Graph("");
+			graph.AddEdge("A", "B");
+			graph.AddEdge("A", "B");
+			graph.FindNode("A").Attr.FillColor =
+			Microsoft.Msagl.Drawing.Color.Red;
+			graph.FindNode("B").Attr.FillColor =
+			Microsoft.Msagl.Drawing.Color.Blue;
+			Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer
+			= new Microsoft.Msagl.GraphViewerGdi.GraphRenderer
+			(graph);
+			renderer.CalculateLayout();
+			int width = 50;
+			Bitmap bitmap = new Bitmap(width, (int)(graph.Height *
+			(width / graph.Width)), PixelFormat.Format32bppPArgb);
+			renderer.Render(bitmap);
+			bitmap.Save("test.png");
+
+
 		}
 
 		private ZoomControl _zoomctrl;
