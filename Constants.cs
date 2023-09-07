@@ -62,12 +62,18 @@ namespace Group_choice_algos_fuzzy
 		};
 		#endregion IDs
 
-		public const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		//символ альтернативы (a1,a2,A,B,a,b...) в индекс 
+		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		/// <summary>
+		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
+		/// </summary>
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
-		//индекс альтернативы в её символ a1, a2 и т.д.
+		/// <summary>
+		/// индекс альтернативы в её символ a1, a2 и т.д.
+		/// </summary>
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
-		//индекс альтернативы в её буквенное обозначение, если возможно(букв всего 26)
+		/// <summary>
+		/// индекс альтернативы в её буквенное обозначение, если возможно (букв всего 26)
+		/// </summary>
 		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
 		/// <summary>
 		/// задание констант (при инициализации формы)

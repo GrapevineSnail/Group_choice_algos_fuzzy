@@ -151,7 +151,12 @@ namespace Group_choice_algos_fuzzy
 		public static bool operator !=(Matrix R1, Matrix R2)
 		{
 			if (R1 is null || R2 is null)
-				return true;
+			{
+				if (R1 is null && R2 is null)
+					return false;
+				else
+					return true;
+			}
 			if (R1.n != R2.n || R1.m != R2.m)
 				return true;
 			for (int i = 0; i < R1.n; i++)
@@ -854,16 +859,16 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public Matrix Rank2Matrix
 		{//ранжирование - как полный строгий порядок (полное, антирефлексивное, асимметричное, транзитивное)
-			//но может быть не полным - тогда будут нули в матрице смежности
+		 //но может быть не полным - тогда будут нули в матрице смежности
 			get
 			{
 				var node_list = Rank2Array;
 				var l = Rank2Array.Length;
 				if (l != node_list.Distinct().Count() || node_list.Max() >= n)
 					throw new MyException(EX_bad_expert_profile);
-				Matrix AM = Matrix.Zeros(n,n);//матрица смежности инициализирована нулями
-				for (int i = 0; i < l-1; i++)
-					for (int j = i+1; j < l; j++)
+				Matrix AM = Matrix.Zeros(n, n);//матрица смежности инициализирована нулями
+				for (int i = 0; i < l - 1; i++)
+					for (int j = i + 1; j < l; j++)
 					{
 						var candidate1 = node_list[i];
 						var candidate2 = node_list[j];
@@ -931,12 +936,12 @@ namespace Group_choice_algos_fuzzy
 			var levels_cnt = levels.Count;
 			Queue<List<int>> Q = new Queue<List<int>>();
 			foreach (var v in levels.First())
-				Q.Enqueue(new List<int> { v});
-			while(Q.Count > 0)
+				Q.Enqueue(new List<int> { v });
+			while (Q.Count > 0)
 			{
 				List<int> constructed_ranking = Q.Dequeue();
 				int next_lvl_index = constructed_ranking.Count;
-				if(next_lvl_index < levels_cnt)//последний возможный индекс уровня - это (n-1)
+				if (next_lvl_index < levels_cnt)//последний возможный индекс уровня - это (n-1)
 				{
 					foreach (int v in levels[next_lvl_index])
 					{
@@ -948,7 +953,7 @@ namespace Group_choice_algos_fuzzy
 					rankings.Add(new Ranking(constructed_ranking));
 				}
 			}
-			if(levels_cnt < n)
+			if (levels_cnt < n)
 				return false;//если это не ранжирование, а разбиение на уровни
 			else
 				return true;
@@ -1441,10 +1446,10 @@ namespace Group_choice_algos_fuzzy
 					}
 			}
 			Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
-			//победители - это, буквально, недоминируемые альтернативы
+																								   //победители - это, буквально, недоминируемые альтернативы
 			var pair_dominant_matrix = new Matrix(PD);
 			if (Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out Schulze_method.Levels, out var ranks))
-				foreach(var r in ranks)
+				foreach (var r in ranks)
 					Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, r));
 		}
 
@@ -1482,7 +1487,7 @@ namespace Group_choice_algos_fuzzy
 			Form1.R.aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(R);
 			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
 			if (Ranking.Matrix2RanksDemukron(R, out Smerchinskaya_Yashina_method.Levels, out var ranks))
-				foreach(var rr in ranks)
+				foreach (var rr in ranks)
 					Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rr));
 		}
 

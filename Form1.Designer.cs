@@ -76,6 +76,7 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.flowLayoutPanel_input_tables = new System.Windows.Forms.FlowLayoutPanel();
 			this.cb_do_transitive_closure = new System.Windows.Forms.CheckBox();
+			this.button_visualize_orgraph = new System.Windows.Forms.Button();
 			this.tableLayoutPanel1.SuspendLayout();
 			this.flowLayoutPanel_output_tables.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
@@ -372,6 +373,8 @@ namespace Group_choice_algos_fuzzy
 			// cb_SY
 			// 
 			this.cb_SY.AutoSize = true;
+			this.cb_SY.Checked = true;
+			this.cb_SY.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.cb_SY.Dock = System.Windows.Forms.DockStyle.Top;
 			this.cb_SY.Location = new System.Drawing.Point(3, 84);
 			this.cb_SY.Name = "cb_SY";
@@ -592,6 +595,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			this.flowLayoutPanel_output_info.AutoScroll = true;
 			this.flowLayoutPanel_output_info.Controls.Add(this.label3);
+			this.flowLayoutPanel_output_info.Controls.Add(this.button_visualize_orgraph);
 			this.flowLayoutPanel_output_info.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.flowLayoutPanel_output_info.Location = new System.Drawing.Point(423, 3);
 			this.flowLayoutPanel_output_info.Name = "flowLayoutPanel_output_info";
@@ -661,6 +665,16 @@ namespace Group_choice_algos_fuzzy
 			this.cb_do_transitive_closure.TabIndex = 27;
 			this.cb_do_transitive_closure.Text = "Дополнять по транзитивности";
 			this.cb_do_transitive_closure.UseVisualStyleBackColor = true;
+			// 
+			// button_visualize_orgraph
+			// 
+			this.button_visualize_orgraph.Location = new System.Drawing.Point(65, 3);
+			this.button_visualize_orgraph.Name = "button_visualize_orgraph";
+			this.button_visualize_orgraph.Size = new System.Drawing.Size(120, 42);
+			this.button_visualize_orgraph.TabIndex = 8;
+			this.button_visualize_orgraph.Text = "Визуализировать граф";
+			this.button_visualize_orgraph.UseVisualStyleBackColor = true;
+			this.button_visualize_orgraph.Click += new System.EventHandler(this.button_visualize_orgraph_Click);
 			// 
 			// Form1
 			// 
@@ -742,6 +756,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.CheckBox cb_SY;
 		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input_tables;
 		private System.Windows.Forms.CheckBox cb_do_transitive_closure;
+		private System.Windows.Forms.Button button_visualize_orgraph;
 	}
 }
 

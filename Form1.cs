@@ -73,13 +73,14 @@ namespace Group_choice_algos_fuzzy
 			public static FuzzyRelation aggregated_DestroyedCycles;
 			public static FuzzyRelation aggregated_DestroyedCycles_TransClosured;
 		}
-		#endregion GLOBALS
+		Form2 form2 = null;
+	#endregion GLOBALS
 
 
-		/// <summary>
-		/// установка дефолтных значений переменных
-		/// </summary>
-		void refresh_variables()
+	/// <summary>
+	/// установка дефолтных значений переменных
+	/// </summary>
+	void refresh_variables()
 		{
 			R_list = new List<FuzzyRelation>();
 			R.aggregated = new FuzzyRelation(n);
@@ -174,11 +175,11 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		private void set_controls_size()
 		{
-			Size get_table_size(DataGridView dgv)
+			System.Drawing.Size get_table_size(DataGridView dgv)
 			{
 				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
 				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
-				return new Size(Width, Height);
+				return new System.Drawing.Size(Width, Height);
 			}
 
 			foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
@@ -208,7 +209,7 @@ namespace Group_choice_algos_fuzzy
 					Label lab = m?.connectedLabel;
 					if (lab != null)
 					{
-						lab.Location = new Point(0, dgv.Location.Y + dgv.Height);
+						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);
 					}
 				}
 			}
@@ -719,6 +720,16 @@ namespace Group_choice_algos_fuzzy
 		{
 			flowLayoutPanel_output_info.Focus();
 		}
+		private void button_visualize_orgraph_Click(object sender, EventArgs e)
+		{
+			var M = R.aggregated_DestroyedCycles_TransClosured;
+			if (M != null && (form2 == null || form2.IsDisposed))
+			{
+				form2 = new Form2(M.matrix_base);
+				form2.Show();
+			}
+		}
+
 
 	}
 }
