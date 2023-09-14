@@ -17,6 +17,8 @@ using GraphX.Logic.Models;
 using GraphX.Controls.Models;
 using static Group_choice_algos_fuzzy.Constants;
 using static Microsoft.Msagl.Drawing.Graph;
+using Microsoft.Msagl.Drawing;
+using Microsoft.Msagl.GraphViewerGdi;
 using System.Drawing.Imaging;
 /// <summary>
 /// /////////////
@@ -31,34 +33,107 @@ namespace Group_choice_algos_fuzzy
 		{
 			InitializeComponent();
 			//Load += Form1_Load;
-			weight_matrix = matrix;
-
-
-
-			Microsoft.Msagl.Drawing.Graph graph = new
-Microsoft.Msagl.Drawing.Graph("");
-			graph.AddEdge("A", "B");
-			graph.AddEdge("A", "B");
-			graph.FindNode("A").Attr.FillColor =
-			Microsoft.Msagl.Drawing.Color.Red;
-			graph.FindNode("B").Attr.FillColor =
-			Microsoft.Msagl.Drawing.Color.Blue;
-			Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer
-			= new Microsoft.Msagl.GraphViewerGdi.GraphRenderer
-			(graph);
-			renderer.CalculateLayout();
-			int width = 50;
-			Bitmap bitmap = new Bitmap(width, (int)(graph.Height *
-			(width / graph.Width)), PixelFormat.Format32bppPArgb);
-			renderer.Render(bitmap);
-			bitmap.Save("test.png");
-
-
+			G = GenerateGraph(matrix);
+			Bitmap bitmap = GenerateBitmap(G, pictureBox1);
+			//bitmap.Save("graph_visualizing_output.png");
+			pictureBox1.SizeChanged += (object sender, EventArgs e) =>
+			{
+				GenerateBitmap(G, (PictureBox)sender);
+			};
+		}
+		Graph G;
+		/// <summary>
+		/// создадим орграф
+		/// </summary>
+		/// <param name="M">матрица весов орграфа</param>
+		/// <returns></returns>
+		private Graph GenerateGraph(double[,] M)
+		{
+			if (M.GetLength(0) != M.GetLength(1))
+				throw new MyException(EX_matrix_not_square);
+			int n = M.GetLength(0);
+			Graph graph = new Graph("");
+			for (int i = 0; i < n; i++)
+			{
+				graph.AddNode(ind2letter[i]);
+			}
+			for (int i = 0; i < n; i++)
+			{
+				for (int j = 0; j < n; j++)
+				{
+					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
+					{
+						graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
+					}
+				}
+				Node node = graph.FindNode(ind2letter[i]);
+				node.Attr.FillColor = node_color;
+				node.Attr.Shape = Shape.Circle;
+			}
+			return graph;
 		}
 
+		private Bitmap GenerateBitmap(Graph g, PictureBox drawing_field)
+		{
+			GraphRenderer renderer = new GraphRenderer(g);
+			renderer.CalculateLayout();
+			int width = drawing_field.Width;
+			int height = drawing_field.Height;
+			Bitmap bitmap;
+			double bmw = width;
+			double bmh = height;
+			var p = g.Height / g.Width;
+			if (height / width < p || height < g.Height)
+			{
+				bmw = g.Width * (height / g.Height);
+			}
+			if (height / width > p || width < g.Width)
+			{
+				bmh = g.Height * (width / g.Width);
+			}
+			bitmap = new Bitmap((int)bmw, (int)bmh, PixelFormat.Format32bppPArgb);
+			renderer.Render(bitmap);
+			drawing_field.Image = (Image)bitmap;
+			return bitmap;
+		}
+
+
+
+		/*
+		/// <summary>
+		/// создадим орграф
+		/// </summary>
+		/// <param name="M">матрица весов орграфа</param>
+		/// <returns></returns>
+		private GraphExample GenerateGraph(double[,] M)
+		{
+			if (M.GetLength(0) != M.GetLength(1))
+				throw new MyException(EX_matrix_not_square);
+			int n = M.GetLength(0);
+			var dataGraph = new GraphExample();
+			for (int i = 0; i < n; i++)
+			{
+				var dataVertex = new DataVertex(ind2letter[i]);
+				dataGraph.AddVertex(dataVertex);
+			}
+			var vlist = dataGraph.Vertices.ToList();
+			for (int i = 0; i < n; i++)
+			{
+				for (int j = 0; j < n; j++)
+				{
+					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
+					{
+						var dataEdge = new DataEdge(vlist[i], vlist[j]) { Text = string.Format("{0:0.####}", M[i, j]) };
+						dataGraph.AddEdge(dataEdge);
+					}
+				}
+			}
+			return dataGraph;
+		}
+		*/
+		/*
 		private ZoomControl _zoomctrl;
 		private GraphAreaExample _gArea;
-		private double[,] weight_matrix;
 
 		void Form1_Load(object sender, EventArgs e)
 		{
@@ -66,7 +141,6 @@ Microsoft.Msagl.Drawing.Graph("");
 			_gArea.GenerateGraph(true);
 			_zoomctrl.ZoomToFill();
 		}
-
 		public class DataVertex : VertexBase
 		{
 			public string Text { get; set; }
@@ -122,35 +196,7 @@ Microsoft.Msagl.Drawing.Graph("");
 			return _zoomctrl;
 		}
 
-		/// <summary>
-		/// создадим орграф
-		/// </summary>
-		/// <param name="M">матрица весов орграфа</param>
-		/// <returns></returns>
-		private GraphExample GenerateGraph(double[,] M)
-		{
-			if (M.GetLength(0) != M.GetLength(1))
-				throw new MyException(EX_matrix_not_square);
-			int n = M.GetLength(0);
-			var dataGraph = new GraphExample();
-			for (int i = 0; i < n; i++)
-			{
-				var dataVertex = new DataVertex(ind2letter[i]);
-				dataGraph.AddVertex(dataVertex);
-			}
-			var vlist = dataGraph.Vertices.ToList();
-			for (int i = 0; i < n; i++)
-			{
-				for (int j = 0; j < n; j++)
-				{
-					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
-					{
-						var dataEdge = new DataEdge(vlist[i], vlist[j]) { Text = string.Format("{0:0.####}", M[i, j]) };
-						dataGraph.AddEdge(dataEdge);
-					}
-				}
-			}
-			return dataGraph;
-		}
+		*/
 	}
+
 }

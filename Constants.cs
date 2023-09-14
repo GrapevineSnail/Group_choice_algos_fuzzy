@@ -23,6 +23,7 @@ namespace Group_choice_algos_fuzzy
 		public static Color window_background = Color.AntiqueWhite; //ColorTranslator.FromHtml("#FAEBD7");
 		public static Color button_background = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
 		public static Color disabled_button_background = ColorTranslator.FromHtml("#D9D9D9");
+		public static Microsoft.Msagl.Drawing.Color node_color = Microsoft.Msagl.Drawing.Color.PaleGreen;
 		#endregion VISUAL_INTERFACE
 
 		public const int max_count_of_alternatives = 9;

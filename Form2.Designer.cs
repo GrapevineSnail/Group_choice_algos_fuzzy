@@ -29,33 +29,34 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.elementHost1 = new System.Windows.Forms.Integration.ElementHost();
+			this.pictureBox1 = new System.Windows.Forms.PictureBox();
+			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
 			this.SuspendLayout();
 			// 
-			// elementHost1
+			// pictureBox1
 			// 
-			this.elementHost1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.elementHost1.Location = new System.Drawing.Point(0, 0);
-			this.elementHost1.Name = "elementHost1";
-			this.elementHost1.Size = new System.Drawing.Size(800, 450);
-			this.elementHost1.TabIndex = 0;
-			this.elementHost1.Text = "elementHost1";
-			this.elementHost1.Child = null;
+			this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+			this.pictureBox1.Name = "pictureBox1";
+			this.pictureBox1.Size = new System.Drawing.Size(800, 450);
+			this.pictureBox1.TabIndex = 2;
+			this.pictureBox1.TabStop = false;
 			// 
 			// Form2
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 450);
-			this.Controls.Add(this.elementHost1);
+			this.Controls.Add(this.pictureBox1);
 			this.Name = "Form2";
 			this.Text = "Form2";
+			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
 			this.ResumeLayout(false);
 
 		}
 
 		#endregion
 
-		private System.Windows.Forms.Integration.ElementHost elementHost1;
+		private System.Windows.Forms.PictureBox pictureBox1;
 	}
 }
