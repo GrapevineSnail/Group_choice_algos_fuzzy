@@ -371,18 +371,38 @@ namespace Group_choice_algos_fuzzy
 			return ans;
 		}
 		/// <summary>
+		/// возвращает множество всех элементов матрицы (каждый элемент в одном экземпляре)
+		/// </summary>
+		/// <returns></returns>
+		public HashSet<double> ElementValues()
+		{
+			HashSet<double> ans = new HashSet<double>();
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					ans.Add(this[i, j]);
+			return ans;
+		}
+		/// <summary>
 		/// минимальный ненулевой элемент матрицы
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
 		public double MinElemNotZero()
 		{
+			var elems = this.ElementValues();
 			double ans = INF;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					if (this[i, j] < ans && this[i, j] != 0)
-						ans = this[i, j];
+			foreach(var e in elems)
+				if (e < ans && e != 0)
+					ans = e;
 			return ans;
+		}
+		/// <summary>
+		/// минимальный элемент матрицы
+		/// </summary>
+		/// <returns></returns>
+		public double MinElem()
+		{
+			return this.ElementValues().Min();
 		}
 		/// <summary>
 		/// максимальный элемент матрицы
@@ -391,12 +411,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public double MaxElem()
 		{
-			double ans = -INF;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					if (this[i, j] > ans)
-						ans = this[i, j];
-			return ans;
+			return this.ElementValues().Max();
 		}
 		/// <summary>
 		/// расстояние между матрицами на основании выбранной функции расстояния для отдельных элементов
@@ -530,6 +545,25 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < M.n; i++)
 				for (int j = 0; j < M.m; j++)
 					dgv[j, i].Value = M[i, j];
+		}
+		/// <summary>
+		/// делает матрицу с элементами, нормированными на 1 (принадлежащими от 0 до 1)
+		/// </summary>
+		/// <returns></returns>
+		public Matrix NormalizeElems(out bool IsNormalized)
+		{
+			Matrix R = new Matrix(this);
+			double min = this.MinElem();
+			double max = this.ElementValues().Select(x => x - min).Max();
+			//была ли матрица уже нормализованной
+			IsNormalized = (min < 0 || min > 1) || max > 1 ? false :true;
+			if (!IsNormalized)
+			{
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < m; j++)
+						R[i, j] = (R[i, j] - min) / max;
+			}
+			return R;
 		}
 	}
 

@@ -74,13 +74,13 @@ namespace Group_choice_algos_fuzzy
 			public static FuzzyRelation aggregated_DestroyedCycles_TransClosured;
 		}
 		Form2 form2 = null;
-	#endregion GLOBALS
+		#endregion GLOBALS
 
 
-	/// <summary>
-	/// установка дефолтных значений переменных
-	/// </summary>
-	void refresh_variables()
+		/// <summary>
+		/// установка дефолтных значений переменных
+		/// </summary>
+		void refresh_variables()
 		{
 			R_list = new List<FuzzyRelation>();
 			R.aggregated = new FuzzyRelation(n);
@@ -111,7 +111,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
-
 		void clear_output()
 		{
 			try
@@ -122,7 +121,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
-
 		void show_output()
 		{
 			try
@@ -132,7 +130,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
-
 		void clear_input()
 		{
 			try
@@ -141,7 +138,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
-
 		void activate_input()
 		{
 			try
@@ -155,7 +151,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
-
 		void deactivate_input()
 		{
 			try
@@ -169,7 +164,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
-
 		/// <summary>
 		/// обновление размеров визуальных элементов после их изменения...
 		/// </summary>
@@ -347,9 +341,11 @@ namespace Group_choice_algos_fuzzy
 					double[,] fill_values = new double[n, n];//инициализирован 0.0
 					if (list_of_matrices != null && list_of_matrices.Count != 0)
 					{
-						for (int i = 0; i < list_of_matrices[expert].n; i++)
-							for (int j = 0; j < list_of_matrices[expert].m; j++)
-								fill_values[i, j] = list_of_matrices[expert][i, j];
+						fill_values = list_of_matrices[expert].NormalizeElems(out var is_norm).matrix_base;
+						if (!is_norm)
+						{
+							new MyException(EX_matrix_was_normalized).Info();
+						}
 					}
 					for (int i = 0; i < dgv.Rows.Count; i++)
 						for (int j = 0; j < dgv.Columns.Count; j++)
@@ -384,12 +380,12 @@ namespace Group_choice_algos_fuzzy
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
 				string for_print_matrices(Matrix M)
 				{
-					return M?.Matrix2String(true) + CR_LF + "Матрица смежности:\n" 
+					return M?.Matrix2String(true) + CR_LF + "Матрица смежности:\n"
 						+ M?.AdjacencyMatrix.Matrix2String(true);
 				}
 				if (R.aggregated != null)
 				{
-					tex += CR_LF + "Агрегированное отношение R:\n"	
+					tex += CR_LF + "Агрегированное отношение R:\n"
 						+ for_print_matrices(R.aggregated);
 
 					tex += CR_LF + "Асимметричная часть As(R) агрегированного отношения R:\n"
@@ -432,10 +428,10 @@ namespace Group_choice_algos_fuzzy
 						if (met.Rankings == null || met.Rankings.Count == 0)
 						{
 							met.ConnectedLabel = "Ранжирование невозможно. ";
-							if(met.Levels != null && met.Levels.Count != 0)
+							if (met.Levels != null && met.Levels.Count != 0)
 							{//ранжирований нет, но можно задать разбиение на уровни
 								int col = 0;
-								set_column(met.connectedTableFrame,col);
+								set_column(met.connectedTableFrame, col);
 								met.connectedTableFrame.Columns[col].HeaderText = $"Разбиение\nна уровни";
 								for (int i = 0; i < met.Levels.Count; i++)
 								{
@@ -444,8 +440,8 @@ namespace Group_choice_algos_fuzzy
 								for (int i = 0; i < met.Levels.Count; i++)
 								{
 									met.connectedTableFrame[col, i].ReadOnly = true;
-									met.connectedTableFrame[col, i].Value = 
-										string.Join(",", met.Levels[i].Select(x => ind2letter[x]).ToArray()) ;
+									met.connectedTableFrame[col, i].Value =
+										string.Join(",", met.Levels[i].Select(x => ind2letter[x]).ToArray());
 								}
 							}
 						}
@@ -455,7 +451,7 @@ namespace Group_choice_algos_fuzzy
 							using (StreamWriter writer = new StreamWriter(OUT_FILE, true))
 							{//если есть ранжирование и оно действительно включает все альтернативы
 								await writer.WriteLineAsync(CR_LF);
-								var text = string.Join(CR_LF+CR_LF,
+								var text = string.Join(CR_LF + CR_LF,
 									met.Rankings
 									.Where(x => x.Count == n)
 									.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
@@ -664,7 +660,11 @@ namespace Group_choice_algos_fuzzy
 			catch (MyException ex) { ex.Info(); }
 		}
 
-
+		/// <summary>
+		/// тестовая кнопочка, для разработчика
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void button_for_tests_Click(object sender, EventArgs e)
 		{
 			refresh_variables();//?
@@ -702,7 +702,6 @@ namespace Group_choice_algos_fuzzy
 				//вывод статистики в файл
 			}
 		}
-
 
 		private void Form1_SizeChanged(object sender, EventArgs e)
 		{
