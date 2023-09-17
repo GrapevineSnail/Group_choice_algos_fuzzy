@@ -291,6 +291,8 @@ namespace Group_choice_algos_fuzzy
 				bool some_contradictory_profiles = false;
 				for (int expert = 0; expert < m; expert++)
 				{
+					int comparsion_trials = 0;//сколько отредактированных ячеек уже было
+					bool[] is_compared_alternative = new bool[n];//сравнима ли альтернатива
 					DataGridView dgv = new DataGridView();
 					SetDataGridViewDefaults(dgv);
 					dgv.CellEndEdit += (object d, DataGridViewCellEventArgs ee) =>
@@ -298,7 +300,7 @@ namespace Group_choice_algos_fuzzy
 						try
 						{
 							var dd = d as DataGridView;
-							var cell = dd.CurrentCell;
+							var cell = dd.CurrentCell;//dd[j, i]
 							var i = cell.RowIndex;
 							var j = cell.ColumnIndex;
 							double res;
@@ -306,15 +308,24 @@ namespace Group_choice_algos_fuzzy
 								cell.Value = 0.0;
 							else
 							{
-								//dd[i, j].Value = 0.0;// эксперт вводит асимметричное отношение
+								comparsion_trials++;
+								if (res != 0)
+								{
+									is_compared_alternative[i] = true;
+									is_compared_alternative[j] = true;
+								}
+								else
+								{
+									is_compared_alternative[i] = IsCompared(i, dd);
+									is_compared_alternative[j] = IsCompared(j, dd);
+								}
+
 								var input_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
 								//транзитивное замыкание не должно содержать циклов
 								if (input_matrix.IsHasCycle())
-								{
-									//cell.Value = 0.0;
-									throw new MyException(EX_not_transitive_profile);
-								}
-								else if (cb_do_transitive_closure.Checked)
+									throw new MyException(EX_contains_cycle);
+								if (!input_matrix.IsTransitive() && cb_do_transitive_closure.Checked &&
+								(comparsion_trials == n-1 || is_compared_alternative.Count(x => x == true) == n ))
 								{
 									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), dd);
 								}
@@ -354,11 +365,17 @@ namespace Group_choice_algos_fuzzy
 							dgv[j, i].Value = fill_values[i, j];
 							dgv[j, i].ValueType = typeof(double);
 						}
+
+					for (int i = 0; i < n; i++)
+					{
+						is_compared_alternative[i] = IsCompared(i, dgv);
+					}
+
 					if (Matrix.GetFromDataGridView(dgv).ToFuzzy.IsHasCycle())
 						some_contradictory_profiles = true;
 				}
 				if (some_contradictory_profiles)
-					throw new MyException(EX_not_transitive_profile);
+					throw new MyException(EX_contains_cycle);
 			}
 			catch (MyException ex) { ex.Info(); }
 			activate_input();
@@ -380,7 +397,7 @@ namespace Group_choice_algos_fuzzy
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
 				string for_print_matrices(Matrix M)
 				{
-					return M?.Matrix2String(true) + CR_LF + "Матрица смежности:\n"
+					return M?.Matrix2String(true) + "Матрица смежности:\n"
 						+ M?.AdjacencyMatrix.Matrix2String(true);
 				}
 				if (R.aggregated != null)
@@ -721,10 +738,12 @@ namespace Group_choice_algos_fuzzy
 		}
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
-			var M = R.aggregated_DestroyedCycles_TransClosured;
-			if (M != null && (form2 == null || form2.IsDisposed))
+			var M = new List<Matrix>{ 
+				R.aggregated, R.aggregated_Asymmetric, R.aggregated_TransClosured, 
+				R.aggregated_DestroyedCycles, R.aggregated_DestroyedCycles_TransClosured};
+			if (M.Any(x=>x != null) && (form2 == null || form2.IsDisposed))
 			{
-				form2 = new Form2(M.matrix_base);
+				form2 = new Form2(M.Select(x=>x.matrix_base).ToList());
 				form2.Show();
 			}
 		}

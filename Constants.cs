@@ -107,7 +107,7 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_choose_method = "Выберите метод агрегирования";
 		public static string EX_choose_distance_func = "Выберите способ подсчёта расстояния между отношениями";
 		public static string EX_bad_symbol = "Неверный символ";
-		public static string EX_not_transitive_profile = "Введённое отношение было не транзитивно (содержание цикла)";
+		public static string EX_contains_cycle = "Введённое отношение содержит цикл";
 		public class MyException : Exception
 		{
 			public MyException(string message) : base(message) { }

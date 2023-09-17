@@ -391,7 +391,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			var elems = this.ElementValues();
 			double ans = INF;
-			foreach(var e in elems)
+			foreach (var e in elems)
 				if (e < ans && e != 0)
 					ans = e;
 			return ans;
@@ -556,7 +556,7 @@ namespace Group_choice_algos_fuzzy
 			double min = this.MinElem();
 			double max = this.ElementValues().Select(x => x - min).Max();
 			//была ли матрица уже нормализованной
-			IsNormalized = (min < 0 || min > 1) || max > 1 ? false :true;
+			IsNormalized = (min < 0 || min > 1) || max > 1 ? false : true;
 			if (!IsNormalized)
 			{
 				for (int i = 0; i < n; i++)
@@ -656,7 +656,7 @@ namespace Group_choice_algos_fuzzy
 			Tuple<int, int>[] ans = new Tuple<int, int>[this.n * this.m];
 			for (int i = 0; i < this.n; i++)
 				for (int j = 0; j < this.m; j++)
-					ans[this.m * i + j] = new Tuple<int, int>(i, j);
+					ans[(this.m * i) + j] = new Tuple<int, int>(i, j);
 			return ans;
 		}
 		/// <summary>
@@ -772,6 +772,34 @@ namespace Group_choice_algos_fuzzy
 			for (int k = 1; k < p; k++)
 				R = R.Compose(R);
 			return R;
+		}
+		/// <summary>
+		/// является ли левый операнд подмножеством (нестрого) правого операнда
+		/// </summary>
+		/// <returns></returns>
+		public static bool SubsetOrEqual(FuzzyRelation R1, FuzzyRelation R2)
+		{
+			if (R1.n != R2.n)
+				throw new MyException(EX_bad_dimensions);
+			for (int i = 0; i < R1.n; i++)
+			{
+				for (int j = 0; j < R1.n; j++)
+				{
+					if (R1[i, j] > R2[i, j])
+						return false;
+				}
+			}
+			return true;
+		}
+		/// <summary>
+		/// является ли отношение транзитивным
+		/// </summary>
+		public bool IsTransitive()
+		{
+			var r2 = this.Compose(this);
+			if (SubsetOrEqual(r2, this))
+				return true;
+			return false;
 		}
 		/// <summary>
 		/// транзитивное замыкание нечеткого отношения

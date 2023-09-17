@@ -15,6 +15,12 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Algorithms
 	{
+		/// <summary>
+		/// поиск файлов в директориях
+		/// </summary>
+		/// <param name="directory_with_file"></param>
+		/// <param name="file_name"></param>
+		/// <returns></returns>
 		public static string FindFile(string directory_with_file, string file_name)
 		{
 			string absolute_file_name = file_name;
@@ -39,6 +45,30 @@ namespace Group_choice_algos_fuzzy
 			}
 			return absolute_file_name;
 		}
+		/// <summary>
+		/// сравнивалась ли альтернатива с какой-то ещё
+		/// </summary>
+		/// <param name="index"></param>
+		/// <param name="dgv"></param>
+		/// <returns></returns>
+		public static bool IsCompared(int index, DataGridView dgv)
+		{
+			for (int j = 0; j < dgv.Rows.Count; j++)
+			{
+				if (index != j)
+				{
+					double ij = (double)dgv[j, index].Value;
+					double ji = (double)dgv[index, j].Value;
+					if (ij != 0 || ji != 0)
+						return true;
+				}
+			}
+			return false;
+		}
+		/// <summary>
+		/// настрйки для вывода DataGridView
+		/// </summary>
+		/// <param name="dgv"></param>
 		public static void SetDataGridViewDefaults(DataGridView dgv)
 		{
 			dgv.AllowUserToAddRows = false;

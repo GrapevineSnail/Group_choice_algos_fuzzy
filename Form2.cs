@@ -26,19 +26,31 @@ namespace Group_choice_algos_fuzzy
 {
 	public partial class Form2 : Form
 	{
-		public Form2(double[,] matrix)
+		public Form2(List<double[,]> matrices)
 		{
 			InitializeComponent();
 			//Load += Form1_Load;
-			G = GenerateGraph(matrix);
-			Bitmap bitmap = DrawBitmap(G, pictureBox1);
-			//bitmap.Save("graph_visualizing_output.png");
-			pictureBox1.SizeChanged += (object sender, EventArgs e) =>
-			{
-				DrawBitmap(G, (PictureBox)sender);
-			};
+			var PB = new List<PictureBox>{ pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5 };
+			for(int i =0; i< 5; i++)
+				DrawGraph(matrices[i], PB[i]);
 		}
-		Graph G;
+		private Bitmap DrawGraph(double[,] matrix, PictureBox pictureBox)
+		{
+			try
+			{
+				var G = GenerateGraph(matrix);
+				Bitmap bitmap = DrawBitmap(G, pictureBox);
+				//bitmap.Save("graph_visualizing_output.png");
+				pictureBox.SizeChanged += (object sender, EventArgs e) =>
+				{
+					DrawBitmap(G, (PictureBox)sender);
+				};
+				return bitmap;
+			}
+			catch { }
+			return null;
+		}
+
 		/// <summary>
 		/// создадим орграф
 		/// </summary>
@@ -61,7 +73,7 @@ namespace Group_choice_algos_fuzzy
 					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
 					{
 						Edge edge = graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
-						edge.Label.FontSize = node.Label.FontSize * 0.5;
+						edge.Label.FontSize = node.Label.FontSize * 0.75;
 					}
 				}
 			}
@@ -91,6 +103,7 @@ namespace Group_choice_algos_fuzzy
 			drawing_field.Image = (Image)bitmap;
 			return bitmap;
 		}
+
 
 
 
