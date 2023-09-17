@@ -20,9 +20,6 @@ using static Microsoft.Msagl.Drawing.Graph;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
 using System.Drawing.Imaging;
-/// <summary>
-/// /////////////
-/// </summary>
 
 
 namespace Group_choice_algos_fuzzy
@@ -34,11 +31,11 @@ namespace Group_choice_algos_fuzzy
 			InitializeComponent();
 			//Load += Form1_Load;
 			G = GenerateGraph(matrix);
-			Bitmap bitmap = GenerateBitmap(G, pictureBox1);
+			Bitmap bitmap = DrawBitmap(G, pictureBox1);
 			//bitmap.Save("graph_visualizing_output.png");
 			pictureBox1.SizeChanged += (object sender, EventArgs e) =>
 			{
-				GenerateBitmap(G, (PictureBox)sender);
+				DrawBitmap(G, (PictureBox)sender);
 			};
 		}
 		Graph G;
@@ -55,25 +52,23 @@ namespace Group_choice_algos_fuzzy
 			Graph graph = new Graph("");
 			for (int i = 0; i < n; i++)
 			{
-				graph.AddNode(ind2letter[i]);
-			}
-			for (int i = 0; i < n; i++)
-			{
+				Node node = graph.AddNode(ind2letter[i]);
+				node.Attr.LabelMargin = 1;
+				node.Attr.FillColor = node_color;
+				node.Attr.Shape = Shape.Circle;
 				for (int j = 0; j < n; j++)
 				{
 					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
 					{
-						graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
+						Edge edge = graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
+						edge.Label.FontSize = node.Label.FontSize * 0.5;
 					}
 				}
-				Node node = graph.FindNode(ind2letter[i]);
-				node.Attr.FillColor = node_color;
-				node.Attr.Shape = Shape.Circle;
 			}
 			return graph;
 		}
 
-		private Bitmap GenerateBitmap(Graph g, PictureBox drawing_field)
+		private Bitmap DrawBitmap(Graph g, PictureBox drawing_field)
 		{
 			GraphRenderer renderer = new GraphRenderer(g);
 			renderer.CalculateLayout();
