@@ -151,6 +151,16 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
+		void activate_input(DataGridView dgv, int row, int col)
+		{
+			try
+			{
+				dgv[col, row].ReadOnly = false;
+				dgv[col, row].Style = dgv.DefaultCellStyle;
+
+			}
+			catch (MyException ex) { }
+		}
 		void deactivate_input()
 		{
 			try
@@ -164,6 +174,18 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { }
 		}
+		void deactivate_input(DataGridView dgv, int row, int col)
+		{
+			try
+			{
+				dgv[col, row].ReadOnly = true;
+				dgv[col, row].Style = new DataGridViewCellStyle();
+				dgv[col, row].Style.BackColor = disabled_input_bg_color;
+
+			}
+			catch (MyException ex) { }
+		}
+
 		/// <summary>
 		/// обновление размеров визуальных элементов после их изменения...
 		/// </summary>
@@ -286,6 +308,8 @@ namespace Group_choice_algos_fuzzy
 			}
 			clear_input();
 			clear_output();
+
+
 			try
 			{
 				bool some_contradictory_profiles = false;
@@ -293,46 +317,97 @@ namespace Group_choice_algos_fuzzy
 				{
 					int comparsion_trials = 0;//сколько отредактированных ячеек уже было
 					bool[] is_compared_alternative = new bool[n];//сравнима ли альтернатива
-					DataGridView dgv = new DataGridView();
-					SetDataGridViewDefaults(dgv);
-					dgv.CellEndEdit += (object d, DataGridViewCellEventArgs ee) =>
+
+
+					void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
 					{//что должно происходить при завершении редактирования ячейки
 						try
 						{
-							var dd = d as DataGridView;
-							var cell = dd.CurrentCell;//dd[j, i]
-							var i = cell.RowIndex;
-							var j = cell.ColumnIndex;
-							double res;
-							if (!double.TryParse(cell.Value.ToString(), out res) || res > 1 || res < 0 || i == j)
-								cell.Value = 0.0;
+							var dd = sender as DataGridView;
+							int i = e.RowIndex;
+							int j = e.ColumnIndex;
+							double Mij, Mji;
+							var p = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+							double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+							if (!p || Mij > 1 || Mij < 0 || i == j)
+								dd[j, i].Value = 0.0;
 							else
 							{
 								comparsion_trials++;
-								if (res != 0)
-								{
-									is_compared_alternative[i] = true;
-									is_compared_alternative[j] = true;
-								}
-								else
+								if (Mij == 0)
 								{
 									is_compared_alternative[i] = IsCompared(i, dd);
 									is_compared_alternative[j] = IsCompared(j, dd);
 								}
-
+								else
+								{
+									is_compared_alternative[i] = true;
+									is_compared_alternative[j] = true;
+								}
 								var input_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
 								//транзитивное замыкание не должно содержать циклов
 								if (input_matrix.IsHasCycle())
 									throw new MyException(EX_contains_cycle);
-								if (!input_matrix.IsTransitive() && cb_do_transitive_closure.Checked &&
-								(comparsion_trials == n-1 || is_compared_alternative.Count(x => x == true) == n ))
+								PerformTransClosure(dd);
+							}
+						}
+						catch (MyException ex) { ex.Info(); }
+					}
+					void PerformTransClosure(DataGridView DGV)
+					{
+						try
+						{
+							if (cb_do_transitive_closure.Checked &&
+							(comparsion_trials == n - 1 || is_compared_alternative.All(x => x == true)))
+							{
+								var input_matrix = Matrix.GetFromDataGridView(DGV).ToFuzzy;
+								if (!input_matrix.IsTransitive())
 								{
-									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), dd);
+									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), DGV);
+									for (int i = 0; i < n; i++)
+										for (int j = 0; j < n; j++)
+											DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
 								}
 							}
 						}
 						catch (MyException ex) { ex.Info(); }
-					};
+					}
+					void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
+					{
+						try
+						{
+							var dd = sender as DataGridView;
+							int i = e.RowIndex;
+							int j = e.ColumnIndex;
+							if (i == j)
+								deactivate_input(dd, i, j);
+							else
+							{
+								double Mij, Mji;
+								double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+								double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+								if (Mij == 0)
+								{
+									activate_input(dd, j, i);
+									if (Mji != 0)
+									{
+										deactivate_input(dd, i, j);
+									}
+								}
+								else if (Mji == 0)
+								{
+									deactivate_input(dd, j, i);
+								}
+							}
+						}
+						catch (MyException ex) { ex.Info(); }
+					}
+
+
+					DataGridView dgv = new DataGridView();
+					SetDataGridViewDefaults(dgv);
+					dgv.CellEndEdit += CheckCellWhenValueChanged;
+					dgv.CellEndEdit += DeactivateSymmetricCell;
 					flowLayoutPanel_input_tables.Controls.Add(dgv);
 
 					for (int j = 0; j < n; j++)
@@ -359,20 +434,28 @@ namespace Group_choice_algos_fuzzy
 						}
 					}
 					for (int i = 0; i < dgv.Rows.Count; i++)
+					{
 						for (int j = 0; j < dgv.Columns.Count; j++)
 						{
-							dgv[j, i].ReadOnly = false;
-							dgv[j, i].Value = fill_values[i, j];
 							dgv[j, i].ValueType = typeof(double);
+							dgv[j, i].Value = fill_values[i, j];
+							DeactivateSymmetricCell(dgv, new DataGridViewCellEventArgs(j,i));
 						}
-
+					}
 					for (int i = 0; i < n; i++)
 					{
 						is_compared_alternative[i] = IsCompared(i, dgv);
 					}
-
 					if (Matrix.GetFromDataGridView(dgv).ToFuzzy.IsHasCycle())
+					{
+						//dgv.BackgroundColor = error_color;
 						some_contradictory_profiles = true;
+					}
+					else
+					{
+						//dgv.BackgroundColor = DGV_background;
+						PerformTransClosure(dgv);
+					}
 				}
 				if (some_contradictory_profiles)
 					throw new MyException(EX_contains_cycle);
@@ -738,12 +821,12 @@ namespace Group_choice_algos_fuzzy
 		}
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
-			var M = new List<Matrix>{ 
-				R.aggregated, R.aggregated_Asymmetric, R.aggregated_TransClosured, 
+			var M = new List<Matrix>{
+				R.aggregated, R.aggregated_Asymmetric, R.aggregated_TransClosured,
 				R.aggregated_DestroyedCycles, R.aggregated_DestroyedCycles_TransClosured};
-			if (M.Any(x=>x != null) && (form2 == null || form2.IsDisposed))
+			if (M.Any(x => x != null) && (form2 == null || form2.IsDisposed))
 			{
-				form2 = new Form2(M.Select(x=>x.matrix_base).ToList());
+				form2 = new Form2(M.Select(x => x.matrix_base).ToList());
 				form2.Show();
 			}
 		}

@@ -529,11 +529,11 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static Matrix GetFromDataGridView(DataGridView dgv)
 		{
-			var input_matrix = new Matrix(dgv.Rows.Count, dgv.Columns.Count);
-			for (int i = 0; i < input_matrix.n; i++)
-				for (int j = 0; j < input_matrix.m; j++)
-					input_matrix[i, j] = (double)dgv[j, i].Value;
-			return input_matrix;
+				var input_matrix = new Matrix(dgv.Rows.Count, dgv.Columns.Count);
+				for (int i = 0; i < input_matrix.n; i++)
+					for (int j = 0; j < input_matrix.m; j++)
+						input_matrix[i, j] = dgv[j, i].Value == null ? 0: (double)dgv[j, i].Value;
+				return input_matrix;
 		}
 		/// <summary>
 		/// кладёт матрицу в DataGridView

@@ -57,8 +57,8 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (index != j)
 				{
-					double ij = (double)dgv[j, index].Value;
-					double ji = (double)dgv[index, j].Value;
+					var ij = dgv[j, index].Value as double?;
+					var ji = dgv[index, j].Value as double?;
 					if (ij != 0 || ji != 0)
 						return true;
 				}
@@ -85,6 +85,7 @@ namespace Group_choice_algos_fuzzy
 			dgv.ShowEditingIcon = false;
 			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
 			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+			dgv.DefaultCellStyle.BackColor = input_bg_color;
 			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 		}
 		
