@@ -26,13 +26,18 @@ namespace Group_choice_algos_fuzzy
 {
 	public partial class Form2 : Form
 	{
-		public Form2(List<double[,]> matrices)
+		public Form2(List<double[,]> matrices, List<string> labels)
 		{
 			InitializeComponent();
 			//Load += Form1_Load;
-			var PB = new List<PictureBox>{ pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5 };
-			for(int i =0; i< 5; i++)
+			var PB = new List<PictureBox> { pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5 };
+			var LB = new List<System.Windows.Forms.Label> { label1, label2, label3, label4, label5 };
+			
+			for (int i = 0; i < 5; i++)
+			{
 				DrawGraph(matrices[i], PB[i]);
+				LB[i].Text = labels[i];
+			}
 		}
 		private Bitmap DrawGraph(double[,] matrix, PictureBox pictureBox)
 		{
@@ -84,21 +89,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			GraphRenderer renderer = new GraphRenderer(g);
 			renderer.CalculateLayout();
-			int width = drawing_field.Width;
-			int height = drawing_field.Height;
-			Bitmap bitmap;
-			double bmw = width;
-			double bmh = height;
-			var p = g.Height / g.Width;
-			if (height / width < p || height < g.Height)
-			{
-				bmw = g.Width * (height / g.Height);
-			}
-			if (height / width > p || width < g.Width)
-			{
-				bmh = g.Height * (width / g.Width);
-			}
-			bitmap = new Bitmap((int)bmw, (int)bmh, PixelFormat.Format32bppPArgb);
+			Bitmap bitmap = new Bitmap(
+				(int)drawing_field.Width, (int)drawing_field.Height, PixelFormat.Format32bppPArgb);
 			renderer.Render(bitmap);
 			drawing_field.Image = (Image)bitmap;
 			return bitmap;

@@ -308,16 +308,48 @@ namespace Group_choice_algos_fuzzy
 			}
 			clear_input();
 			clear_output();
-
-
 			try
 			{
+				void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
+				{
+					try
+					{
+						var dd = sender as DataGridView;
+						int i = e.RowIndex;
+						int j = e.ColumnIndex;
+						if (i == j)
+							deactivate_input(dd, i, j);
+						else
+						{
+							double Mij, Mji;
+							double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+							double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+							if (Mij == 0)
+							{
+								activate_input(dd, j, i);
+								if (Mji != 0)
+								{
+									deactivate_input(dd, i, j);
+								}
+							}
+							else if (Mji == 0)
+							{
+								deactivate_input(dd, j, i);
+							}
+							else
+							{
+								activate_input(dd, i, j);
+								activate_input(dd, j, i);
+							}
+						}
+					}
+					catch (MyException ex) { ex.Info(); }
+				}
 				bool some_contradictory_profiles = false;
 				for (int expert = 0; expert < m; expert++)
 				{
 					int comparsion_trials = 0;//сколько отредактированных ячеек уже было
 					bool[] is_compared_alternative = new bool[n];//сравнима ли альтернатива
-
 
 					void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
 					{//что должно происходить при завершении редактирования ячейки
@@ -372,38 +404,7 @@ namespace Group_choice_algos_fuzzy
 						}
 						catch (MyException ex) { ex.Info(); }
 					}
-					void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
-					{
-						try
-						{
-							var dd = sender as DataGridView;
-							int i = e.RowIndex;
-							int j = e.ColumnIndex;
-							if (i == j)
-								deactivate_input(dd, i, j);
-							else
-							{
-								double Mij, Mji;
-								double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
-								double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
-								if (Mij == 0)
-								{
-									activate_input(dd, j, i);
-									if (Mji != 0)
-									{
-										deactivate_input(dd, i, j);
-									}
-								}
-								else if (Mji == 0)
-								{
-									deactivate_input(dd, j, i);
-								}
-							}
-						}
-						catch (MyException ex) { ex.Info(); }
-					}
-
-
+					
 					DataGridView dgv = new DataGridView();
 					SetDataGridViewDefaults(dgv);
 					dgv.CellEndEdit += CheckCellWhenValueChanged;
@@ -439,7 +440,7 @@ namespace Group_choice_algos_fuzzy
 						{
 							dgv[j, i].ValueType = typeof(double);
 							dgv[j, i].Value = fill_values[i, j];
-							DeactivateSymmetricCell(dgv, new DataGridViewCellEventArgs(j,i));
+							DeactivateSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
 						}
 					}
 					for (int i = 0; i < n; i++)
@@ -824,9 +825,13 @@ namespace Group_choice_algos_fuzzy
 			var M = new List<Matrix>{
 				R.aggregated, R.aggregated_Asymmetric, R.aggregated_TransClosured,
 				R.aggregated_DestroyedCycles, R.aggregated_DestroyedCycles_TransClosured};
-			if (M.Any(x => x != null) && (form2 == null || form2.IsDisposed))
+			var L = new List<string>{
+				"R", "Asy(R)", "Tr(R)",
+				"Acyclic(R)", "Tr(Acyclic(R))"};
+			if (M.Any(x => x != null))// && (form2 == null || form2.IsDisposed))
 			{
-				form2 = new Form2(M.Select(x => x.matrix_base).ToList());
+				form2?.Dispose();
+				form2 = new Form2(M.Select(x => x.matrix_base).ToList(), L);
 				form2.Show();
 			}
 		}
