@@ -26,7 +26,7 @@ namespace Group_choice_algos_fuzzy
 			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
 			Methods.Smerchinskaya_Yashina_method.SetConnectedControls(cb_SY, dg_SY);
 
-			R.R_Changed += UpdateGraphPicture;
+			R.R_Changed += R_UpdateGraphPicture;
 
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
@@ -66,6 +66,8 @@ namespace Group_choice_algos_fuzzy
 			get { return _m; }
 		}
 		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
+		Form2 form2 = null;
+		Form3 form3 = null;
 		/// <summary>
 		/// ResultRelation
 		/// </summary>
@@ -160,10 +162,15 @@ namespace Group_choice_algos_fuzzy
 				var ans = (M, L);
 				return ans;
 			}
+			
 		}
-		Form2 form2 = null;
 		#endregion GLOBALS
 
+		public void R_UpdateGraphPicture()
+		{
+			var rtd = R.GetRelations2Draw();
+			OrgraphsPics_update(form2, rtd.Matrices, rtd.Labels);
+		}
 		public void R_Set(List<FuzzyRelation> experts_relations)
 		{
 			R.Avg = Matrix.Average(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
@@ -283,26 +290,6 @@ namespace Group_choice_algos_fuzzy
 				dgv[col, row].Style.BackColor = color;
 			}
 			catch (MyException ex) { }
-		}
-		void show_orgraphs_pic()
-		{
-			var rtd = R.GetRelations2Draw();
-			var M = rtd.Matrices;
-			var L = rtd.Labels;
-			if (M.Any(x => x != null))
-			{
-				form2?.Dispose();
-				form2 = new Form2();
-				update_orgraph_pic(M, L);
-				form2.Show();
-			}
-		}
-		void update_orgraph_pic(List<Matrix> M, List<string> L)
-		{
-			if (form2 != null && !form2.IsDisposed)
-			{
-				form2.Redraw(M.Select(x => x.matrix_base).ToList(), L);
-			}
 		}
 
 		/// <summary>
@@ -446,27 +433,16 @@ namespace Group_choice_algos_fuzzy
 						{
 							color_input_cell(dd, i, j, input_bg_color);
 							color_input_cell(dd, j, i, input_bg_color);
-						}
-						//if (Mij == 0)
-						//{
-						//	color_input_cell(dd, j, i, input_bg_color);
-						//	if (Mji != 0)
-						//	{
-						//		color_input_cell(dd, i, j, input_bg_color_disabled);
-						//	}
-						//}
-						//else if (Mji == 0)
-						//{
-						//	color_input_cell(dd, j, i, input_bg_color_disabled);
-						//}
-						//else
-						//{
-						//	color_input_cell(dd, i, j, input_bg_color);
-						//	color_input_cell(dd, j, i, input_bg_color);
-						//}
+						}						
 					}
 				}
 				catch (MyException ex) { ex.Info(); }
+			}
+			void ExpertGraphsUpdate(object sender, DataGridViewCellEventArgs e)
+			{
+				var M = flowLayoutPanel_input_tables.Controls.OfType<DataGridView>()
+					   .Select(x => Matrix.GetFromDataGridView(x)).ToList();
+				OrgraphsPics_update(form3, M, null);
 			}
 			try
 			{
@@ -534,6 +510,7 @@ namespace Group_choice_algos_fuzzy
 					SetDataGridViewDefaults(dgv);
 					dgv.CellEndEdit += CheckCellWhenValueChanged;
 					dgv.CellEndEdit += DeactivateSymmetricCell;
+					dgv.CellEndEdit += ExpertGraphsUpdate;
 					flowLayoutPanel_input_tables.Controls.Add(dgv);
 
 					for (int j = 0; j < n; j++)
@@ -580,6 +557,7 @@ namespace Group_choice_algos_fuzzy
 					{
 						PerformTransClosure(dgv);
 					}
+					ExpertGraphsUpdate(null, null);
 				}
 				if (some_contradictory_profiles)
 					throw new MyException(EX_contains_cycle);
@@ -927,18 +905,32 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-		public void UpdateGraphPicture()
-		{
-			var rtd = R.GetRelations2Draw();
-			update_orgraph_pic(rtd.Matrices, rtd.Labels);
-		}
 		private void Form1_SizeChanged(object sender, EventArgs e)
 		{
 			set_controls_size();
 		}
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
-			show_orgraphs_pic();
+			var rtd = R.GetRelations2Draw();
+			var M = rtd.Matrices;
+			var L = rtd.Labels;
+			if (M.Any(x => x != null))
+			{
+				form2?.Dispose();
+				form2 = new Form2();
+				OrgraphsPics_update(form2, M, L);
+				form2.Show();
+			}
+
+			M = flowLayoutPanel_input_tables.Controls.OfType<DataGridView>()
+					   .Select(x => Matrix.GetFromDataGridView(x)).ToList();
+			if (M.Any(x => x != null))
+			{
+				form3?.Dispose();
+				form3 = new Form3();
+				OrgraphsPics_update(form3, M, null);
+				form3.Show();
+			}
 		}
 		private void flowLayoutPanel_output_info_MouseDown(object sender, MouseEventArgs e)
 		{
