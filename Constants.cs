@@ -9,21 +9,22 @@ namespace Group_choice_algos_fuzzy
 	public class Constants
 	{
 		#region VISUAL_INTERFACE
-		public const float button_borderwidth = 5;
 		public const string font = "Book Antiqua";
 		public const string font_mono = "Courier New";
 		public const float font_size = 10;
+		public const float button_borderwidth = 5;
+		public static Color font_color = Color.Black;
 		public static Color error_color = ColorTranslator.FromHtml("#FFBBBB");
 		public static Color input_bg_color = Color.White;
+		public static Color input_bg_color_disabled = ColorTranslator.FromHtml("#FFCCCCCC");
 		public static Color output_characteristics_bg_color = ColorTranslator.FromHtml("#FFDFBFFA");
-		public static Color disabled_input_bg_color = ColorTranslator.FromHtml("#FFCCCCCC");
-		public static Color color_min = ColorTranslator.FromHtml("#BBEEFF");
-		public static Color color_max = ColorTranslator.FromHtml("#FFEEBB");
-		public static Color color_mutual = ColorTranslator.FromHtml("#D0FFBB");
-		public static Color window_background = Color.AntiqueWhite; //ColorTranslator.FromHtml("#FAEBD7");
-		public static Color button_background = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
-		public static Color disabled_button_background = ColorTranslator.FromHtml("#D9D9D9");
-		public static Color DGV_background = System.Drawing.Color.Gray;
+		public static Color output_characteristics_min_color = ColorTranslator.FromHtml("#BBEEFF");
+		public static Color output_characteristics_max_color = ColorTranslator.FromHtml("#FFEEBB");
+		public static Color output_characteristics_mutual_color = ColorTranslator.FromHtml("#D0FFBB");
+		public static Color window_bg_color = Color.AntiqueWhite; //ColorTranslator.FromHtml("#FAEBD7");
+		public static Color button_bg_color = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
+		public static Color button_bg_color_disabled = ColorTranslator.FromHtml("#D9D9D9");
+		public static Color datagridview_bg_color = System.Drawing.Color.Gray;
 
 		public static Microsoft.Msagl.Drawing.Color node_color = Microsoft.Msagl.Drawing.Color.PaleGreen;
 		#endregion VISUAL_INTERFACE

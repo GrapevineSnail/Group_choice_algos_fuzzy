@@ -71,8 +71,8 @@ namespace Group_choice_algos_fuzzy
 			this.rb_dist_square = new System.Windows.Forms.RadioButton();
 			this.rb_dist_modulus = new System.Windows.Forms.RadioButton();
 			this.flowLayoutPanel_output_info = new System.Windows.Forms.FlowLayoutPanel();
-			this.label3 = new System.Windows.Forms.Label();
 			this.button_visualize_orgraph = new System.Windows.Forms.Button();
+			this.label3 = new System.Windows.Forms.Label();
 			this.button_for_tests = new System.Windows.Forms.Button();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.flowLayoutPanel_input_tables = new System.Windows.Forms.FlowLayoutPanel();
@@ -145,7 +145,8 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_tables.Size = new System.Drawing.Size(548, 229);
 			this.flowLayoutPanel_output_tables.TabIndex = 24;
 			this.flowLayoutPanel_output_tables.WrapContents = false;
-			this.flowLayoutPanel_output_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_tables_MouseEnter);
+			this.flowLayoutPanel_output_tables.MouseDown += new System.Windows.Forms.MouseEventHandler(this.flowLayoutPanel_output_tables_MouseDown);
+			
 			// 
 			// groupBox_HP_max_length
 			// 
@@ -602,17 +603,7 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_info, 3);
 			this.flowLayoutPanel_output_info.Size = new System.Drawing.Size(548, 250);
 			this.flowLayoutPanel_output_info.TabIndex = 3;
-			this.flowLayoutPanel_output_info.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_info_MouseEnter);
-			// 
-			// label3
-			// 
-			this.label3.AutoSize = true;
-			this.label3.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			this.label3.Location = new System.Drawing.Point(129, 0);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(56, 14);
-			this.label3.TabIndex = 7;
-			this.label3.Text = "Info...";
+			this.flowLayoutPanel_output_info.MouseDown += new System.Windows.Forms.MouseEventHandler(this.flowLayoutPanel_output_info_MouseDown);
 			// 
 			// button_visualize_orgraph
 			// 
@@ -623,6 +614,16 @@ namespace Group_choice_algos_fuzzy
 			this.button_visualize_orgraph.Text = "Визуализировать граф";
 			this.button_visualize_orgraph.UseVisualStyleBackColor = true;
 			this.button_visualize_orgraph.Click += new System.EventHandler(this.button_visualize_orgraph_Click);
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			this.label3.Location = new System.Drawing.Point(129, 0);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(56, 14);
+			this.label3.TabIndex = 7;
+			this.label3.Text = "Info...";
 			// 
 			// button_for_tests
 			// 
@@ -662,7 +663,8 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_input_tables.Size = new System.Drawing.Size(408, 158);
 			this.flowLayoutPanel_input_tables.TabIndex = 25;
 			this.flowLayoutPanel_input_tables.WrapContents = false;
-			this.flowLayoutPanel_input_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_MouseEnter);
+			this.flowLayoutPanel_input_tables.MouseDown += new System.Windows.Forms.MouseEventHandler(this.flowLayoutPanel_input_tables_MouseDown);
+			
 			// 
 			// cb_do_transitive_closure
 			// 

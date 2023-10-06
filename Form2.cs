@@ -7,16 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using QuikGraph;
-using GraphX.Controls;
-using GraphX.Common.Models;
 using System.Windows;
-using GraphX.Common.Enums;
-using GraphX.Logic.Algorithms.OverlapRemoval;
-using GraphX.Logic.Models;
-using GraphX.Controls.Models;
 using static Group_choice_algos_fuzzy.Constants;
-using static Microsoft.Msagl.Drawing.Graph;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
 using System.Drawing.Imaging;
@@ -26,19 +18,30 @@ namespace Group_choice_algos_fuzzy
 {
 	public partial class Form2 : Form
 	{
+		public Form2()
+		{
+			InitializeComponent();
+		}
 		public Form2(List<double[,]> matrices, List<string> labels)
 		{
 			InitializeComponent();
-			//Load += Form1_Load;
+			Redraw(matrices, labels);
+		}
+		public List<double[,]> CurMatrices;
+		public List<string> CurLabels;
+		public void Redraw(List<double[,]> matrices, List<string> labels)
+		{
+			CurMatrices = matrices;
+			CurLabels = labels;
 			var PB = new List<PictureBox> { pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5 };
 			var LB = new List<System.Windows.Forms.Label> { label1, label2, label3, label4, label5 };
-			
 			for (int i = 0; i < 5; i++)
 			{
-				DrawGraph(matrices[i], PB[i]);
-				LB[i].Text = labels[i];
+				DrawGraph(CurMatrices[i], PB[i]);
+				LB[i].Text = CurLabels[i];
 			}
 		}
+
 		private Bitmap DrawGraph(double[,] matrix, PictureBox pictureBox)
 		{
 			try
@@ -96,107 +99,6 @@ namespace Group_choice_algos_fuzzy
 			return bitmap;
 		}
 
-
-
-
-		/*
-		/// <summary>
-		/// создадим орграф
-		/// </summary>
-		/// <param name="M">матрица весов орграфа</param>
-		/// <returns></returns>
-		private GraphExample GenerateGraph(double[,] M)
-		{
-			if (M.GetLength(0) != M.GetLength(1))
-				throw new MyException(EX_matrix_not_square);
-			int n = M.GetLength(0);
-			var dataGraph = new GraphExample();
-			for (int i = 0; i < n; i++)
-			{
-				var dataVertex = new DataVertex(ind2letter[i]);
-				dataGraph.AddVertex(dataVertex);
-			}
-			var vlist = dataGraph.Vertices.ToList();
-			for (int i = 0; i < n; i++)
-			{
-				for (int j = 0; j < n; j++)
-				{
-					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
-					{
-						var dataEdge = new DataEdge(vlist[i], vlist[j]) { Text = string.Format("{0:0.####}", M[i, j]) };
-						dataGraph.AddEdge(dataEdge);
-					}
-				}
-			}
-			return dataGraph;
-		}
-		*/
-		/*
-		private ZoomControl _zoomctrl;
-		private GraphAreaExample _gArea;
-
-		void Form1_Load(object sender, EventArgs e)
-		{
-			elementHost1.Child = GenerateWpfVisuals();
-			_gArea.GenerateGraph(true);
-			_zoomctrl.ZoomToFill();
-		}
-		public class DataVertex : VertexBase
-		{
-			public string Text { get; set; }
-			public override string ToString() { return Text; }
-			public DataVertex(string text = "") { Text = text; }
-		}
-
-		public class DataEdge : EdgeBase<DataVertex>
-		{
-			/// <summary>
-			/// Default constructor. We need to set at least Source and Target properties of the edge.
-			/// </summary>
-			/// <param name="source">Source vertex data</param>
-			/// <param name="target">Target vertex data</param>
-			/// <param name="weight">Optional edge weight</param>
-			public DataEdge(DataVertex source, DataVertex target, double weight = 1)
-				: base(source, target, weight) { }
-			public string Text { get; set; }
-			public override string ToString() { return Text; }
-		}
-
-		public class GraphExample : BidirectionalGraph<DataVertex, DataEdge> { }
-
-		public class GraphAreaExample : GraphArea<DataVertex, DataEdge, BidirectionalGraph<DataVertex, DataEdge>> { }
-
-		private UIElement GenerateWpfVisuals()
-		{
-			_zoomctrl = new ZoomControl();
-			ZoomControl.SetViewFinderVisibility(_zoomctrl, Visibility.Visible);
-			var logic = new GXLogicCore<DataVertex, DataEdge, BidirectionalGraph<DataVertex, DataEdge>>();
-			_gArea = new GraphAreaExample
-			{
-				LogicCore = logic,
-				EdgeLabelFactory = new DefaultEdgelabelFactory()
-			};
-			_gArea.ShowAllEdgesLabels(true);
-			logic.Graph = GenerateGraph(weight_matrix);
-			logic.DefaultLayoutAlgorithm = LayoutAlgorithmTypeEnum.FR;
-			logic.DefaultLayoutAlgorithmParams = logic.AlgorithmFactory.CreateLayoutParameters(
-				LayoutAlgorithmTypeEnum.LinLog);
-			logic.DefaultEdgeRoutingAlgorithm = EdgeRoutingAlgorithmTypeEnum.PathFinder;
-			logic.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.FSA;
-			logic.DefaultOverlapRemovalAlgorithmParams = logic.AlgorithmFactory.CreateOverlapRemovalParameters(OverlapRemovalAlgorithmTypeEnum.FSA);
-			((OverlapRemovalParameters)logic.DefaultOverlapRemovalAlgorithmParams).HorizontalGap = 50;
-			((OverlapRemovalParameters)logic.DefaultOverlapRemovalAlgorithmParams).VerticalGap = 50;
-			logic.AsyncAlgorithmCompute = false;
-			_zoomctrl.Content = _gArea;
-			_gArea.RelayoutFinished += (object sender, EventArgs e) => { _zoomctrl.ZoomToFill(); };
-
-			var myResourceDictionary = new ResourceDictionary { Source = new Uri("template.xaml", UriKind.Relative) };
-			_zoomctrl.Resources.MergedDictionaries.Add(myResourceDictionary);
-
-			return _zoomctrl;
-		}
-
-		*/
 	}
 
 }

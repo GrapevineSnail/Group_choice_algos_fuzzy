@@ -9,7 +9,8 @@ using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Algorithms;
 using static System.IO.DirectoryInfo;
-
+using System.ComponentModel;
+using System.Reflection;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -25,18 +26,20 @@ namespace Group_choice_algos_fuzzy
 			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
 			Methods.Smerchinskaya_Yashina_method.SetConnectedControls(cb_SY, dg_SY);
 
+			R.R_Changed += UpdateGraphPicture;
+
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
 
 			foreach (Control c in flowLayoutPanel_input_tables.Controls)
-				c.MouseEnter += flowLayoutPanel_input_MouseEnter;
-			foreach (Control c in flowLayoutPanel_output_info.Controls)
-				c.MouseEnter += flowLayoutPanel_output_info_MouseEnter;
+				c.MouseDown += flowLayoutPanel_input_tables_MouseDown;
+			foreach (Control c in flowLayoutPanel_output_info.Controls.OfType<Label>())
+				c.MouseDown += flowLayoutPanel_output_info_MouseDown;
 			foreach (Control c in flowLayoutPanel_output_tables.Controls)
 			{
-				c.MouseEnter += flowLayoutPanel_output_tables_MouseEnter;
+				c.MouseDown += flowLayoutPanel_output_tables_MouseDown;
 				foreach (Control c1 in c.Controls)
-					c1.MouseEnter += flowLayoutPanel_output_tables_MouseEnter;
+					c1.MouseDown += flowLayoutPanel_output_tables_MouseDown;
 			}
 			interface_coloring(this);
 			clear_output();
@@ -63,19 +66,115 @@ namespace Group_choice_algos_fuzzy
 			get { return _m; }
 		}
 		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
-		public struct R //агрегированная матрица матриц профилей
+		/// <summary>
+		/// ResultRelation
+		/// </summary>
+		public static class R //агрегированная матрица матриц профилей
 		{
-			public static FuzzyRelation avg;//агрегированная матрица матриц профилей (среднее)
-			public static FuzzyRelation med;//агрегированная матрица матриц профилей (медианные)
-			public static FuzzyRelation aggregated;
-			public static FuzzyRelation aggregated_TransClosured;
-			public static FuzzyRelation aggregated_Asymmetric;
-			public static FuzzyRelation aggregated_DestroyedCycles;
-			public static FuzzyRelation aggregated_DestroyedCycles_TransClosured;
+			public delegate void MyEventHandler();//сигнатура
+			public static event MyEventHandler R_Changed;//для изменения картинки графа
+			public static FuzzyRelation Avg;//агрегированная матрица матриц профилей (среднее)
+			public static FuzzyRelation Med;//агрегированная матрица матриц профилей (медианные)
+			private static FuzzyRelation aggregated;//текущая используемая агрегированная матрица
+			private static FuzzyRelation aggregated_Asymmetric;
+			private static FuzzyRelation aggregated_TransClosured;
+			private static FuzzyRelation aggregated_DestroyedCycles;
+			private static FuzzyRelation aggregated_DestroyedCycles_TransClosured;
+			public static FuzzyRelation Aggregated
+			{
+				set
+				{
+					aggregated = value;
+					Aggregated_TransClosured = new FuzzyRelation(n);
+					Aggregated_Asymmetric = new FuzzyRelation(n);
+					Aggregated_DestroyedCycles = new FuzzyRelation(n);
+
+					R_Changed();
+				}
+				get { return aggregated; }
+			}
+			public static FuzzyRelation Aggregated_Asymmetric
+			{
+				set
+				{
+					aggregated_Asymmetric = value;
+
+					R_Changed();
+				}
+				get { return aggregated_Asymmetric; }
+			}
+			public static FuzzyRelation Aggregated_TransClosured
+			{
+				set
+				{
+					aggregated_TransClosured = value;
+
+					R_Changed();
+				}
+				get { return aggregated_TransClosured; }
+			}
+			public static FuzzyRelation Aggregated_DestroyedCycles
+			{
+				set
+				{
+					aggregated_DestroyedCycles = value;
+					Aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(n);
+
+					R_Changed();
+				}
+				get { return aggregated_DestroyedCycles; }
+			}
+			public static FuzzyRelation Aggregated_DestroyedCycles_TransClosured
+			{
+				set
+				{
+					aggregated_DestroyedCycles_TransClosured = value;
+
+					R_Changed();
+				}
+				get { return aggregated_DestroyedCycles_TransClosured; }
+			}
+			public static void ClearAll()
+			{
+				Avg = new FuzzyRelation(n);
+				Med = new FuzzyRelation(n);
+				Aggregated = new FuzzyRelation(n);
+			}
+			public static void SetDerivatives()
+			{
+				aggregated_Asymmetric = aggregated.AsymmetricPart.ToFuzzy;
+				aggregated_TransClosured = aggregated.TransitiveClosure();
+				aggregated_DestroyedCycles = aggregated.DestroyedCycles();
+				aggregated_DestroyedCycles_TransClosured = aggregated_DestroyedCycles.TransitiveClosure();
+
+				R_Changed();
+			}
+			public static (List<Matrix> Matrices, List<string> Labels) GetRelations2Draw()
+			{
+				var M = new List<Matrix>{
+					R.Aggregated, R.Aggregated_Asymmetric, R.Aggregated_TransClosured,
+					R.Aggregated_DestroyedCycles, R.Aggregated_DestroyedCycles_TransClosured};
+				var L = new List<string>{
+					"R", "Asy(R)", "Tr(R)",
+					"Acyclic(R)", "Tr(Acyclic(R))"};
+				var ans = (M, L);
+				return ans;
+			}
 		}
 		Form2 form2 = null;
 		#endregion GLOBALS
 
+		public void R_Set(List<FuzzyRelation> experts_relations)
+		{
+			R.Avg = Matrix.Average(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
+			R.Med = Matrix.Median(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
+			if (rb_dist_square.Checked)
+				R.Aggregated = R.Avg;
+			else if (rb_dist_modulus.Checked)
+				R.Aggregated = R.Med;
+			else
+				throw new MyException(EX_choose_distance_func);
+		}
 
 		/// <summary>
 		/// установка дефолтных значений переменных
@@ -83,11 +182,10 @@ namespace Group_choice_algos_fuzzy
 		void refresh_variables()
 		{
 			R_list = new List<FuzzyRelation>();
-			R.aggregated = new FuzzyRelation(n);
-			R.avg = new FuzzyRelation(n);
-			R.med = new FuzzyRelation(n);
+			R.ClearAll();
 			Methods.ClearMethods();
 		}
+
 
 		/// <summary>
 		/// начальное расцвечивание формы
@@ -102,8 +200,8 @@ namespace Group_choice_algos_fuzzy
 					if (c as Button != null)
 					{
 						var b = c as Button;
-						b.BackColor = button_background;
-						b.FlatAppearance.BorderColor = button_background;
+						b.BackColor = button_bg_color;
+						b.FlatAppearance.BorderColor = button_bg_color;
 					}
 					else
 						interface_coloring(c);
@@ -144,20 +242,17 @@ namespace Group_choice_algos_fuzzy
 			{
 				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
 				{
+					int rws = dgv.RowCount;
+					int cls = dgv.ColumnCount;
+					for (int i = 0; i < rws; i++)
+					{
+						for (int j = 0; j < cls; j++)
+						{
+							color_input_cell(dgv, i, j, input_bg_color);
+						}
+					}
 					dgv.ReadOnly = false;
-					foreach (DataGridViewColumn column in dgv.Columns)
-						column.DefaultCellStyle.BackColor = input_bg_color;
 				}
-			}
-			catch (MyException ex) { }
-		}
-		void activate_input(DataGridView dgv, int row, int col)
-		{
-			try
-			{
-				dgv[col, row].ReadOnly = false;
-				dgv[col, row].Style = dgv.DefaultCellStyle;
-
 			}
 			catch (MyException ex) { }
 		}
@@ -167,23 +262,47 @@ namespace Group_choice_algos_fuzzy
 			{
 				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
 				{
+					int rws = dgv.RowCount;
+					int cls = dgv.ColumnCount;
+					for (int i =0 ; i < rws; i++)
+					{
+						for (int j = 0; j < cls; j++)
+						{
+							color_input_cell(dgv, i, j, input_bg_color_disabled);
+						}
+					}
 					dgv.ReadOnly = true;
-					foreach (DataGridViewColumn column in dgv.Columns)
-						column.DefaultCellStyle.BackColor = disabled_input_bg_color;
 				}
 			}
 			catch (MyException ex) { }
 		}
-		void deactivate_input(DataGridView dgv, int row, int col)
+		void color_input_cell(DataGridView dgv, int row, int col, Color color)
 		{
 			try
 			{
-				dgv[col, row].ReadOnly = true;
-				dgv[col, row].Style = new DataGridViewCellStyle();
-				dgv[col, row].Style.BackColor = disabled_input_bg_color;
-
+				dgv[col, row].Style.BackColor = color;
 			}
 			catch (MyException ex) { }
+		}
+		void show_orgraphs_pic()
+		{
+			var rtd = R.GetRelations2Draw();
+			var M = rtd.Matrices;
+			var L = rtd.Labels;
+			if (M.Any(x => x != null))
+			{
+				form2?.Dispose();
+				form2 = new Form2();
+				update_orgraph_pic(M, L);
+				form2.Show();
+			}
+		}
+		void update_orgraph_pic(List<Matrix> M, List<string> L)
+		{
+			if (form2 != null && !form2.IsDisposed)
+			{
+				form2.Redraw(M.Select(x => x.matrix_base).ToList(), L);
+			}
 		}
 
 		/// <summary>
@@ -243,17 +362,8 @@ namespace Group_choice_algos_fuzzy
 				if (ExpertsRelationsList.Count == 0)
 					throw new MyException(EX_bad_expert_profile);
 				R_list = ExpertsRelationsList;
-				R.avg = Matrix.Average(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
-				R.med = Matrix.Median(FuzzyRelation.ToMatrixList(R_list)).ToFuzzy;
-				if (rb_dist_square.Checked)
-					R.aggregated = R.avg;
-				else if (rb_dist_modulus.Checked)
-					R.aggregated = R.med;
-				else
-					throw new MyException(EX_choose_distance_func);
-
-				R.aggregated_TransClosured = R.aggregated.TransitiveClosure();
-				R.aggregated_Asymmetric = R.aggregated.AsymmetricPart.ToFuzzy;
+				R_Set(R_list);
+				R.SetDerivatives();
 
 				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
 				if (checkbuttons.All(x => x == false))
@@ -262,15 +372,15 @@ namespace Group_choice_algos_fuzzy
 				if (Methods.All_various_rankings.IsExecute)
 					Methods.Set_All_various_rankings(n);
 				if (Methods.All_Hamiltonian_paths.IsExecute)
-					Methods.Set_All_Hamiltonian_paths(R.aggregated);
+					Methods.Set_All_Hamiltonian_paths(R.Aggregated);
 				if (Methods.Hp_max_length.IsExecute)
-					Methods.Set_Hp_max_length(R.aggregated);
+					Methods.Set_Hp_max_length(R.Aggregated);
 				if (Methods.Hp_max_strength.IsExecute)
-					Methods.Set_Hp_max_strength(R.aggregated);
+					Methods.Set_Hp_max_strength(R.Aggregated);
 				if (Methods.Schulze_method.IsExecute)
-					Methods.Set_Schulze_method(n, R.aggregated);
+					Methods.Set_Schulze_method(n, R.Aggregated);
 				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
-					Methods.Set_Smerchinskaya_Yashina_method(R.aggregated);
+					Methods.Set_Smerchinskaya_Yashina_method(R.Aggregated);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -308,43 +418,58 @@ namespace Group_choice_algos_fuzzy
 			}
 			clear_input();
 			clear_output();
-			try
+			void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
 			{
-				void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
+				try
 				{
-					try
+					var dd = sender as DataGridView;
+					int i = e.RowIndex;
+					int j = e.ColumnIndex;
+					if (i == j)
+						color_input_cell(dd, i, j, input_bg_color_disabled);
+					else
 					{
-						var dd = sender as DataGridView;
-						int i = e.RowIndex;
-						int j = e.ColumnIndex;
-						if (i == j)
-							deactivate_input(dd, i, j);
+						double Mij, Mji;
+						double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+						double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+						if (Mij == 0 && Mji != 0)
+						{
+							color_input_cell(dd, i, j, input_bg_color_disabled);
+							color_input_cell(dd, j, i, input_bg_color);
+						}
+						else if (Mij != 0 && Mji == 0)
+						{
+							color_input_cell(dd, i, j, input_bg_color);
+							color_input_cell(dd, j, i, input_bg_color_disabled);
+						}
 						else
 						{
-							double Mij, Mji;
-							double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
-							double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
-							if (Mij == 0)
-							{
-								activate_input(dd, j, i);
-								if (Mji != 0)
-								{
-									deactivate_input(dd, i, j);
-								}
-							}
-							else if (Mji == 0)
-							{
-								deactivate_input(dd, j, i);
-							}
-							else
-							{
-								activate_input(dd, i, j);
-								activate_input(dd, j, i);
-							}
+							color_input_cell(dd, i, j, input_bg_color);
+							color_input_cell(dd, j, i, input_bg_color);
 						}
+						//if (Mij == 0)
+						//{
+						//	color_input_cell(dd, j, i, input_bg_color);
+						//	if (Mji != 0)
+						//	{
+						//		color_input_cell(dd, i, j, input_bg_color_disabled);
+						//	}
+						//}
+						//else if (Mji == 0)
+						//{
+						//	color_input_cell(dd, j, i, input_bg_color_disabled);
+						//}
+						//else
+						//{
+						//	color_input_cell(dd, i, j, input_bg_color);
+						//	color_input_cell(dd, j, i, input_bg_color);
+						//}
 					}
-					catch (MyException ex) { ex.Info(); }
 				}
+				catch (MyException ex) { ex.Info(); }
+			}
+			try
+			{
 				bool some_contradictory_profiles = false;
 				for (int expert = 0; expert < m; expert++)
 				{
@@ -404,7 +529,7 @@ namespace Group_choice_algos_fuzzy
 						}
 						catch (MyException ex) { ex.Info(); }
 					}
-					
+
 					DataGridView dgv = new DataGridView();
 					SetDataGridViewDefaults(dgv);
 					dgv.CellEndEdit += CheckCellWhenValueChanged;
@@ -449,12 +574,10 @@ namespace Group_choice_algos_fuzzy
 					}
 					if (Matrix.GetFromDataGridView(dgv).ToFuzzy.IsHasCycle())
 					{
-						//dgv.BackgroundColor = error_color;
 						some_contradictory_profiles = true;
 					}
 					else
 					{
-						//dgv.BackgroundColor = DGV_background;
 						PerformTransClosure(dgv);
 					}
 				}
@@ -484,22 +607,22 @@ namespace Group_choice_algos_fuzzy
 					return M?.Matrix2String(true) + "Матрица смежности:\n"
 						+ M?.AdjacencyMatrix.Matrix2String(true);
 				}
-				if (R.aggregated != null)
+				if (R.Aggregated != null)
 				{
 					tex += CR_LF + "Агрегированное отношение R:\n"
-						+ for_print_matrices(R.aggregated);
+						+ for_print_matrices(R.Aggregated);
 
 					tex += CR_LF + "Асимметричная часть As(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.aggregated_Asymmetric);
+						+ for_print_matrices(R.Aggregated_Asymmetric);
 
 					tex += CR_LF + "Транзитивное замыкание Tr(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.aggregated_TransClosured);
+						+ for_print_matrices(R.Aggregated_TransClosured);
 
 					tex += CR_LF + "Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.aggregated_DestroyedCycles);
+						+ for_print_matrices(R.Aggregated_DestroyedCycles);
 
 					tex += CR_LF + "Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.aggregated_DestroyedCycles_TransClosured);
+						+ for_print_matrices(R.Aggregated_DestroyedCycles_TransClosured);
 				}
 				label3.Text = tex;
 				void set_column(DataGridView dgv, int j)
@@ -508,7 +631,7 @@ namespace Group_choice_algos_fuzzy
 					column.CellTemplate = new DataGridViewTextBoxCell();
 					column.HeaderText = $"Ранжиро-\nвание {j + 1}";
 					column.Name = j.ToString();
-					column.HeaderCell.Style.BackColor = window_background;
+					column.HeaderCell.Style.BackColor = window_bg_color;
 					column.FillWeight = 1;
 					dgv.Columns.Add(column);
 				}
@@ -586,16 +709,16 @@ namespace Group_choice_algos_fuzzy
 								if (min < max)
 								{
 									if (characteristic.Value == min)
-										met.connectedTableFrame[j, i].Style.BackColor = color_min;
+										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_min_color;
 									else if (characteristic.Value == max)
-										met.connectedTableFrame[j, i].Style.BackColor = color_max;
+										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
 								}
 								else if (characteristic.ValuesList != null && characteristic.ValuesList.Count != 0)
 								{
 									met.connectedTableFrame[j, i].Value = string.Join(CR_LF,
 										characteristic.ValuesList);
 									if (met.IsInPareto[j])
-										met.connectedTableFrame[j, i].Style.BackColor = color_max;
+										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
 								}
 							}
 
@@ -616,7 +739,7 @@ namespace Group_choice_algos_fuzzy
 								if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
 								{
 									for (int i = 0; i < n; i++)
-										met.connectedTableFrame[j, i].Style.BackColor = color_mutual;
+										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
 								}
 
 								display_characteristic(j, n, met.MinLength, met.MaxLength,
@@ -804,38 +927,30 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
+		public void UpdateGraphPicture()
+		{
+			var rtd = R.GetRelations2Draw();
+			update_orgraph_pic(rtd.Matrices, rtd.Labels);
+		}
 		private void Form1_SizeChanged(object sender, EventArgs e)
 		{
 			set_controls_size();
 		}
-		private void flowLayoutPanel_input_MouseEnter(object sender, EventArgs e)
+		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
-			flowLayoutPanel_input_tables.Focus();
+			show_orgraphs_pic();
 		}
-		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
-		{
-			flowLayoutPanel_output_tables.Focus();
-		}
-		private void flowLayoutPanel_output_info_MouseEnter(object sender, EventArgs e)
+		private void flowLayoutPanel_output_info_MouseDown(object sender, MouseEventArgs e)
 		{
 			flowLayoutPanel_output_info.Focus();
 		}
-		private void button_visualize_orgraph_Click(object sender, EventArgs e)
+		private void flowLayoutPanel_output_tables_MouseDown(object sender, MouseEventArgs e)
 		{
-			var M = new List<Matrix>{
-				R.aggregated, R.aggregated_Asymmetric, R.aggregated_TransClosured,
-				R.aggregated_DestroyedCycles, R.aggregated_DestroyedCycles_TransClosured};
-			var L = new List<string>{
-				"R", "Asy(R)", "Tr(R)",
-				"Acyclic(R)", "Tr(Acyclic(R))"};
-			if (M.Any(x => x != null))// && (form2 == null || form2.IsDisposed))
-			{
-				form2?.Dispose();
-				form2 = new Form2(M.Select(x => x.matrix_base).ToList(), L);
-				form2.Show();
-			}
+			flowLayoutPanel_output_tables.Focus();
 		}
-
-
+		private void flowLayoutPanel_input_tables_MouseDown(object sender, MouseEventArgs e)
+		{
+			flowLayoutPanel_input_tables.Focus();
+		}
 	}
 }

@@ -825,6 +825,32 @@ namespace Group_choice_algos_fuzzy
 		{
 			return Matrix.IsHasCycle(this.AdjacencyList(0.0));
 		}
+		public FuzzyRelation DestroyedCycles()
+		{
+			var R = new FuzzyRelation(this);
+			var r = R.AdjacencyMatrix.ToFuzzy;
+			Matrix RK = Matrix.Eye(1); //матрица контуров
+			while (true)
+			{//если ещё остались контуры
+				RK = r.TransitiveClosure().Intersect(r.TransitiveClosure().Transpose().ToFuzzy).Intersect(r);
+				if (RK.ElemSum() == 0)
+					break;
+				for (int i = 0; i < RK.n; i++)
+					for (int j = 0; j < RK.m; j++)
+						if (RK[i, j] != 0)
+							RK[i, j] = R[i, j];
+
+				var min_elem = RK.MinElemNotZero();
+				for (int i = 0; i < R.n; i++)
+					for (int j = 0; j < R.m; j++)
+						if (RK[i, j] != 0 && R[i, j] == min_elem)
+						{
+							R[i, j] = 0;
+							r[i, j] = 0;
+						}
+			}
+			return R;
+		}
 		/// <summary>
 		/// преобразование списка FuzzyRelation в список Matrix
 		/// </summary>
@@ -903,7 +929,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value;
-				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.aggregated);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.Aggregated);
 			}
 			get { return Path; }
 		}
@@ -912,7 +938,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value.ToList();
-				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.aggregated);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.Aggregated);
 			}
 			get { return Path.ToArray(); }
 		}
@@ -1523,30 +1549,10 @@ namespace Group_choice_algos_fuzzy
 		{
 			Smerchinskaya_Yashina_method.ClearRankings();
 			var R = new FuzzyRelation(weight_matrix);
-			var r = weight_matrix.AdjacencyMatrix.ToFuzzy;
-			Matrix RK = Matrix.Eye(1); //матрица контуров
-			while (true)
-			{//если ещё остались контуры
-				RK = r.TransitiveClosure().Intersect(r.TransitiveClosure().Transpose().ToFuzzy).Intersect(r);
-				if (RK.ElemSum() == 0)
-					break;
-				for (int i = 0; i < RK.n; i++)
-					for (int j = 0; j < RK.m; j++)
-						if (RK[i, j] != 0)
-							RK[i, j] = R[i, j];
-
-				var min_elem = RK.MinElemNotZero();
-				for (int i = 0; i < R.n; i++)
-					for (int j = 0; j < R.m; j++)
-						if (RK[i, j] != 0 && R[i, j] == min_elem)
-						{
-							R[i, j] = 0;
-							r[i, j] = 0;
-						}
-			}
-			Form1.R.aggregated_DestroyedCycles = new FuzzyRelation(R);
+			R = R.DestroyedCycles();
+			Form1.R.Aggregated_DestroyedCycles = new FuzzyRelation(R);
 			R = R.TransitiveClosure();
-			Form1.R.aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(R);
+			Form1.R.Aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(R);
 			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
 			if (Ranking.Matrix2RanksDemukron(R, out Smerchinskaya_Yashina_method.Levels, out var ranks))
 				foreach (var rr in ranks)

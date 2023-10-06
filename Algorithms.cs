@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -65,6 +66,16 @@ namespace Group_choice_algos_fuzzy
 			}
 			return false;
 		}
+		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
+		{
+			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
+			dgv.DefaultCellStyle.ForeColor = font_color;
+			dgv.DefaultCellStyle.BackColor = input_bg_color;
+			dgv.DefaultCellStyle.SelectionForeColor = font_color;
+			dgv.DefaultCellStyle.SelectionBackColor = Color.Empty;
+		}
+
+
 		/// <summary>
 		/// настрйки для вывода DataGridView
 		/// </summary>
@@ -85,7 +96,7 @@ namespace Group_choice_algos_fuzzy
 			dgv.ShowEditingIcon = false;
 			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
 			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-			dgv.DefaultCellStyle.BackColor = input_bg_color;
+			SetDataGridViewDefaults_FontAndColors(dgv);
 			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 		}
 		
