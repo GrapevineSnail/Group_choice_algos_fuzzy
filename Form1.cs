@@ -582,8 +582,8 @@ namespace Group_choice_algos_fuzzy
 					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
 				string for_print_matrices(Matrix M)
 				{
-					return M?.Matrix2String(true) + "Матрица смежности:\n"
-						+ M?.AdjacencyMatrix.Matrix2String(true);
+					return M?.Matrix2String(true);
+					//+ "Матрица смежности:\n" + M?.AdjacencyMatrix.Matrix2String(true);
 				}
 				if (R.Aggregated != null)
 				{

@@ -35,7 +35,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				var pb = new PictureBox();
 				this.flowLayoutPanel1.Controls.Add(pb);
-				pb.Size = new Size(300,400);
+				pb.Size = new Size(400,400);
 				PB.Add(pb);
 				DrawGraph(CurMatrices[k], PB[k]);
 			}
