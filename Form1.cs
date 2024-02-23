@@ -813,7 +813,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (n > max_count_of_alternatives)
+				if (cb_All_rankings.Checked && n > max_count_of_alternatives)
 					throw new MyException(EX_n_m_too_big);
 				R_list = new List<FuzzyRelation>();
 				foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
@@ -849,8 +849,10 @@ namespace Group_choice_algos_fuzzy
 				}
 				else
 				{
-					if ((int)numericUpDown_n.Value > max_count_of_alternatives ||
-						(int)numericUpDown_m.Value > max_count_of_experts)
+					if (cb_All_rankings.Checked && (
+						(int)numericUpDown_n.Value > max_count_of_alternatives ||
+						(int)numericUpDown_m.Value > max_count_of_experts
+						))
 						throw new MyException(EX_n_m_too_big);
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
