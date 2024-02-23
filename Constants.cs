@@ -90,8 +90,9 @@ namespace Group_choice_algos_fuzzy
 				sym2ind[$"{MARK}{i}"] = i;
 				ind2sym[i] = $"{MARK}{i}";
 				sym2ind[$"{letters[i]}"] = i;
+				sym2ind[$"{letters[i]}{i:00}"] = i;
 				sym2ind[$"{char.ToLower(letters[i])}"] = i;
-				ind2letter[i] = n > 26 ? ind2sym[i] : letters[i].ToString();
+				ind2letter[i] = n > 26 ? ind2sym[i] : string.Format("{0}{1:00}", letters[i], i);
 			}
 		}
 
