@@ -30,14 +30,18 @@ namespace Group_choice_algos_fuzzy
 			CurMatrices = matrices;
 			CurLabels = labels;
 			int m = matrices.Count();
-			var PB = new List<PictureBox>();
-			for(int k =0; k <m; k++)
+			var pb_list = new List<PictureBox>();
+			var lb_list = new List<System.Windows.Forms.Label>();
+			for (int k =0; k <m; k++)
 			{
-				var pb = new PictureBox();
-				this.flowLayoutPanel1.Controls.Add(pb);
-				pb.Size = new Size(400,400);
-				PB.Add(pb);
-				DrawGraph(CurMatrices[k], PB[k]);
+				lb_list.Add(new Label());
+				pb_list.Add(new PictureBox());
+				this.flowLayoutPanel1.Controls.Add(lb_list[k]);
+				this.flowLayoutPanel1.Controls.Add(pb_list[k]);
+				pb_list[k].Size = new Size(400,400);
+				lb_list[k].Text = CurLabels[k];
+				DrawGraph(CurMatrices[k], pb_list[k]);
+
 			}
 		}
 	}
