@@ -562,7 +562,7 @@ namespace Group_choice_algos_fuzzy
 					{//что должно происходить при завершении редактирования ячейки
 						try
 						{
-
+							FuzzyRelation changed_matrix;
 							var dd = sender as DataGridView;
 							///////
 							//int exp_index = flowLayoutPanel_input_tables.Controls.GetChildIndex(dd);
@@ -574,7 +574,10 @@ namespace Group_choice_algos_fuzzy
 							var p = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
 							double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
 							if (!p || Mij > 1 || Mij < 0 || i == j)
+							{
 								dd[j, i].Value = 0.0;
+								changed_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
+							}
 							else
 							{
 								comparsion_trials++;
@@ -588,16 +591,13 @@ namespace Group_choice_algos_fuzzy
 									is_compared_alternative[i] = true;
 									is_compared_alternative[j] = true;
 								}
-								FuzzyRelation changed_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
+								changed_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
 								//транзитивное замыкание не должно содержать циклов
 								if (changed_matrix.IsHasCycle())
 									throw new MyException(EX_contains_cycle);
 								changed_matrix = PerformTransClosure(changed_matrix, out bool is_need_update);
-								if (is_need_update)
-								{
-									UpdateExpertMatrices_wrapper(sender, exp_index, changed_matrix);
-								}
 							}
+							UpdateExpertMatrices_wrapper(sender, exp_index, changed_matrix);
 						}
 						catch (MyException ex) { ex.Info(); }
 					}
@@ -626,15 +626,11 @@ namespace Group_choice_algos_fuzzy
 					}
 
 					FuzzyRelation input_matrix = ExpertMatricesInUI[expert].ToFuzzy;
-					//if (list_of_matrices != null && list_of_matrices.Count != 0)
-					//{
 					input_matrix = input_matrix.NormalizeElems(out var is_norm).ToFuzzy;
 					if (!is_norm)
 					{
 						new MyException(EX_matrix_was_normalized).Info();
 					}
-					//}
-
 					if (input_matrix.IsHasCycle())
 					{
 						some_contradictory_profiles = true;
