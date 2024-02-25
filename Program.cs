@@ -16,7 +16,12 @@ namespace Group_choice_algos_fuzzy
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new Form1());
+
+			var Main_form = new Form1();
+			Main_form.ExpertMatricesInUI_EventHandler += Main_form.UpdateExpertMatrices;
+
+			Application.Run(Main_form);
+
 		}
 	}
 }

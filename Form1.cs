@@ -198,14 +198,102 @@ namespace Group_choice_algos_fuzzy
 					R.Aggregated_Asymmetric};
 				var L = new List<string>{
 					"R", "Tr(R)",
-					"Acyclic(R)", "Tr(Acyclic(R))", 
+					"Acyclic(R)", "Tr(Acyclic(R))",
 					"Asym(R)"};
 				var ans = (M, L);
 				return ans;
 			}
-			
+
 		}
+
+		#region Обновление матриц экспертов (Model)
+		public List<Matrix> ExpertMatricesInUI;
+
+		//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
+		public event EventHandler<ExpertMatricesEventArgs> ExpertMatricesInUI_EventHandler;
+		
+		protected virtual void ExpertMatricesInUI_Update(object sender, ExpertMatricesEventArgs e)
+		{
+			EventHandler<ExpertMatricesEventArgs> handler = ExpertMatricesInUI_EventHandler;
+			handler?.Invoke(this, e);
+		}
+		public class ExpertMatricesEventArgs : EventArgs
+		{
+			public int expert_index { get; set; }
+			public Matrix fill_values { get; set; }
+		}
+		List<DataGridView> GetDGVList()
+		{
+			return flowLayoutPanel_input_tables.Controls.OfType<DataGridView>().ToList();
+		}
+		List<Matrix> GetMatrixListFromDGVs()
+		{
+			return GetDGVList().Select(x => Matrix.GetFromDataGridView(x)).ToList();
+		}
+		void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
+		{
+			try
+			{
+				var dd = sender as DataGridView;
+				int i = e.RowIndex;
+				int j = e.ColumnIndex;
+				if (i == j)
+					color_input_cell(dd, i, j, input_bg_color_disabled);
+				else
+				{
+					double Mij, Mji;
+					double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+					double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+					if (Mij == 0 && Mji != 0)
+					{
+						color_input_cell(dd, i, j, input_bg_color_disabled);
+						color_input_cell(dd, j, i, input_bg_color);
+					}
+					else if (Mij != 0 && Mji == 0)
+					{
+						color_input_cell(dd, i, j, input_bg_color);
+						color_input_cell(dd, j, i, input_bg_color_disabled);
+					}
+					else
+					{
+						color_input_cell(dd, i, j, input_bg_color);
+						color_input_cell(dd, j, i, input_bg_color);
+					}
+				}
+			}
+			catch (MyException ex) { ex.Info(); }
+		}
+		void UpdateExpertDGV(List<Matrix> lst_of_matrices, int expert_index)
+		{
+			try
+			{
+				var DGV = GetDGVList()[expert_index];
+				Matrix fill_values = lst_of_matrices[expert_index];
+				Matrix.SetToDataGridView(fill_values, DGV);
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < n; j++)
+						DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
+			}
+			catch { }
+		}
+		public void UpdateExpertMatrices(object sender, ExpertMatricesEventArgs e)
+			//ref List<Matrix> expert_matrices, int expert_index, Matrix fill_values)
+		{
+			ExpertMatricesInUI[e.expert_index] = e.fill_values;
+			UpdateExpertDGV(ExpertMatricesInUI, e.expert_index);
+		}
+		public void UpdateExpertMatrices_wrapper(object sender, int expert_index, Matrix fill_values)
+		{
+			var args = new ExpertMatricesEventArgs();
+			args.expert_index = expert_index;
+			args.fill_values = fill_values;
+			ExpertMatricesInUI_EventHandler?.Invoke(sender, args);
+		}
+		#endregion Обновление матриц экспертов (Model)
+
+
 		#endregion GLOBALS
+
 
 		public void R_UpdateGraphPicture()
 		{
@@ -312,7 +400,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					int rws = dgv.RowCount;
 					int cls = dgv.ColumnCount;
-					for (int i =0 ; i < rws; i++)
+					for (int i = 0; i < rws; i++)
 					{
 						for (int j = 0; j < cls; j++)
 						{
@@ -436,7 +524,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// размещение таблицы для ввода профилей
 		/// </summary>
-		private void set_input_datagrids(List<Matrix> list_of_matrices)
+		private void set_input_datagrids()
 		{
 			if (numericUpDown_n.Minimum <= n && n <= numericUpDown_n.Maximum &&
 				numericUpDown_m.Minimum <= m && m <= numericUpDown_m.Maximum)
@@ -446,43 +534,10 @@ namespace Group_choice_algos_fuzzy
 			}
 			clear_input();
 			clear_output();
-			void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
-			{
-				try
-				{
-					var dd = sender as DataGridView;
-					int i = e.RowIndex;
-					int j = e.ColumnIndex;
-					if (i == j)
-						color_input_cell(dd, i, j, input_bg_color_disabled);
-					else
-					{
-						double Mij, Mji;
-						double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
-						double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
-						if (Mij == 0 && Mji != 0)
-						{
-							color_input_cell(dd, i, j, input_bg_color_disabled);
-							color_input_cell(dd, j, i, input_bg_color);
-						}
-						else if (Mij != 0 && Mji == 0)
-						{
-							color_input_cell(dd, i, j, input_bg_color);
-							color_input_cell(dd, j, i, input_bg_color_disabled);
-						}
-						else
-						{
-							color_input_cell(dd, i, j, input_bg_color);
-							color_input_cell(dd, j, i, input_bg_color);
-						}						
-					}
-				}
-				catch (MyException ex) { ex.Info(); }
-			}
+
 			void ExpertGraphsUpdate(object sender, DataGridViewCellEventArgs e)
 			{
-				var M = flowLayoutPanel_input_tables.Controls.OfType<DataGridView>()
-					   .Select(x => Matrix.GetFromDataGridView(x)).ToList();
+				var M = GetMatrixListFromDGVs();
 				var L = new List<string>();
 				for (int i = 0; i < M.Count; i++)
 				{
@@ -490,6 +545,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				OrgraphsPics_update(form3_input_expert_matrices, M, L);
 			}
+
 			try
 			{
 				bool some_contradictory_profiles = false;
@@ -502,7 +558,12 @@ namespace Group_choice_algos_fuzzy
 					{//что должно происходить при завершении редактирования ячейки
 						try
 						{
+
 							var dd = sender as DataGridView;
+							///////
+							//int exp_index = flowLayoutPanel_input_tables.Controls.GetChildIndex(dd);
+							int exp_index = GetDGVList().IndexOf(dd);
+							///////
 							int i = e.RowIndex;
 							int j = e.ColumnIndex;
 							double Mij, Mji;
@@ -523,92 +584,114 @@ namespace Group_choice_algos_fuzzy
 									is_compared_alternative[i] = true;
 									is_compared_alternative[j] = true;
 								}
-								var input_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
+								FuzzyRelation changed_matrix = Matrix.GetFromDataGridView(dd).ToFuzzy;
 								//транзитивное замыкание не должно содержать циклов
-								if (input_matrix.IsHasCycle())
+								if (changed_matrix.IsHasCycle())
 									throw new MyException(EX_contains_cycle);
-								PerformTransClosure(dd);
+								changed_matrix = PerformTransClosure(changed_matrix, out bool is_need_update);
+								if (is_need_update)
+								{
+									UpdateExpertMatrices_wrapper(sender, exp_index, changed_matrix);
+								}
 							}
 						}
-						catch (MyException ex) { ex.Info(); }
+						catch (MyException ex) { ex.Info();	}
 					}
-					void PerformTransClosure(DataGridView DGV)
+					FuzzyRelation PerformTransClosure(FuzzyRelation matrix, out bool is_need_update)
 					{
+						is_need_update = false;
 						try
 						{
 							if (cb_do_transitive_closure.Checked &&
 							(comparsion_trials == n - 1 || is_compared_alternative.All(x => x == true)))
 							{
-								var input_matrix = Matrix.GetFromDataGridView(DGV).ToFuzzy;
-								if (!input_matrix.IsTransitive())
+								if (!matrix.IsTransitive())
 								{
-									Matrix.SetToDataGridView(input_matrix.TransitiveClosure(), DGV);
-									for (int i = 0; i < n; i++)
-										for (int j = 0; j < n; j++)
-											DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
+									is_need_update = true;
+									matrix = matrix.TransitiveClosure();
+									
 								}
 							}
+							return matrix;
 						}
-						catch (MyException ex) { ex.Info(); }
+						catch (MyException ex) 
+						{ 
+							ex.Info();
+							return matrix;
+						}
 					}
 
-					DataGridView dgv = new DataGridView();
-					SetDataGridViewDefaults(dgv);
-					dgv.CellEndEdit += CheckCellWhenValueChanged;
-					dgv.CellEndEdit += DeactivateSymmetricCell;
-					dgv.CellEndEdit += ExpertGraphsUpdate;
-					flowLayoutPanel_input_tables.Controls.Add(dgv);
-
-					for (int j = 0; j < n; j++)
-					{
-						DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
-						column.Name = j.ToString();
-						column.HeaderText = $"{ind2letter[j]}";
-						column.SortMode = DataGridViewColumnSortMode.NotSortable;
-						dgv.Columns.Add(column);
-					}
-					for (int i = 0; i < n; i++)
-					{
-						dgv.Rows.Add();
-						dgv.Rows[i].HeaderCell.Value = $"{ind2letter[i]}";
-					}
-
-					double[,] fill_values = new double[n, n];//инициализирован 0.0
-					if (list_of_matrices != null && list_of_matrices.Count != 0)
-					{
-						fill_values = list_of_matrices[expert].NormalizeElems(out var is_norm).matrix_base;
+					FuzzyRelation input_matrix = ExpertMatricesInUI[expert].ToFuzzy;
+					//if (list_of_matrices != null && list_of_matrices.Count != 0)
+					//{
+					input_matrix = input_matrix.NormalizeElems(out var is_norm).ToFuzzy;
 						if (!is_norm)
 						{
 							new MyException(EX_matrix_was_normalized).Info();
 						}
-					}
-					for (int i = 0; i < dgv.Rows.Count; i++)
-					{
-						for (int j = 0; j < dgv.Columns.Count; j++)
-						{
-							dgv[j, i].ValueType = typeof(double);
-							dgv[j, i].Value = fill_values[i, j];
-							DeactivateSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
-						}
-					}
-					for (int i = 0; i < n; i++)
-					{
-						is_compared_alternative[i] = IsCompared(i, dgv);
-					}
-					if (Matrix.GetFromDataGridView(dgv).ToFuzzy.IsHasCycle())
+					//}
+
+					if (input_matrix.IsHasCycle())
 					{
 						some_contradictory_profiles = true;
 					}
 					else
 					{
-						PerformTransClosure(dgv);
+						input_matrix = PerformTransClosure(input_matrix, out bool is_need_update);
+						if (is_need_update)
+						{
+							UpdateExpertMatrices_wrapper(this, expert, input_matrix);
+						}
 					}
+
+					double[,] fill_values = new double[n, n];//инициализирован 0.0
+					fill_values = input_matrix.matrix_base;
+
+					if (cb_show_input_matrices.Checked)
+					{
+						DataGridView dgv = new DataGridView();
+						SetDataGridViewDefaults(dgv);
+						dgv.CellEndEdit += CheckCellWhenValueChanged;
+						dgv.CellEndEdit += DeactivateSymmetricCell;
+						dgv.CellEndEdit += ExpertGraphsUpdate;
+						flowLayoutPanel_input_tables.Controls.Add(dgv);
+
+						for (int j = 0; j < n; j++)
+						{
+							DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
+							column.Name = j.ToString();
+							column.HeaderText = $"{ind2letter[j]}";
+							column.SortMode = DataGridViewColumnSortMode.NotSortable;
+							dgv.Columns.Add(column);
+						}
+						for (int i = 0; i < n; i++)
+						{
+							dgv.Rows.Add();
+							dgv.Rows[i].HeaderCell.Value = $"{ind2letter[i]}";
+						}
+						for (int i = 0; i < dgv.Rows.Count; i++)
+						{
+							for (int j = 0; j < dgv.Columns.Count; j++)
+							{
+								dgv[j, i].ValueType = typeof(double);
+								dgv[j, i].Value = fill_values[i, j];
+								DeactivateSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
+							}
+						}
+						for (int i = 0; i < n; i++)
+						{
+							is_compared_alternative[i] = IsCompared(i, dgv);
+						}
+
+					}
+
+					UpdateExpertMatrices_wrapper(this, expert, input_matrix);
 					ExpertGraphsUpdate(null, null);
 				}
 				if (some_contradictory_profiles)
 					throw new MyException(EX_contains_cycle);
 			}
-			catch (MyException ex) { ex.Info(); }
+			catch (MyException ex) { ex.Info();	}
 			activate_input();
 			set_controls_size();
 		}
@@ -840,7 +923,8 @@ namespace Group_choice_algos_fuzzy
 					n = nn;
 
 					refresh_variables();
-					set_input_datagrids(matrices);
+					ExpertMatricesInUI = matrices;
+					set_input_datagrids();
 				}
 				catch (FileNotFoundException ex)
 				{
@@ -872,7 +956,8 @@ namespace Group_choice_algos_fuzzy
 					R_list = R_list.Select(x => x.ToFuzzy.TransitiveClosure()).ToList();
 				}
 				//выполняет проверку и выводит уведомления о наличии циклов
-				set_input_datagrids(FuzzyRelation.ToMatrixList(R_list));
+				ExpertMatricesInUI = FuzzyRelation.ToMatrixList(R_list);
+				set_input_datagrids();
 				var Intersect = execute_algorythms(R_list);
 				set_output_results(Intersect);
 				// visualize_graph(C, null);//
@@ -904,7 +989,8 @@ namespace Group_choice_algos_fuzzy
 					m = (int)numericUpDown_m.Value;
 
 					refresh_variables();
-					set_input_datagrids(null);
+					ExpertMatricesInUI = null;
+					set_input_datagrids();
 				}
 			}
 			catch (MyException ex) { ex.Info(); }
@@ -997,5 +1083,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			flowLayoutPanel_input_tables.Focus();
 		}
+
+
 	}
 }

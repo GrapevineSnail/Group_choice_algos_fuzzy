@@ -77,6 +77,7 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.flowLayoutPanel_input_tables = new System.Windows.Forms.FlowLayoutPanel();
 			this.cb_do_transitive_closure = new System.Windows.Forms.CheckBox();
+			this.cb_show_input_matrices = new System.Windows.Forms.CheckBox();
 			this.tableLayoutPanel1.SuspendLayout();
 			this.flowLayoutPanel_output_tables.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
@@ -117,6 +118,7 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.Controls.Add(this.button_for_tests, 2, 1);
 			this.tableLayoutPanel1.Controls.Add(this.groupBox3, 0, 4);
 			this.tableLayoutPanel1.Controls.Add(this.cb_do_transitive_closure, 1, 3);
+			this.tableLayoutPanel1.Controls.Add(this.cb_show_input_matrices, 1, 1);
 			this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
 			this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -146,7 +148,6 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_tables.TabIndex = 24;
 			this.flowLayoutPanel_output_tables.WrapContents = false;
 			this.flowLayoutPanel_output_tables.MouseDown += new System.Windows.Forms.MouseEventHandler(this.flowLayoutPanel_output_tables_MouseDown);
-			
 			// 
 			// groupBox_HP_max_length
 			// 
@@ -664,7 +665,6 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_input_tables.TabIndex = 25;
 			this.flowLayoutPanel_input_tables.WrapContents = false;
 			this.flowLayoutPanel_input_tables.MouseDown += new System.Windows.Forms.MouseEventHandler(this.flowLayoutPanel_input_tables_MouseDown);
-			
 			// 
 			// cb_do_transitive_closure
 			// 
@@ -677,6 +677,17 @@ namespace Group_choice_algos_fuzzy
 			this.cb_do_transitive_closure.TabIndex = 27;
 			this.cb_do_transitive_closure.Text = "Дополнять по транзитивности автоматически";
 			this.cb_do_transitive_closure.UseVisualStyleBackColor = true;
+			// 
+			// cb_show_input_matrices
+			// 
+			this.cb_show_input_matrices.Checked = true;
+			this.cb_show_input_matrices.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.cb_show_input_matrices.Location = new System.Drawing.Point(283, 53);
+			this.cb_show_input_matrices.Name = "cb_show_input_matrices";
+			this.cb_show_input_matrices.Size = new System.Drawing.Size(74, 71);
+			this.cb_show_input_matrices.TabIndex = 28;
+			this.cb_show_input_matrices.Text = "Показывать входные матрицы";
+			this.cb_show_input_matrices.UseVisualStyleBackColor = true;
 			// 
 			// Form1
 			// 
@@ -759,6 +770,7 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input_tables;
 		private System.Windows.Forms.CheckBox cb_do_transitive_closure;
 		private System.Windows.Forms.Button button_visualize_orgraph;
+		private System.Windows.Forms.CheckBox cb_show_input_matrices;
 	}
 }
 
