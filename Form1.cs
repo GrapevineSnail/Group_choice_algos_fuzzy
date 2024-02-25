@@ -211,7 +211,7 @@ namespace Group_choice_algos_fuzzy
 
 		//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
 		public event EventHandler<ExpertMatricesEventArgs> ExpertMatricesInUI_EventHandler;
-		
+
 		protected virtual void ExpertMatricesInUI_Update(object sender, ExpertMatricesEventArgs e)
 		{
 			EventHandler<ExpertMatricesEventArgs> handler = ExpertMatricesInUI_EventHandler;
@@ -276,8 +276,23 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch { }
 		}
+		/// <summary>
+		/// обновить рисунки графов - матриц экспертов
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void UpdateExpertGraphs(object sender, DataGridViewCellEventArgs e)
+		{
+			var M = GetMatrixListFromDGVs();
+			var L = new List<string>();
+			for (int i = 0; i < M.Count; i++)
+			{
+				L.Add($"Expert{i}:");
+			}
+			OrgraphsPics_update(form3_input_expert_matrices, M, L);
+		}
 		public void UpdateExpertMatrices(object sender, ExpertMatricesEventArgs e)
-			//ref List<Matrix> expert_matrices, int expert_index, Matrix fill_values)
+		//ref List<Matrix> expert_matrices, int expert_index, Matrix fill_values)
 		{
 			ExpertMatricesInUI[e.expert_index] = e.fill_values;
 			UpdateExpertDGV(ExpertMatricesInUI, e.expert_index);
@@ -535,17 +550,6 @@ namespace Group_choice_algos_fuzzy
 			clear_input();
 			clear_output();
 
-			void ExpertGraphsUpdate(object sender, DataGridViewCellEventArgs e)
-			{
-				var M = GetMatrixListFromDGVs();
-				var L = new List<string>();
-				for (int i = 0; i < M.Count; i++)
-				{
-					L.Add($"Expert{i}:");
-				}
-				OrgraphsPics_update(form3_input_expert_matrices, M, L);
-			}
-
 			try
 			{
 				bool some_contradictory_profiles = false;
@@ -595,7 +599,7 @@ namespace Group_choice_algos_fuzzy
 								}
 							}
 						}
-						catch (MyException ex) { ex.Info();	}
+						catch (MyException ex) { ex.Info(); }
 					}
 					FuzzyRelation PerformTransClosure(FuzzyRelation matrix, out bool is_need_update)
 					{
@@ -609,13 +613,13 @@ namespace Group_choice_algos_fuzzy
 								{
 									is_need_update = true;
 									matrix = matrix.TransitiveClosure();
-									
+
 								}
 							}
 							return matrix;
 						}
-						catch (MyException ex) 
-						{ 
+						catch (MyException ex)
+						{
 							ex.Info();
 							return matrix;
 						}
@@ -625,10 +629,10 @@ namespace Group_choice_algos_fuzzy
 					//if (list_of_matrices != null && list_of_matrices.Count != 0)
 					//{
 					input_matrix = input_matrix.NormalizeElems(out var is_norm).ToFuzzy;
-						if (!is_norm)
-						{
-							new MyException(EX_matrix_was_normalized).Info();
-						}
+					if (!is_norm)
+					{
+						new MyException(EX_matrix_was_normalized).Info();
+					}
 					//}
 
 					if (input_matrix.IsHasCycle())
@@ -644,16 +648,15 @@ namespace Group_choice_algos_fuzzy
 						}
 					}
 
-					double[,] fill_values = new double[n, n];//инициализирован 0.0
-					fill_values = input_matrix.matrix_base;
 
 					if (cb_show_input_matrices.Checked)
 					{
+						double[,] fill_values = input_matrix.matrix_base;
 						DataGridView dgv = new DataGridView();
 						SetDataGridViewDefaults(dgv);
 						dgv.CellEndEdit += CheckCellWhenValueChanged;
 						dgv.CellEndEdit += DeactivateSymmetricCell;
-						dgv.CellEndEdit += ExpertGraphsUpdate;
+						dgv.CellEndEdit += UpdateExpertGraphs;
 						flowLayoutPanel_input_tables.Controls.Add(dgv);
 
 						for (int j = 0; j < n; j++)
@@ -686,12 +689,13 @@ namespace Group_choice_algos_fuzzy
 					}
 
 					UpdateExpertMatrices_wrapper(this, expert, input_matrix);
-					ExpertGraphsUpdate(null, null);
+					UpdateExpertGraphs(null, null);
+
 				}
 				if (some_contradictory_profiles)
 					throw new MyException(EX_contains_cycle);
 			}
-			catch (MyException ex) { ex.Info();	}
+			catch (MyException ex) { ex.Info(); }
 			activate_input();
 			set_controls_size();
 		}
@@ -989,7 +993,11 @@ namespace Group_choice_algos_fuzzy
 					m = (int)numericUpDown_m.Value;
 
 					refresh_variables();
-					ExpertMatricesInUI = null;
+					ExpertMatricesInUI = new List<Matrix>(m);
+					for(int k =0; k < m; k++)
+					{
+						ExpertMatricesInUI.Add(new Matrix(n));
+					}
 					set_input_datagrids();
 				}
 			}
