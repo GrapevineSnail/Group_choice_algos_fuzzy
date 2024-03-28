@@ -40,6 +40,7 @@ namespace Group_choice_algos_fuzzy
 				this.flowLayoutPanel1.Controls.Add(pb_list[k]);
 				pb_list[k].Size = new Size(400,400);
 				lb_list[k].Text = CurLabels[k];
+				lb_list[k].AutoSize = true;
 				DrawGraph(CurMatrices[k], pb_list[k]);
 
 			}

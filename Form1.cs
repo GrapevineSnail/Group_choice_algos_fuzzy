@@ -26,7 +26,7 @@ namespace Group_choice_algos_fuzzy
 			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
 			Methods.Smerchinskaya_Yashina_method.SetConnectedControls(cb_SY, dg_SY);
 
-			R.R_Changed += R_UpdateGraphPicture;
+			AggregatedMatrix.R_Changed += R_UpdateGraphPicture;
 
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
@@ -71,131 +71,133 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// ResultRelation
 		/// </summary>
-		public static class R //агрегированная матрица матриц профилей
+		public static class AggregatedMatrix //агрегированная матрица матриц профилей
 		{
 			public delegate void MyEventHandler();//сигнатура
 			public static event MyEventHandler R_Changed;//для изменения картинки графа
+
 			public static FuzzyRelation Avg;//агрегированная матрица матриц профилей (среднее)
 			public static FuzzyRelation Med;//агрегированная матрица матриц профилей (медианные)
-			private static FuzzyRelation aggregated;//текущая используемая агрегированная матрица
-			private static FuzzyRelation aggregated_TransClosured;
-			private static FuzzyRelation aggregated_DestroyedCycles;
-			private static FuzzyRelation aggregated_DestroyedCycles_TransClosured;
-			private static FuzzyRelation aggregated_Asymmetric;
-			private static FuzzyRelation aggregated_Asymmetric_TransClosured;
-			private static FuzzyRelation aggregated_Asymmetric_DestroyedCycles;
-			private static FuzzyRelation aggregated_Asymmetric_DestroyedCycles_TransClosured;
-			public static FuzzyRelation Aggregated
+			private static FuzzyRelation _R;//текущая используемая агрегированная матрица
+			private static FuzzyRelation _R_TransClosured;
+			private static FuzzyRelation _R_DestroyedCycles;
+			private static FuzzyRelation _R_DestroyedCycles_TransClosured;
+			private static FuzzyRelation _R_Asymmetric;
+			private static FuzzyRelation _R_Asymmetric_TransClosured;
+			private static FuzzyRelation _R_Asymmetric_DestroyedCycles;
+			private static FuzzyRelation _R_Asymmetric_DestroyedCycles_TransClosured;
+
+			public static FuzzyRelation R
 			{
 				set
 				{
-					aggregated = value;
-					Aggregated_TransClosured = new FuzzyRelation(n);
-					Aggregated_DestroyedCycles = new FuzzyRelation(n);
-					Aggregated_Asymmetric = new FuzzyRelation(n);
+					_R = value;
+					R_TransClosured = new FuzzyRelation(n);
+					R_DestroyedCycles = new FuzzyRelation(n);
+					R_Asymmetric = new FuzzyRelation(n);
 
 					R_Changed();
 				}
-				get { return aggregated; }
+				get { return _R; }
 			}
-			public static FuzzyRelation Aggregated_TransClosured
+			public static FuzzyRelation R_TransClosured
 			{
 				set
 				{
-					aggregated_TransClosured = value;
+					_R_TransClosured = value;
 
 					R_Changed();
 				}
-				get { return aggregated_TransClosured; }
+				get { return _R_TransClosured; }
 			}
-			public static FuzzyRelation Aggregated_DestroyedCycles
+			public static FuzzyRelation R_DestroyedCycles
 			{
 				set
 				{
-					aggregated_DestroyedCycles = value;
-					Aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(n);
+					_R_DestroyedCycles = value;
+					R_DestroyedCycles_TransClosured = new FuzzyRelation(n);
 
 					R_Changed();
 				}
-				get { return aggregated_DestroyedCycles; }
+				get { return _R_DestroyedCycles; }
 			}
-			public static FuzzyRelation Aggregated_DestroyedCycles_TransClosured
+			public static FuzzyRelation R_DestroyedCycles_TransClosured
 			{
 				set
 				{
-					aggregated_DestroyedCycles_TransClosured = value;
+					_R_DestroyedCycles_TransClosured = value;
 
 					R_Changed();
 				}
-				get { return aggregated_DestroyedCycles_TransClosured; }
+				get { return _R_DestroyedCycles_TransClosured; }
 			}
-			public static FuzzyRelation Aggregated_Asymmetric
+			public static FuzzyRelation R_Asymmetric
 			{
 				set
 				{
-					aggregated_Asymmetric = value;
-					Aggregated_Asymmetric_TransClosured = new FuzzyRelation(n);
-					Aggregated_Asymmetric_DestroyedCycles = new FuzzyRelation(n);
+					_R_Asymmetric = value;
+					R_Asymmetric_TransClosured = new FuzzyRelation(n);
+					R_Asymmetric_DestroyedCycles = new FuzzyRelation(n);
 
 					R_Changed();
 				}
-				get { return aggregated_Asymmetric; }
+				get { return _R_Asymmetric; }
 			}
-			public static FuzzyRelation Aggregated_Asymmetric_TransClosured
+			public static FuzzyRelation R_Asymmetric_TransClosured
 			{
 				set
 				{
-					aggregated_Asymmetric_TransClosured = value;
+					_R_Asymmetric_TransClosured = value;
 
 					R_Changed();
 				}
-				get { return aggregated_Asymmetric_TransClosured; }
+				get { return _R_Asymmetric_TransClosured; }
 			}
-			public static FuzzyRelation Aggregated_Asymmetric_DestroyedCycles
+			public static FuzzyRelation R_Asymmetric_DestroyedCycles
 			{
 				set
 				{
 
-					aggregated_Asymmetric_DestroyedCycles = value;
-					Aggregated_Asymmetric_DestroyedCycles_TransClosured = new FuzzyRelation(n);
+					_R_Asymmetric_DestroyedCycles = value;
+					R_Asymmetric_DestroyedCycles_TransClosured = new FuzzyRelation(n);
 
 					R_Changed();
 				}
-				get { return aggregated_Asymmetric_DestroyedCycles; }
+				get { return _R_Asymmetric_DestroyedCycles; }
 			}
-			public static FuzzyRelation Aggregated_Asymmetric_DestroyedCycles_TransClosured
+			public static FuzzyRelation R_Asymmetric_DestroyedCycles_TransClosured
 			{
 				set
 				{
-					aggregated_Asymmetric_DestroyedCycles_TransClosured = value;
+					_R_Asymmetric_DestroyedCycles_TransClosured = value;
 
 					R_Changed();
 				}
-				get { return aggregated_Asymmetric_DestroyedCycles_TransClosured; }
+				get { return _R_Asymmetric_DestroyedCycles_TransClosured; }
 			}
 
 
-			public static void ClearAll()
+			public static void ClearAggregatedMatrices()
 			{
 				Avg = new FuzzyRelation(n);
 				Med = new FuzzyRelation(n);
-				Aggregated = new FuzzyRelation(n);
+				R = new FuzzyRelation(n);
 			}
-			public static void SetDerivatives()
+			public static void SetDerivatives()//сомнительно, переделать
 			{
-				aggregated_Asymmetric = aggregated.AsymmetricPart.ToFuzzy;
-				aggregated_TransClosured = aggregated.TransitiveClosure();
-				aggregated_DestroyedCycles = aggregated.DestroyedCycles();
-				aggregated_DestroyedCycles_TransClosured = aggregated_DestroyedCycles.TransitiveClosure();
+				_R_Asymmetric = _R.AsymmetricPart.ToFuzzy;
+				_R_TransClosured = _R.TransitiveClosure();
+				_R_DestroyedCycles = _R.DestroyedCycles();
+				_R_DestroyedCycles_TransClosured = _R_DestroyedCycles.TransitiveClosure();
 
 				R_Changed();
 			}
 			public static (List<Matrix> Matrices, List<string> Labels) GetRelations2Draw()
 			{
 				var M = new List<Matrix>{
-					R.Aggregated, R.Aggregated_TransClosured,
-					R.Aggregated_DestroyedCycles, R.Aggregated_DestroyedCycles_TransClosured,
-					R.Aggregated_Asymmetric};
+					AggregatedMatrix.R, AggregatedMatrix.R_TransClosured,
+					AggregatedMatrix.R_DestroyedCycles, AggregatedMatrix.R_DestroyedCycles_TransClosured,
+					AggregatedMatrix.R_Asymmetric};
 				var L = new List<string>{
 					"R", "Tr(R)",
 					"Acyclic(R)", "Tr(Acyclic(R))",
@@ -208,7 +210,6 @@ namespace Group_choice_algos_fuzzy
 
 		#region Обновление матриц экспертов (Model)
 		public List<Matrix> ExpertMatricesInUI;
-
 		//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
 		public event EventHandler<ExpertMatricesEventArgs> ExpertMatricesInUI_EventHandler;
 
@@ -312,17 +313,17 @@ namespace Group_choice_algos_fuzzy
 
 		public void R_UpdateGraphPicture()
 		{
-			var rtd = R.GetRelations2Draw();
+			var rtd = AggregatedMatrix.GetRelations2Draw();
 			OrgraphsPics_update(form2_result_matrices, rtd.Matrices, rtd.Labels);
 		}
 		public void R_Set(List<FuzzyRelation> experts_relations)
 		{
-			R.Avg = Matrix.Average(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
-			R.Med = Matrix.Median(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
+			AggregatedMatrix.Avg = Matrix.Average(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
+			AggregatedMatrix.Med = Matrix.Median(FuzzyRelation.ToMatrixList(experts_relations)).ToFuzzy;
 			if (rb_dist_square.Checked)
-				R.Aggregated = R.Avg;
+				AggregatedMatrix.R = AggregatedMatrix.Avg;
 			else if (rb_dist_modulus.Checked)
-				R.Aggregated = R.Med;
+				AggregatedMatrix.R = AggregatedMatrix.Med;
 			else
 				throw new MyException(EX_choose_distance_func);
 		}
@@ -333,7 +334,7 @@ namespace Group_choice_algos_fuzzy
 		void refresh_variables()
 		{
 			R_list = new List<FuzzyRelation>();
-			R.ClearAll();
+			AggregatedMatrix.ClearAggregatedMatrices();
 			Methods.ClearMethods();
 		}
 
@@ -494,7 +495,7 @@ namespace Group_choice_algos_fuzzy
 					throw new MyException(EX_bad_expert_profile);
 				R_list = ExpertsRelationsList;
 				R_Set(R_list);
-				R.SetDerivatives();
+				AggregatedMatrix.SetDerivatives();
 
 				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
 				if (checkbuttons.All(x => x == false))
@@ -503,15 +504,15 @@ namespace Group_choice_algos_fuzzy
 				if (Methods.All_various_rankings.IsExecute)
 					Methods.Set_All_various_rankings(n);
 				if (Methods.All_Hamiltonian_paths.IsExecute)
-					Methods.Set_All_Hamiltonian_paths(R.Aggregated);
+					Methods.Set_All_Hamiltonian_paths(AggregatedMatrix.R);
 				if (Methods.Hp_max_length.IsExecute)
-					Methods.Set_Hp_max_length(R.Aggregated);
+					Methods.Set_Hp_max_length(AggregatedMatrix.R);
 				if (Methods.Hp_max_strength.IsExecute)
-					Methods.Set_Hp_max_strength(R.Aggregated);
+					Methods.Set_Hp_max_strength(AggregatedMatrix.R);
 				if (Methods.Schulze_method.IsExecute)
-					Methods.Set_Schulze_method(n, R.Aggregated);
+					Methods.Set_Schulze_method(n, AggregatedMatrix.R);
 				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
-					Methods.Set_Smerchinskaya_Yashina_method(R.Aggregated);
+					Methods.Set_Smerchinskaya_Yashina_method(AggregatedMatrix.R);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				foreach (Method met in is_rankings_of_method_exist)
@@ -560,6 +561,8 @@ namespace Group_choice_algos_fuzzy
 
 					void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
 					{//что должно происходить при завершении редактирования ячейки
+						if (!cb_show_input_matrices.Checked)
+							return;
 						try
 						{
 							FuzzyRelation changed_matrix;
@@ -714,22 +717,22 @@ namespace Group_choice_algos_fuzzy
 					return M?.Matrix2String(true);
 					//+ "Матрица смежности:\n" + M?.AdjacencyMatrix.Matrix2String(true);
 				}
-				if (R.Aggregated != null)
+				if (AggregatedMatrix.R != null)
 				{
 					tex += CR_LF + "Агрегированное отношение R:\n"
-						+ for_print_matrices(R.Aggregated);
+						+ for_print_matrices(AggregatedMatrix.R);
 
 					tex += CR_LF + "Асимметричная часть As(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.Aggregated_Asymmetric);
+						+ for_print_matrices(AggregatedMatrix.R_Asymmetric);
 
 					tex += CR_LF + "Транзитивное замыкание Tr(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.Aggregated_TransClosured);
+						+ for_print_matrices(AggregatedMatrix.R_TransClosured);
 
 					tex += CR_LF + "Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.Aggregated_DestroyedCycles);
+						+ for_print_matrices(AggregatedMatrix.R_DestroyedCycles);
 
 					tex += CR_LF + "Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
-						+ for_print_matrices(R.Aggregated_DestroyedCycles_TransClosured);
+						+ for_print_matrices(AggregatedMatrix.R_DestroyedCycles_TransClosured);
 				}
 				label3.Text = tex;
 				void set_column(DataGridView dgv, int j)
@@ -1049,7 +1052,7 @@ namespace Group_choice_algos_fuzzy
 		}
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
-			var rtd = R.GetRelations2Draw();
+			var rtd = AggregatedMatrix.GetRelations2Draw();
 			var M = rtd.Matrices;
 			var L = rtd.Labels;
 			if (M.Any(x => x != null))

@@ -929,7 +929,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value;
-				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.Aggregated);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), AggregatedMatrix.R);
 			}
 			get { return Path; }
 		}
@@ -938,7 +938,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				Path = value.ToList();
-				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), R.Aggregated);
+				SetRankingParams(FuzzyRelation.ToMatrixList(R_list), AggregatedMatrix.R);
 			}
 			get { return Path.ToArray(); }
 		}
@@ -1550,9 +1550,9 @@ namespace Group_choice_algos_fuzzy
 			Smerchinskaya_Yashina_method.ClearRankings();
 			var R = new FuzzyRelation(weight_matrix);
 			R = R.DestroyedCycles();
-			Form1.R.Aggregated_DestroyedCycles = new FuzzyRelation(R);
+			Form1.AggregatedMatrix.R_DestroyedCycles = new FuzzyRelation(R);
 			R = R.TransitiveClosure();
-			Form1.R.Aggregated_DestroyedCycles_TransClosured = new FuzzyRelation(R);
+			Form1.AggregatedMatrix.R_DestroyedCycles_TransClosured = new FuzzyRelation(R);
 			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
 			if (Ranking.Matrix2RanksDemukron(R, out Smerchinskaya_Yashina_method.Levels, out var ranks))
 				foreach (var rr in ranks)
