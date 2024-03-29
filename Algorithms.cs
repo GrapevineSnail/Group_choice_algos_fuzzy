@@ -104,37 +104,70 @@ namespace Group_choice_algos_fuzzy
 		}
 
 
-
 		/// <summary>
 		/// поиск файлов в директориях
 		/// </summary>
 		/// <param name="directory_with_file"></param>
 		/// <param name="file_name"></param>
 		/// <returns></returns>
-		public static string FindFile(string directory_with_file, string file_name)
+		public static bool FindFile(string file_name, out string absolute_file_name)
 		{
-			string absolute_file_name = file_name;
-			//сначала пробуем искать в заданной директории
-			if (!new object[] { null, "" }.Contains(directory_with_file))
+			string directory_with_file = Path.GetDirectoryName(file_name);
+			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+			file_name = Path.GetFileName(file_name);
+			Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
+			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+			string[] allFoundFiles;
+			if (!emptydirname)
 			{
-				var path_and_filename = Path.Combine(
-					Path.Combine(PROJECT_DIRECTORY, directory_with_file)
-					, file_name);
-				if (File.Exists(path_and_filename))
+				allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+					SearchOption.TopDirectoryOnly);
+			}
+			else
+			{
+				allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+					SearchOption.AllDirectories);
+			}
+			if (allFoundFiles.Length > 0)
+			{
+				absolute_file_name = allFoundFiles.First();
+				return true;
+			}
+			absolute_file_name = "";
+			return false;
+		}
+
+		/// <summary>
+		/// создать файл с переданным текстом
+		/// </summary>
+		/// <param name="text"></param>
+		/// <param name="filename"></param>
+		/// <returns></returns>
+		public static string WriteToFile(string text, string filename, bool add)
+		{
+			string directory_with_file = Path.GetDirectoryName(filename);
+			filename = Path.GetFileName(filename);
+			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+			//достать название папки, если есть указание папки
+			var absolute_file_name = Path.Combine(directory_with_file, filename);
+			if (add)
+			{
+				using (StreamWriter writer = new StreamWriter(absolute_file_name, true))
 				{
-					absolute_file_name = path_and_filename;
+					writer.WriteLineAsync(CR_LF);
+					writer.WriteLineAsync(text);
 				}
 			}
-			//если не нашли, то поищем по всем каталогам внутри, берём первый попавшийся
-			if (absolute_file_name == file_name)
+			else
 			{
-				string[] allFoundFiles = Directory.GetFiles(
-					PROJECT_DIRECTORY, file_name, SearchOption.AllDirectories);
-				if (allFoundFiles.Length != 0)
-					absolute_file_name = allFoundFiles.First();
+				File.WriteAllText(absolute_file_name, text);
 			}
 			return absolute_file_name;
 		}
+
+
+
 		/// <summary>
 		/// сравнивалась ли альтернатива с какой-то ещё
 		/// </summary>

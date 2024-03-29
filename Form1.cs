@@ -895,9 +895,7 @@ namespace Group_choice_algos_fuzzy
 				try
 				{
 					List<Matrix> matrices = new List<Matrix>();
-					string file_name = Path.GetFileNameWithoutExtension(textBox_file.Text) + MAINTAINED_EXTENSION;
-					string path_to_file = Path.GetDirectoryName(textBox_file.Text);
-					string absolute_file_name = FindFile(path_to_file, file_name);
+					FindFile(textBox_file.Text, out string absolute_file_name);
 
 					string[] lines = File.ReadAllLines(absolute_file_name)
 						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
