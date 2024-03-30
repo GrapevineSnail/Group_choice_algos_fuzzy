@@ -8,6 +8,57 @@ namespace Group_choice_algos_fuzzy
 {
 	public class Constants
 	{
+		#region COMMON
+		public const int max_count_of_alternatives = 9;
+		public const int max_count_of_experts = 50;
+		#endregion COMMON
+
+		#region SYMBOLS
+		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
+		public const double INF = double.PositiveInfinity;
+		public const int DIGITS_PRECISION = 12;//насколько точными будут вычисления на double
+		public const string ZER = "0";
+		public const string ONE = "1";
+		public const char PLS = '+';
+		public const char MARK = 'a';
+		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+		/// <summary>
+		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
+		/// </summary>
+		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
+
+		/// <summary>
+		/// индекс альтернативы в её символ a1, a2 и т.д.
+		/// </summary>
+		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
+
+		/// <summary>
+		/// индекс альтернативы в её буквенное обозначение, если возможно (букв всего 26)
+		/// </summary>
+		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
+
+		/// <summary>
+		/// задание символов, обозначающих альтернативы
+		/// </summary>
+		/// <param name="n">количество альтернатив (размерность квадратной матрицы предпочтений)</param>
+		public static void SetSymbolsForAlternatives(int n)
+		{
+			for (int i = 0; i < n; i++)
+			{
+				sym2ind[$"{MARK}{i}"] = i;
+				ind2sym[i] = $"{MARK}{i}";
+				if (n <= 26)
+				{
+					sym2ind[$"{letters[i]}"] = i;
+					sym2ind[$"{letters[i]}{i:00}"] = i;
+					sym2ind[$"{char.ToLower(letters[i])}"] = i;
+				}
+				ind2letter[i] = n > 26 ? ind2sym[i] : string.Format("{0}{1:00}", letters[i], i);
+			}
+		}
+		#endregion SYMBOLS
+
 		#region VISUAL_INTERFACE
 		public const string font = "Book Antiqua";
 		public const string font_mono = "Courier New";
@@ -29,9 +80,6 @@ namespace Group_choice_algos_fuzzy
 		public static Microsoft.Msagl.Drawing.Color node_color = Microsoft.Msagl.Drawing.Color.PaleGreen;
 		#endregion VISUAL_INTERFACE
 
-		public const int max_count_of_alternatives = 9;
-		public const int max_count_of_experts = 50;
-
 		#region FILE_OPERATIONS
 		//для прогона тестов
 		public static string PROJECT_DIRECTORY = new DirectoryInfo(
@@ -41,15 +89,7 @@ namespace Group_choice_algos_fuzzy
 		public const string MAINTAINED_EXTENSION = ".txt";
 		#endregion FILE_OPERATIONS
 
-		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
-		public const double INF = double.PositiveInfinity;
-		public const int DIGITS_PRECISION = 12;//насколько точными будут вычисления на double
-		public const string ZER = "0";
-		public const string ONE = "1";
-		public const char PLS = '+';
-		public const char MARK = 'a';
-
-		#region IDs
+		#region METHODS' IDs
 		public const int ALL_RANKINGS = 0;
 		public const int ALL_HP = 1;
 		public const int HP_MAX_LENGTH = 2;
@@ -64,40 +104,7 @@ namespace Group_choice_algos_fuzzy
 			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
 			{ SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию, с разбиением контуров" }
 		};
-		#endregion IDs
-
-		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		/// <summary>
-		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
-		/// </summary>
-		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
-		/// <summary>
-		/// индекс альтернативы в её символ a1, a2 и т.д.
-		/// </summary>
-		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
-		/// <summary>
-		/// индекс альтернативы в её буквенное обозначение, если возможно (букв всего 26)
-		/// </summary>
-		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
-		/// <summary>
-		/// задание констант (при инициализации формы)
-		/// </summary>
-		/// <param name="n">количество альтернатив (размерность квадратной матрицы предпочтений)</param>
-		public static void SetConstants(int n)
-		{
-			for (int i = 0; i < n; i++)
-			{
-				sym2ind[$"{MARK}{i}"] = i;
-				ind2sym[i] = $"{MARK}{i}";
-				if (n <= 26)
-				{
-					sym2ind[$"{letters[i]}"] = i;
-					sym2ind[$"{letters[i]}{i:00}"] = i;
-					sym2ind[$"{char.ToLower(letters[i])}"] = i;
-				}
-				ind2letter[i] = n > 26 ? ind2sym[i] : string.Format("{0}{1:00}", letters[i], i);
-			}
-		}
+		#endregion METHODS' IDs
 
 		#region EXCEPTIONS
 		public static string EX_bad_expert_profile = "Введите корректные профили экспертов";
@@ -108,9 +115,9 @@ namespace Group_choice_algos_fuzzy
 		public static string EX_matrix_was_normalized = "Элементы матрицы были нормализованы (значения приведены в интервал [0;1])";
 		public static string EX_bad_file = "Некорректный файл";
 		public static string EX_n_m_too_big =
-			"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть\n" +
-			$"n максимальное = {max_count_of_alternatives}\n" +
-			$"m максимальное = {max_count_of_experts}\n";
+			$"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть{CR_LF}" +
+			$"n максимальное = {max_count_of_alternatives}{CR_LF}" +
+			$"m максимальное = {max_count_of_experts}{CR_LF}";
 		public static string EX_choose_method = "Выберите метод агрегирования";
 		public static string EX_choose_distance_func = "Выберите способ подсчёта расстояния между отношениями";
 		public static string EX_bad_symbol = "Неверный символ";

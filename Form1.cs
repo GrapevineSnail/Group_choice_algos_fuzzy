@@ -53,7 +53,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_n = value;
-				SetConstants(n);
+				SetSymbolsForAlternatives(n);
 			}
 			get { return _n; }
 		}
@@ -187,7 +187,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				_R_Asymmetric = _R.AsymmetricPart.ToFuzzy;
 				_R_TransClosured = _R.TransitiveClosure();
-				_R_DestroyedCycles = _R.DestroyedCycles();
+				_R_DestroyedCycles = _R.DestroyCycles();
 				_R_DestroyedCycles_TransClosured = _R_DestroyedCycles.TransitiveClosure();
 
 				R_Changed();
@@ -833,11 +833,11 @@ namespace Group_choice_algos_fuzzy
 							}
 
 							var some_rank = met.Rankings.First();
-							add_row_with_characteristic(some_rank.PathCost.Label);
-							add_row_with_characteristic(some_rank.PathStrength.Label);
-							add_row_with_characteristic(some_rank.PathSummaryDistance.modulus.Label);
-							add_row_with_characteristic(some_rank.PathSummaryDistance.square.Label);
-							add_row_with_characteristic(some_rank.PathExpertCosts.Label);
+							add_row_with_characteristic(some_rank.Cost.Label);
+							add_row_with_characteristic(some_rank.Strength.Label);
+							add_row_with_characteristic(some_rank.SummaryDistance.modulus.Label);
+							add_row_with_characteristic(some_rank.SummaryDistance.square.Label);
+							add_row_with_characteristic(some_rank.CostsExperts.Label);
 
 							for (int j = 0; j < r; j++)
 							{
@@ -853,18 +853,18 @@ namespace Group_choice_algos_fuzzy
 								}
 
 								display_characteristic(j, n, met.MinLength, met.MaxLength,
-									met.Rankings[j].PathCost);
+									met.Rankings[j].Cost);
 								display_characteristic(j, n + 1, met.MinStrength, met.MaxStrength,
-									met.Rankings[j].PathStrength);
+									met.Rankings[j].Strength);
 								display_characteristic(j, n + 2,
 									met.MinDistance.modulus.Value, met.MaxDistance.modulus.Value,
-									met.Rankings[j].PathSummaryDistance.modulus);
+									met.Rankings[j].SummaryDistance.modulus);
 								display_characteristic(j, n + 3,
 									met.MinDistance.square.Value, met.MaxDistance.square.Value,
-									met.Rankings[j].PathSummaryDistance.square);
+									met.Rankings[j].SummaryDistance.square);
 								display_characteristic(j, n + 4,
 									INF, INF,
-									met.Rankings[j].PathExpertCosts);
+									met.Rankings[j].CostsExperts);
 							}
 						}
 					}

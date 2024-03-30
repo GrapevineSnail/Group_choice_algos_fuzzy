@@ -220,50 +220,7 @@ namespace Group_choice_algos_fuzzy
 			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
 			SetDataGridViewDefaults_FontAndColors(dgv);
 			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
-		}
-		
-		/// <summary>
-		/// веса данного пути
-		/// </summary>
-		/// <param name="vertices_list"></param>
-		/// <param name="Weights_matrix"></param>
-		/// <returns></returns>
-		public static List<double> WeightsOfPath(List<int> vertices_list, Matrix Weights_matrix)
-		{
-			List<double> weights_list = new List<double>();
-			var l = vertices_list.Count;
-			// при l = 0 нет пути
-			// при l = 1 путь (a) "ничего не делать" - нет пути, так как нет петли
-			if (l > 1)
-			{  // включает и путь-петлю (a,a)
-				for (int i = 0; i < l - 1; i++)
-					weights_list.Add(Weights_matrix[vertices_list[i], vertices_list[i + 1]]);
-			}
-			return weights_list;
-		}
-
-		/// <summary>
-		/// стоимость пути (суммарный вес)
-		/// </summary>
-		/// <param name="vertices_list"></param>
-		/// <param name="Weights_matrix"></param>
-		/// <returns></returns>
-		public static double PathCost(List<int> vertices_list, Matrix Weights_matrix)
-		{
-			return WeightsOfPath(vertices_list, Weights_matrix).Sum();
-		}
-
-		/// <summary>
-		/// сила пути (пропускная способность)
-		/// </summary>
-		/// <param name=""></param>
-		/// <param name=""></param>
-		/// <returns></returns>
-		public static double PathStrength(List<int> vertices_list, Matrix Weights_matrix)
-		{
-			var wp = WeightsOfPath(vertices_list, Weights_matrix);
-			return wp.Count == 0 ? INF : wp.Min();
-		}
+		}		
 
 		/// <summary>
 		/// нахождение Гамильтоновых путей
