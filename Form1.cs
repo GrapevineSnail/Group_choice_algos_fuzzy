@@ -709,9 +709,9 @@ namespace Group_choice_algos_fuzzy
 			deactivate_input();
 			try
 			{
-				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:\n" +
-					$"'модуль разности': {Methods.MinSummaryModulusDistance}\n" +
-					$"'квадрат разности': {Methods.MinSummarySquareDistance}\n";
+				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:{CR_LF}" +
+					$"'модуль разности': {Methods.MinSummaryModulusDistance}{CR_LF}" +
+					$"'квадрат разности': {Methods.MinSummarySquareDistance}{CR_LF}";
 				string for_print_matrices(Matrix M)
 				{
 					return M?.Matrix2String(true);
@@ -719,19 +719,19 @@ namespace Group_choice_algos_fuzzy
 				}
 				if (AggregatedMatrix.R != null)
 				{
-					tex += CR_LF + "Агрегированное отношение R:\n"
+					tex += CR_LF + $"Агрегированное отношение R:{CR_LF}"
 						+ for_print_matrices(AggregatedMatrix.R);
 
-					tex += CR_LF + "Асимметричная часть As(R) агрегированного отношения R:\n"
+					tex += CR_LF + $"Асимметричная часть As(R) агрегированного отношения R:{CR_LF}"
 						+ for_print_matrices(AggregatedMatrix.R_Asymmetric);
 
-					tex += CR_LF + "Транзитивное замыкание Tr(R) агрегированного отношения R:\n"
+					tex += CR_LF + $"Транзитивное замыкание Tr(R) агрегированного отношения R:{CR_LF}"
 						+ for_print_matrices(AggregatedMatrix.R_TransClosured);
 
-					tex += CR_LF + "Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
+					tex += CR_LF + $"Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:{CR_LF}"
 						+ for_print_matrices(AggregatedMatrix.R_DestroyedCycles);
 
-					tex += CR_LF + "Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:\n"
+					tex += CR_LF + $"Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:{CR_LF}"
 						+ for_print_matrices(AggregatedMatrix.R_DestroyedCycles_TransClosured);
 				}
 				label3.Text = tex;
