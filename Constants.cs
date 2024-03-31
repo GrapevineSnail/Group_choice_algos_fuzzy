@@ -16,6 +16,7 @@ namespace Group_choice_algos_fuzzy
 		#region SYMBOLS
 		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
 		public const double INF = double.PositiveInfinity;
+		public const double NO_EDGE = 0;//если стоит в ячейке матрицы, то в соотв. графе нет этого ребра
 		public const int DIGITS_PRECISION = 12;//насколько точными будут вычисления на double
 		public const string ZER = "0";
 		public const string ONE = "1";

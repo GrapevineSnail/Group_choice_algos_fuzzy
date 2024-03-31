@@ -240,7 +240,7 @@ namespace Group_choice_algos_fuzzy
 			public static void Set_All_Hamiltonian_paths(Matrix weight_matrix)
 			{
 				All_Hamiltonian_paths.ClearResults();
-				List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix);
+				List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix, NO_EDGE);
 				for (int i = 0; i < HP.GetLength(0); i++)
 					for (int j = 0; j < HP.GetLength(1); j++)
 						foreach (List<int> path_from_i_to_j in HP[i, j])
@@ -257,7 +257,7 @@ namespace Group_choice_algos_fuzzy
 				/// <summary>
 				/// нахождение Гамильтоновых путей
 				/// </summary>
-				List<List<int>>[,] Hamiltonian_paths_through_matrix_degree(Matrix Weights_matrix)
+				List<List<int>>[,] Hamiltonian_paths_through_matrix_degree(Matrix Weights_matrix, double no_edge_symbol)
 				{
 					int n = Weights_matrix.GetLength(0);
 
@@ -320,7 +320,8 @@ namespace Group_choice_algos_fuzzy
 					for (int i = 0; i < n; i++)
 						for (int j = 0; j < n; j++)
 						{
-							if (Math.Abs(Weights_matrix[i, j]) == INF || i == j)// с занулением диагонали
+							if (!Weights_matrix.HasEdge((i, j), new double[] { no_edge_symbol , INF, -INF}) 
+								|| i == j)// с занулением диагонали
 							{
 								Q_int[i, j] = 0;
 								Q[i, j] = ZER;

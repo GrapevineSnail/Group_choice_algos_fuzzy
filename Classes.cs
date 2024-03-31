@@ -183,6 +183,10 @@ namespace Group_choice_algos_fuzzy
 		#endregion OPERATORS
 
 		#region FUNCTIONS
+		public bool HasEdge((int i, int j) edge, double[] no_edge_symbol)
+		{
+			return !no_edge_symbol.Contains(this[edge.i, edge.j]);
+		}
 		/// <summary>
 		/// выводит список смежности матрицы на основании того, 
 		/// какое значение элемента матрицы считать отсутствием ребра
