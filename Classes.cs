@@ -985,6 +985,16 @@ namespace Group_choice_algos_fuzzy
 				Value = INF;
 				ValuesList = new List<double>();
 			}
+			public static bool IsInitialized(object t, Method parent_method)
+			{
+				if (!parent_method.HasRankings)
+					return false;
+				if (t is double)
+					return (double)t != 0 && Math.Abs((double)t) != INF;
+				else if (t as Ranking.PathSummaryDistanceClass != null)
+					return t != null;
+				return default;
+			}
 		}
 		/// <summary>
 		/// суммарное расстояние до всех остальных входных ранжирований
@@ -999,6 +1009,7 @@ namespace Group_choice_algos_fuzzy
 				modulus = new RankingCharacteristic("Сумм. расстояние 'модуль разности'");
 				square = new RankingCharacteristic("Сумм. расстояние 'квадрат разности'");
 			}
+
 		}
 
 		#region CONSTRUCTORS
@@ -1234,7 +1245,7 @@ namespace Group_choice_algos_fuzzy
 		#region FIELDS
 		public int ID = -1;//обозначение метода
 		private List<Ranking> _Rankings;//выдаваемые методом ранжирования
-		private RankingsCharacteristics _RanksCharacteristics;
+		private MethodRankingsCharacteristics _RanksCharacteristics;
 		private List<int> _Winners;//победители - недоминируемые альтернативы
 		private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
 		private ConnectedControls _VisualFormConnectedControls;
@@ -1327,10 +1338,10 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// характеристики совокупности ранжирований метода
 		/// </summary>
-		public class RankingsCharacteristics //: Method
+		public class MethodRankingsCharacteristics //: Method
 		{
 			//public MethodCharacteristics(int id) : base(id) { }//фиктивный конструктор
-			public RankingsCharacteristics(Method m) { parent_method = m; }
+			public MethodRankingsCharacteristics(Method m) { parent_method = m; }
 			private readonly Method parent_method;
 			private double _MinCost;//минимальная длина среди ранжирований метода
 			private double _MaxCost;//максимальная длина среди ранжирований метода
@@ -1343,7 +1354,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					if (!IsInitialized(_MinCost))
+					if (!Ranking.RankingCharacteristic.IsInitialized(_MinCost, parent_method))
 						_MinCost = min(parent_method.Rankings.Select(x => x.Cost.Value).ToList());
 					return _MinCost;
 				}
@@ -1352,7 +1363,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					if (!IsInitialized(_MaxCost))
+					if (!Ranking.RankingCharacteristic.IsInitialized(_MaxCost, parent_method))
 						_MaxCost = max(parent_method.Rankings.Select(x => x.Cost.Value).ToList());
 					return _MaxCost;
 				}
@@ -1361,7 +1372,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					if (!IsInitialized(_MinStrength))
+					if (!Ranking.RankingCharacteristic.IsInitialized(_MinStrength, parent_method))
 						_MinStrength = min(parent_method.Rankings.Select(x => x.Strength.Value).ToList());
 					return _MinStrength;
 				}
@@ -1370,7 +1381,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					if (!IsInitialized(_MaxStrength))
+					if (!Ranking.RankingCharacteristic.IsInitialized(_MaxStrength, parent_method))
 						_MaxStrength = max(parent_method.Rankings.Select(x => x.Strength.Value).ToList());
 					return _MaxStrength;
 				}
@@ -1379,7 +1390,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					if (!IsInitialized(_MinDistance))
+					if (!Ranking.RankingCharacteristic.IsInitialized(_MinDistance, parent_method))
 					{
 						_MinDistance = new Ranking.PathSummaryDistanceClass();
 						_MinDistance.modulus.Value = min(parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList());
@@ -1392,7 +1403,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					if (!IsInitialized(_MaxDistance))
+					if (!Ranking.RankingCharacteristic.IsInitialized(_MaxDistance, parent_method))
 					{
 						_MaxDistance = new Ranking.PathSummaryDistanceClass();
 						_MaxDistance.modulus.Value = max(parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList());
@@ -1409,16 +1420,6 @@ namespace Group_choice_algos_fuzzy
 						_IsInPareto = QualeEInParetoSet(parent_method.Rankings.Select(x => x.CostsExperts).ToList());
 					return _IsInPareto;
 				}
-			}
-			private bool IsInitialized(object t)
-			{
-				if (!parent_method.HasRankings)
-					return false;
-				if (t is double)
-					return (double)t != 0 && Math.Abs((double)t) != INF;
-				else if (t as Ranking.PathSummaryDistanceClass != null)
-					return t != null;
-				return default;
 			}
 			/// <summary>
 			/// находит минимум характеристики ранжирований
@@ -1574,13 +1575,13 @@ namespace Group_choice_algos_fuzzy
 					RanksCharacteristics = null;
 			}
 		}
-		public RankingsCharacteristics RanksCharacteristics
+		public MethodRankingsCharacteristics RanksCharacteristics
 		{
 			get
 			{
 				if (_RanksCharacteristics is null)
 				{
-					_RanksCharacteristics = new RankingsCharacteristics(this);
+					_RanksCharacteristics = new MethodRankingsCharacteristics(this);
 				}
 				return _RanksCharacteristics;
 			}

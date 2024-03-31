@@ -93,24 +93,32 @@ namespace Group_choice_algos_fuzzy
 			public static Method Smerchinskaya_Yashina_method = new Method(SMERCHINSKAYA_YASHINA_METHOD);
 			public static class MethodsCharacteristics
 			{
-				private static double _MaxHamPathLength;//длина пути длиннейших Гаммильтоновых путей
-				private static double _MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
+				private static Ranking.RankingCharacteristic _MaxHamPathCost;//длина пути длиннейших Гаммильтоновых путей
+				private static Ranking.RankingCharacteristic _MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
 				private static Ranking.PathSummaryDistanceClass _MinSummaryDistance;//расстояние наиближайшего ко всем агрегированного ранжирования
-				public static double MaxHamPathLength
+				public static Ranking.RankingCharacteristic MaxHamPathCost
 				{
 					get
 					{
-						if (!IsInitialized(_MaxHamPathLength))
-							_MaxHamPathLength = All_Hamiltonian_paths.Rankings.Select(x => x.Cost.Value).Max();
-						return _MaxHamPathLength;
+						if (!Ranking.RankingCharacteristic.IsInitialized(
+							_MaxHamPathCost, All_Hamiltonian_paths))
+						{
+							_MaxHamPathCost = new Ranking.RankingCharacteristic("самая большая стоимость гамильтоновых путей",
+								All_Hamiltonian_paths.Rankings.Select(x => x.Cost.Value).Max());
+						}
+						return _MaxHamPathCost;
 					}
 				}
-				public static double MaxHamPathStrength
+				public static Ranking.RankingCharacteristic MaxHamPathStrength
 				{
 					get
 					{
-						if (!IsInitialized(_MaxHamPathStrength))
-							_MaxHamPathStrength = All_Hamiltonian_paths.Rankings.Select(x => x.Strength.Value).Max();
+						if (!Ranking.RankingCharacteristic.IsInitialized(
+							_MaxHamPathStrength, All_Hamiltonian_paths))
+						{
+							_MaxHamPathStrength = new Ranking.RankingCharacteristic("самая большая сила гамильтоновых путей",
+								All_Hamiltonian_paths.Rankings.Select(x => x.Strength.Value).Max());
+						}
 						return _MaxHamPathStrength;
 					}
 				}
@@ -118,10 +126,10 @@ namespace Group_choice_algos_fuzzy
 				{
 					get
 					{
-						if (!IsInitialized(_MinSummaryDistance))
+						if (!Ranking.RankingCharacteristic.IsInitialized(_MinSummaryDistance, All_various_rankings))
 						{
 							_MinSummaryDistance = new Ranking.PathSummaryDistanceClass();
-							if (All_various_rankings.HasResults)
+							if (All_various_rankings.HasRankings)
 							{
 								_MinSummaryDistance.modulus.Value = All_various_rankings.Rankings
 									.Select(x => x.SummaryDistance.modulus.Value).Min();
@@ -132,18 +140,10 @@ namespace Group_choice_algos_fuzzy
 						return _MinSummaryDistance;
 					}
 				}
-				private static bool IsInitialized(double t)
-				{
-					return t != 0 && Math.Abs(t) != INF;
-				}
-				private static bool IsInitialized(Ranking.PathSummaryDistanceClass t)
-				{
-					return t != null;
-				}
 				public static void Clear()
 				{
-					_MaxHamPathLength = INF;
-					_MaxHamPathStrength = INF;
+					_MaxHamPathCost = null;
+					_MaxHamPathStrength = null;
 					_MinSummaryDistance = null;
 				}
 			}
@@ -249,9 +249,9 @@ namespace Group_choice_algos_fuzzy
 				Hp_max_strength.ClearResults();
 				foreach (Ranking r in All_Hamiltonian_paths.Rankings)
 				{
-					if (r.Cost.Value == MethodsCharacteristics.MaxHamPathLength)
+					if (r.Cost.Value == MethodsCharacteristics.MaxHamPathCost.Value)
 						Hp_max_length.Rankings.Add(r);
-					if (r.Strength.Value == MethodsCharacteristics.MaxHamPathStrength)
+					if (r.Strength.Value == MethodsCharacteristics.MaxHamPathStrength.Value)
 						Hp_max_strength.Rankings.Add(r);
 				}
 				/// <summary>
@@ -320,7 +320,7 @@ namespace Group_choice_algos_fuzzy
 					for (int i = 0; i < n; i++)
 						for (int j = 0; j < n; j++)
 						{
-							if (!Weights_matrix.HasEdge((i, j), new double[] { no_edge_symbol , INF, -INF}) 
+							if (!Weights_matrix.HasEdge((i, j), new double[] { no_edge_symbol, INF, -INF })
 								|| i == j)// с занулением диагонали
 							{
 								Q_int[i, j] = 0;
