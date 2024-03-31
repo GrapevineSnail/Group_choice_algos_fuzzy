@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Forms;
-using static Group_choice_algos_fuzzy.Algorithms;
+using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
 
 
 namespace Group_choice_algos_fuzzy

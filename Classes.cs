@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
-using static Group_choice_algos_fuzzy.Algorithms;
+using static Group_choice_algos_fuzzy.AuxiliaryFuncs;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Form1;
 
@@ -895,10 +896,10 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		///каждая характеристика ранжирования имеет числовое значение и осмысленное наименование 
 		/// </summary>
-		public class Characteristic
+		public class RankingCharacteristic
 		{
-			public Characteristic(string label) { Label = label; }
-			public Characteristic(string label, double value) { Label = label; Value = value; }
+			public RankingCharacteristic(string label) { Label = label; }
+			public RankingCharacteristic(string label, double value) { Label = label; Value = value; }
 			public string Label = "";
 			public double Value = INF;
 			public List<double> ValuesList = new List<double>();
@@ -908,8 +909,8 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public class PathSummaryDistanceClass
 		{
-			public Characteristic modulus = new Characteristic("Сумм. расстояние 'модуль разности'");
-			public Characteristic square = new Characteristic("Сумм. расстояние 'квадрат разности'");
+			public RankingCharacteristic modulus = new RankingCharacteristic("Сумм. расстояние 'модуль разности'");
+			public RankingCharacteristic square = new RankingCharacteristic("Сумм. расстояние 'квадрат разности'");
 		}
 
 		#region CONSTRUCTORS
@@ -936,9 +937,9 @@ namespace Group_choice_algos_fuzzy
 		#region FIELDS
 		private List<int> _Path;//список вершин в пути-ранжировании
 		public int MethodID;//каким методом получено
-		public Characteristic Cost;//общая стоимость пути
-		public Characteristic CostsExperts; //вектор стоимостей по каждому эксперту-характеристике
-		public Characteristic Strength; //сила пути (пропускная способность)
+		public RankingCharacteristic Cost;//общая стоимость пути
+		public RankingCharacteristic CostsExperts; //вектор стоимостей по каждому эксперту-характеристике
+		public RankingCharacteristic Strength; //сила пути (пропускная способность)
 		public PathSummaryDistanceClass SummaryDistance;//суммарное расстояние до всех остальных входных ранжирований
 		#endregion FIELDS
 
@@ -1036,9 +1037,9 @@ namespace Group_choice_algos_fuzzy
 		{
 			if (Rank2List != null)
 			{
-				Cost = new Characteristic("Стоимость", PathCost(Rank2List, weight_matrix));
-				Strength = new Characteristic("Сила", PathStrength(Rank2List, weight_matrix));
-				CostsExperts = new Characteristic("Вектор стоимостей по экспертам");
+				Cost = new RankingCharacteristic("Стоимость", PathCost(Rank2List, weight_matrix));
+				Strength = new RankingCharacteristic("Сила", PathStrength(Rank2List, weight_matrix));
+				CostsExperts = new RankingCharacteristic("Вектор стоимостей по экспертам");
 				if (other_matrices != null)
 				{
 					foreach (var expert_matrix in other_matrices)
@@ -1128,69 +1129,232 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Method
 	{
-		public Method(int id)
-		{
-			ID = id;
-			Rankings = new List<Ranking>();
-		}
+		public Method(int id)		{			ID = id; }
 
+		#region FIELDS
 		public int ID = -1;//обозначение метода
-		private CheckBox connectedCheckBox = null;//чекбокс - будем ли запускать метод
-		public DataGridView connectedTableFrame = null;//в какой контейнер выводить результаты работы метода
-		public Label connectedLabel = null;//в какой контейнер выводить текстовые пояснения к методу
+		private List<Ranking> _Rankings;//выдаваемые методом ранжирования
+		private bool[] _IsInPareto;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
+		private List<int> _Winners;//победители - недоминируемые альтернативы
+		private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
+		private ConnectedControls _VisualFormConnectedControls;
+		private MethodCharacteristics _MinMaxCharacteristics;
+		#endregion FIELDS
 
-		public List<Ranking> Rankings = null;//выдаваемые методом ранжирования
-		public bool[] IsInPareto = null;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
-		public List<int> Winners = null;//победители - недоминируемые альтернативы
-		public List<List<int>> Levels = null;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
+		#region SUBCLASSES
+		/// <summary>
+		/// связанные с методом элементы управления на форме
+		/// </summary>
+		public class ConnectedControls //: Method
+		{
+			//public ConnectedControls(int id) : base(id) { }//фиктивный конструктор
+			public ConnectedControls(Method m) { parent_method = m; }
+			private readonly Method parent_method;
+			private CheckBox connectedCheckBox;//чекбокс - будем ли запускать метод
+			private Label connectedLabel;//в какой контейнер выводить текстовые пояснения к методу
+			private DataGridView connectedTableFrame;//в какой контейнер выводить результаты работы метода
+			public CheckBox ConnectedCheckBox
+			{
+				get { return connectedCheckBox; }
+				set
+				{
+					connectedCheckBox = value;
+					connectedCheckBox.Text = MethodsInfo[parent_method.ID];
+				}
+			}
+			public string ConnectedLabel
+			{
+				get { return connectedLabel != null ? connectedLabel.Text : ""; }
+				set
+				{
+					if (value == "" || value is null)
+					{
+						connectedLabel?.ResetText();
+						connectedLabel?.Hide();
+						//connectedLabel?.Dispose();
+					}
+					else
+					{
+						if (connectedLabel is null)
+						{
+							connectedLabel = new Label();
+							connectedLabel.AutoSize = true;
+							connectedLabel.Location = new System.Drawing.Point(
+								0, connectedTableFrame.Location.Y + connectedTableFrame.Height);
+							connectedTableFrame?.Parent?.Controls.Add(connectedLabel);
+						}
+						connectedLabel.Text = value;
+						connectedLabel.Show();
+					}
 
-		public double MinLength;//минимальная длина среди ранжирований метода
-		public double MaxLength;//максимальная длина среди ранжирований метода
-		public double MinStrength;//минимальная сила среди ранжирований метода
-		public double MaxStrength;//максимальная сила среди ранжирований метода
-								  //минимальное и максимальное суммарные расстояние среди ранжирований метода
-		public Ranking.PathSummaryDistanceClass MinDistance = new Ranking.PathSummaryDistanceClass();
-		public Ranking.PathSummaryDistanceClass MaxDistance = new Ranking.PathSummaryDistanceClass();
+				}
+			}
+			public Label ConnectedLabel_control
+			{
+				get { return connectedLabel; }
+				set { connectedLabel = value; }
+			}
+			public DataGridView ConnectedTableFrame
+			{
+				get { return connectedTableFrame; }
+				set
+				{
+					connectedTableFrame = value;
+					((GroupBox)connectedTableFrame?.Parent).Text = MethodsInfo[parent_method.ID];
+				}
+			}
+			public void Set(CheckBox checkBox, DataGridView dgv)
+			{
+				ConnectedCheckBox = checkBox;
+				ConnectedTableFrame = dgv;
+			}
+			public void ShowOutput()
+			{
+				if (parent_method.IsExecute)
+				{
+					ConnectedTableFrame?.Show();
+					ConnectedTableFrame?.Parent.Show();
+				}
+			}
+			public void ClearOutput()
+			{
+				ConnectedTableFrame?.Rows.Clear();
+				ConnectedTableFrame?.Columns.Clear();
+				ConnectedLabel = "";
+				ConnectedTableFrame?.Hide();
+				ConnectedTableFrame?.Parent?.Hide();
+			}
+		}
+		public class MethodCharacteristics //: Method
+		{
+			//public MethodCharacteristics(int id) : base(id) { }//фиктивный конструктор
+			public MethodCharacteristics(Method m) { parent_method = m; }
+			private readonly Method parent_method;
+			private double _MinCost;//минимальная длина среди ранжирований метода
+			private double _MaxCost;//максимальная длина среди ранжирований метода
+			private double _MinStrength;//минимальная сила среди ранжирований метода
+			private double _MaxStrength;//максимальная сила среди ранжирований метода
+			private Ranking.PathSummaryDistanceClass _MinDistance;//минимальное суммарн. расстояние среди ранжирований метода
+			private Ranking.PathSummaryDistanceClass _MaxDistance;//максимальное суммарн. расстояние среди ранжирований метода
+			public double MinCost
+			{
+				get
+				{
+					if (!IsInitialized(_MinCost))
+						_MinCost = min(parent_method.Rankings.Select(x => x.Cost.Value).ToList());
+					return _MinCost;
+				}
+			}
+			public double MaxCost
+			{
+				get
+				{
+					if (!IsInitialized(_MaxCost))
+						_MaxCost = max(parent_method.Rankings.Select(x => x.Cost.Value).ToList());
+					return _MaxCost;
+				}
+			}
+			public double MinStrength
+			{
+				get
+				{
+					if (!IsInitialized(_MinStrength))
+						_MinStrength = min(parent_method.Rankings.Select(x => x.Strength.Value).ToList());
+					return _MinStrength;
+				}
+			}
+			public double MaxStrength
+			{
+				get
+				{
+					if (!IsInitialized(_MaxStrength))
+						_MaxStrength = max(parent_method.Rankings.Select(x => x.Strength.Value).ToList());
+					return _MaxStrength;
+				}
+			}
+			public Ranking.PathSummaryDistanceClass MinDistance
+			{
+				get
+				{
+					if (!IsInitialized(_MinDistance))
+					{
+						_MinDistance = new Ranking.PathSummaryDistanceClass();
+						_MinDistance.modulus.Value = min(parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList());
+						_MinDistance.square.Value = min(parent_method.Rankings.Select(x => x.SummaryDistance.square.Value).ToList());
+					}
+					return _MinDistance;
+				}
+			}
+			public Ranking.PathSummaryDistanceClass MaxDistance
+			{
+				get
+				{
+					if (!IsInitialized(_MaxDistance))
+					{
+						_MaxDistance = new Ranking.PathSummaryDistanceClass();
+						_MaxDistance.modulus.Value = max(parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList());
+						_MaxDistance.square.Value = max(parent_method.Rankings.Select(x => x.SummaryDistance.square.Value).ToList());
+					}
+					return _MaxDistance;
+				}
+			}
+			private bool IsInitialized(double t)
+			{
+				return t != 0 && Math.Abs(t) != INF;
+			}
+			private bool IsInitialized(Ranking.PathSummaryDistanceClass t)
+			{
+				return t != null;
+			}
+			/// <summary>
+			/// находит минимум характеристики ранжирований
+			/// </summary>
+			/// <param name="list"></param>
+			/// <returns></returns>
+			private double min(List<double> list)
+			{
+				List<double> L = list.Where(x => Math.Abs(x) != INF).ToList();
+				if (L.Count == 0)
+					return INF;
+				return Enumerable.Min(L);
+			}
+			/// <summary>
+			/// находит максимум характеристики ранжирований
+			/// </summary>
+			/// <param name="list"></param>
+			/// <returns></returns>
+			private double max(List<double> list)
+			{
+				List<double> L = list.Where(x => Math.Abs(x) != INF).ToList();
+				if (L.Count == 0)
+					return INF;
+				return Enumerable.Max(L);
+			}
+			public void Clear()
+			{
+				_MinCost = INF;
+				_MaxCost = INF;
+				_MinStrength = INF;
+				_MaxStrength = INF;
+				_MinDistance = null;
+				_MaxDistance = null;
+			}
+		}
+		#endregion SUBCLASSES
 
 		#region PROPERTIES
 		public bool IsExecute
 		{
 			get
 			{
-				return (connectedCheckBox != null) ? connectedCheckBox.Checked : false;
+				return (VisualFormConnectedControls.ConnectedCheckBox != null) ?
+					VisualFormConnectedControls.ConnectedCheckBox.Checked : false;
 			}
-		}
-		public string ConnectedLabel
-		{
-			set
-			{
-				if (value == "" || value == null)
-				{
-					connectedLabel?.ResetText();
-					connectedLabel?.Hide();
-					//connectedLabel?.Dispose();
-				}
-				else
-				{
-					if (connectedLabel == null)
-					{
-						connectedLabel = new Label();
-						connectedLabel.AutoSize = true;
-						connectedLabel.Location = new System.Drawing.Point(
-							0, connectedTableFrame.Location.Y + connectedTableFrame.Height);
-						connectedTableFrame?.Parent?.Controls.Add(connectedLabel);
-					}
-					connectedLabel.Text = value;
-					connectedLabel.Show();
-				}
-
-			}
-			get { return connectedLabel != null ? connectedLabel.Text : ""; }
 		}
 		public List<List<int>> Ranks2Lists
 		{
-			set { Rankings = Enumerable.Select(value, x => new Ranking(x)).ToList(); }
-			get { return Enumerable.Select(this.Rankings, x => x.Rank2List).ToList(); }
+			set { Rankings = value.Select(x => new Ranking(x)).ToList(); }
+			get { return this.Rankings.Select(x => x.Rank2List).ToList(); }
 		}
 		public List<int[]> Ranks2Arrays
 		{
@@ -1201,95 +1365,80 @@ namespace Group_choice_algos_fuzzy
 		{
 			get { return this.Rankings.Select(x => x.Rank2String).ToList(); }
 		}
+		public List<Ranking> Rankings
+		{
+			get
+			{
+				if (_Rankings is null)
+					_Rankings = new List<Ranking>();
+				return _Rankings;
+			}
+			set { _Rankings = value; }
+		}
+		public bool[] IsInPareto
+		{
+			get
+			{
+				if(_IsInPareto is null)
+					_IsInPareto = set_Pareto_signs(Rankings.Select(x => x.CostsExperts).ToList());
+				return _IsInPareto;
+			}
+		}
+		public List<int> Winners
+		{
+			get
+			{
+				if (_Winners is null)
+					_Winners = new List<int>();
+				return _Winners;
+			}
+			set { _Winners = value; }
+		}
+		public List<List<int>> Levels
+		{
+			get
+			{
+				if (_Levels is null)
+					_Levels = new List<List<int>>();
+				return _Levels;
+			}
+			set { _Levels = value; }
+		}
+		public ConnectedControls VisualFormConnectedControls
+		{
+			get
+			{
+				if (_VisualFormConnectedControls is null)
+				{
+					//_VisualFormConnectedControls = new ConnectedControls(ID);
+					_VisualFormConnectedControls = new ConnectedControls(this);
+				}
+				return _VisualFormConnectedControls;
+			}
+			set { _VisualFormConnectedControls = value; }
+		}
+		public MethodCharacteristics MinMaxCharacteristics
+		{
+			get
+			{
+				if (_MinMaxCharacteristics is null)
+				{
+					//_MinMaxCharacteristics = new MethodCharacteristics(ID);
+					_MinMaxCharacteristics = new MethodCharacteristics(this);
+				}
+				return _MinMaxCharacteristics;
+			}
+			set { _MinMaxCharacteristics = value; }
+		}
 		#endregion PROPERTIES
 
-		/// <summary>
-		/// отношение Парето
-		/// </summary>
-		/// <param name="R1"></param>
-		/// <param name="R2"></param>
-		/// <returns></returns>
-		public static bool ParetoMORETHAN(List<double> R1, List<double> R2)
-		{
-			bool ans = false;
-			if (R1.Count != R2.Count)
-				throw new MyException(EX_bad_dimensions);
-			for (int i = 0; i < R1.Count; i++)
-			{
-				if (R1[i] < R2[i])
-					return false;
-				if (R1[i] > R2[i])//если есть хотя бы один элемент, который больше
-					ans = true;
-			}
-			return ans;
-		}
-		public static bool ParetoEQUALS(List<double> R1, List<double> R2)
-		{
-			if (!ParetoMORETHAN(R1, R2) && !ParetoMORETHAN(R2, R1))
-				return true;
-			return false;
-		}
-
-		/// <summary>
-		/// задаёт связанные с методом элементы управления
-		/// </summary>
-		/// <param name="checkBox"></param>
-		/// <param name="dgv"></param>
-		public void SetConnectedControls(CheckBox checkBox, DataGridView dgv)
-		{
-			connectedCheckBox = checkBox;
-			connectedTableFrame = dgv;
-			connectedCheckBox.Text = MethodsInfo[ID];
-			((GroupBox)connectedTableFrame?.Parent).Text = MethodsInfo[ID];
-		}
-		/// <summary>
-		/// удаление ранжирований и их характеристик
-		/// </summary>
-		public void ClearRankings()
-		{
-			Rankings = new List<Ranking>();
-			Winners = new List<int>();
-			Levels = new List<List<int>>();
-			IsInPareto = new bool[] { };
-			MinLength = INF;
-			MaxLength = INF;
-			MinStrength = INF;
-			MaxStrength = INF;
-			MinDistance.modulus.Value = INF;
-			MaxDistance.modulus.Value = INF;
-			MinDistance.square.Value = INF;
-			MaxDistance.square.Value = INF;
-		}
-		/// <summary>
-		/// находит минимум характеристики ранжирований
-		/// </summary>
-		/// <param name="list"></param>
-		/// <returns></returns>
-		private double min(List<double> list)
-		{
-			List<double> L = list.Where(x => Math.Abs(x) != INF).ToList();
-			if (L.Count == 0)
-				return INF;
-			return Enumerable.Min(L);
-		}
-		/// <summary>
-		/// находит максимум характеристики ранжирований
-		/// </summary>
-		/// <param name="list"></param>
-		/// <returns></returns>
-		private double max(List<double> list)
-		{
-			List<double> L = list.Where(x => Math.Abs(x) != INF).ToList();
-			if (L.Count == 0)
-				return INF;
-			return Enumerable.Max(L);
-		}
+		#region FUNCTIONS
 		/// <summary>
 		/// задаёт индексы ранжирований, входящих в Парето-множество
 		/// </summary>
 		/// <param name="R"></param>
 		/// <returns></returns>
-		private bool[] set_Pareto_signs(List<Ranking.Characteristic> R)
+		private bool[] set_Pareto_signs(List<Ranking.RankingCharacteristic> R)
 		{
 			var r = R.Count;
 			var ans = new bool[r];
@@ -1311,43 +1460,38 @@ namespace Group_choice_algos_fuzzy
 				ans[i] = true;
 			return ans;
 		}
-		/// <summary>
-		/// выбирает лучшие по каждой характеристике ранжирований
-		/// </summary>
-		public void SetCharacteristicsBestWorst()
+		public static bool ParetoMORETHAN(List<double> R1, List<double> R2)
 		{
-			MinLength = min(Rankings.Select(x => x.Cost.Value).ToList());
-			MaxLength = max(Rankings.Select(x => x.Cost.Value).ToList());
-			MinStrength = min(Rankings.Select(x => x.Strength.Value).ToList());
-			MaxStrength = max(Rankings.Select(x => x.Strength.Value).ToList());
-			MinDistance.modulus.Value = min(Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList());
-			MaxDistance.modulus.Value = max(Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList());
-			MinDistance.square.Value = min(Rankings.Select(x => x.SummaryDistance.square.Value).ToList());
-			MaxDistance.square.Value = max(Rankings.Select(x => x.SummaryDistance.square.Value).ToList());
-			IsInPareto = set_Pareto_signs(Rankings.Select(x => x.CostsExperts).ToList());
-		}
-		/// <summary>
-		/// очищает весь вывод метода
-		/// </summary>
-		public void ClearMethodOutput()
-		{
-			connectedTableFrame?.Rows.Clear();
-			connectedTableFrame?.Columns.Clear();
-			ConnectedLabel = "";
-			connectedTableFrame?.Hide();
-			connectedTableFrame?.Parent?.Hide();
-		}
-		/// <summary>
-		/// отображает весь вывод метода
-		/// </summary>
-		public void ShowMethodOutput()
-		{
-			if (IsExecute)
+			bool ans = false;
+			if (R1.Count != R2.Count)
+				throw new MyException(EX_bad_dimensions);
+			for (int i = 0; i < R1.Count; i++)
 			{
-				connectedTableFrame?.Show();
-				connectedTableFrame?.Parent.Show();
+				if (R1[i] < R2[i])
+					return false;//тогда уже не строго больше
+				if (R1[i] > R2[i])//если есть хотя бы один элемент, который больше
+					ans = true;
 			}
+			return ans;
 		}
+		public static bool ParetoEQUALS(List<double> R1, List<double> R2)
+		{
+			if (!ParetoMORETHAN(R1, R2) && !ParetoMORETHAN(R2, R1))
+				return true;
+			return false;
+		}
+		/// <summary>
+		/// удаление ранжирований и их характеристик
+		/// </summary>
+		public void ClearRankings()
+		{
+			Rankings = new List<Ranking>();
+			Winners = new List<int>();
+			Levels = new List<List<int>>();
+			_IsInPareto = null;
+			MinMaxCharacteristics.Clear();
+		}
+		#endregion FUNCTIONS
 
 	}
 
@@ -1570,9 +1714,13 @@ namespace Group_choice_algos_fuzzy
 			Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
 																								   //победители - это, буквально, недоминируемые альтернативы
 			var pair_dominant_matrix = new Matrix(PD);
-			if (Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out Schulze_method.Levels, out var ranks))
+			var is_ = Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out var levels, out var ranks);
+			Schulze_method.Levels = levels;
+			if (is_)
+			{
 				foreach (var r in ranks)
 					Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, r));
+			}
 		}
 
 		/// <summary>
@@ -1588,9 +1736,14 @@ namespace Group_choice_algos_fuzzy
 			R = R.TransitiveClosure();
 			Form1.AggregatedMatrix.R_DestroyedCycles_TransClosured = new FuzzyRelation(R);
 			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
-			if (Ranking.Matrix2RanksDemukron(R, out Smerchinskaya_Yashina_method.Levels, out var ranks))
+
+			var is_ = Ranking.Matrix2RanksDemukron(R, out var levels, out var ranks);
+			Smerchinskaya_Yashina_method.Levels = levels;
+			if (is_)
+			{
 				foreach (var rr in ranks)
 					Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rr));
+			}
 		}
 
 	}

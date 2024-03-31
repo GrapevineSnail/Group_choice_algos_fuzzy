@@ -7,7 +7,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
-using static Group_choice_algos_fuzzy.Algorithms;
+using static Group_choice_algos_fuzzy.AuxiliaryFuncs;
+using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
 using static System.IO.DirectoryInfo;
 using System.ComponentModel;
 using System.Reflection;
@@ -20,11 +21,11 @@ namespace Group_choice_algos_fuzzy
 		{
 			InitializeComponent();
 			//связывание методов с control-ами на форме
-			Methods.Hp_max_length.SetConnectedControls(cb_HP_max_length, dg_HP_max_length);
-			Methods.Hp_max_strength.SetConnectedControls(cb_HP_max_strength, dg_HP_max_strength);
-			Methods.Schulze_method.SetConnectedControls(cb_Schulze_method, dg_Schulze_method);
-			Methods.All_various_rankings.SetConnectedControls(cb_All_rankings, dg_All_rankings);
-			Methods.Smerchinskaya_Yashina_method.SetConnectedControls(cb_SY, dg_SY);
+			Methods.Hp_max_length.VisualFormConnectedControls.Set(cb_HP_max_length, dg_HP_max_length);
+			Methods.Hp_max_strength.VisualFormConnectedControls.Set(cb_HP_max_strength, dg_HP_max_strength);
+			Methods.Schulze_method.VisualFormConnectedControls.Set(cb_Schulze_method, dg_Schulze_method);
+			Methods.All_various_rankings.VisualFormConnectedControls.Set(cb_All_rankings, dg_All_rankings);
+			Methods.Smerchinskaya_Yashina_method.VisualFormConnectedControls.Set(cb_SY, dg_SY);
 
 			AggregatedMatrix.R_Changed += R_UpdateGraphPicture;
 
@@ -367,7 +368,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				label3.Text = "";
 				foreach (var m in Methods.GetMethods())
-					m.ClearMethodOutput();
+					m.VisualFormConnectedControls.ClearOutput();
 			}
 			catch (MyException ex) { }
 		}
@@ -376,7 +377,7 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				foreach (var m in Methods.GetMethods())
-					m.ShowMethodOutput();
+					m.VisualFormConnectedControls.ShowOutput();
 			}
 			catch (MyException ex) { }
 		}
@@ -457,7 +458,7 @@ namespace Group_choice_algos_fuzzy
 
 			foreach (Method m in Methods.GetMethods())
 			{
-				DataGridView dgv = m?.connectedTableFrame;
+				DataGridView dgv = m?.VisualFormConnectedControls.ConnectedTableFrame;
 
 				if (dgv != null)
 				{
@@ -473,7 +474,7 @@ namespace Group_choice_algos_fuzzy
 					dgv.AutoSize = true;
 					dgv.Size = get_table_size(dgv);
 
-					Label lab = m?.connectedLabel;
+					Label lab = m?.VisualFormConnectedControls.ConnectedLabel_control;
 					if (lab != null)
 					{
 						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);
@@ -515,14 +516,14 @@ namespace Group_choice_algos_fuzzy
 					Methods.Set_Smerchinskaya_Yashina_method(AggregatedMatrix.R);
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
-				foreach (Method met in is_rankings_of_method_exist)
-					met.SetCharacteristicsBestWorst();
+				//foreach (Method met in is_rankings_of_method_exist)
+				//	met.SetCharacteristicsBestWorst();
 				if (is_rankings_of_method_exist.Count() > 1)
 				{
 					bool enter_intersect = false;
 					foreach (Method met in is_rankings_of_method_exist)
 					{
-						met.SetCharacteristicsBestWorst();
+						//met.SetCharacteristicsBestWorst();
 						if (enter_intersect == false)
 						{
 							Intersect = met.Ranks2Strings;
@@ -761,20 +762,20 @@ namespace Group_choice_algos_fuzzy
 					{
 						if (met.Rankings == null || met.Rankings.Count == 0)
 						{
-							met.ConnectedLabel = "Ранжирование невозможно. ";
+							met.VisualFormConnectedControls.ConnectedLabel = "Ранжирование невозможно. ";
 							if (met.Levels != null && met.Levels.Count != 0)
 							{//ранжирований нет, но можно задать разбиение на уровни
 								int col = 0;
-								set_column(met.connectedTableFrame, col);
-								met.connectedTableFrame.Columns[col].HeaderText = $"Разбиение\nна уровни";
+								set_column(met.VisualFormConnectedControls.ConnectedTableFrame, col);
+								met.VisualFormConnectedControls.ConnectedTableFrame.Columns[col].HeaderText = $"Разбиение\nна уровни";
 								for (int i = 0; i < met.Levels.Count; i++)
 								{
-									set_row(met.connectedTableFrame, i);
+									set_row(met.VisualFormConnectedControls.ConnectedTableFrame, i);
 								}
 								for (int i = 0; i < met.Levels.Count; i++)
 								{
-									met.connectedTableFrame[col, i].ReadOnly = true;
-									met.connectedTableFrame[col, i].Value =
+									met.VisualFormConnectedControls.ConnectedTableFrame[col, i].ReadOnly = true;
+									met.VisualFormConnectedControls.ConnectedTableFrame[col, i].Value =
 										string.Join(",", met.Levels[i].Select(x => ind2letter[x]).ToArray());
 								}
 							}
@@ -795,40 +796,40 @@ namespace Group_choice_algos_fuzzy
 							var r = met.Rankings.Count;
 							for (int j = 0; j < r; j++)
 							{
-								set_column(met.connectedTableFrame, j);
+								set_column(met.VisualFormConnectedControls.ConnectedTableFrame, j);
 							}
 							for (int i = 0; i < n; i++)
 							{
-								set_row(met.connectedTableFrame, i);
+								set_row(met.VisualFormConnectedControls.ConnectedTableFrame, i);
 							}
 
 							//добавить в конец datagrid-а строку с характеристикой ранжирования
 							int add_row_with_characteristic(string label)
 							{
-								met.connectedTableFrame.Rows.Add();
-								int i = met.connectedTableFrame.Rows.Count - 1;
-								met.connectedTableFrame.Rows[i].HeaderCell.Value = label;
+								met.VisualFormConnectedControls.ConnectedTableFrame.Rows.Add();
+								int i = met.VisualFormConnectedControls.ConnectedTableFrame.Rows.Count - 1;
+								met.VisualFormConnectedControls.ConnectedTableFrame.Rows[i].HeaderCell.Value = label;
 								return i;
 							}
 							//задать значение характеристики ранжирования и раскрасить
 							void display_characteristic(int j, int i, double min, double max,
-								Ranking.Characteristic characteristic)
+								Ranking.RankingCharacteristic characteristic)
 							{
-								met.connectedTableFrame[j, i].Value = characteristic.Value;
-								met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_bg_color;
+								met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Value = characteristic.Value;
+								met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_bg_color;
 								if (min < max)
 								{
 									if (characteristic.Value == min)
-										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_min_color;
+										met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_min_color;
 									else if (characteristic.Value == max)
-										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
+										met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
 								}
 								else if (characteristic.ValuesList != null && characteristic.ValuesList.Count != 0)
 								{
-									met.connectedTableFrame[j, i].Value = string.Join(CR_LF,
+									met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Value = string.Join(CR_LF,
 										characteristic.ValuesList);
 									if (met.IsInPareto[j])
-										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
+										met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
 								}
 							}
 
@@ -843,27 +844,34 @@ namespace Group_choice_algos_fuzzy
 							{
 								for (int i = 0; i < met.Rankings[j].Count; i++)
 								{
-									met.connectedTableFrame[j, i].ReadOnly = true;
-									met.connectedTableFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
+									met.VisualFormConnectedControls.ConnectedTableFrame[j, i].ReadOnly = true;
+									met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
 								}
 								if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
 								{
 									for (int i = 0; i < n; i++)
-										met.connectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
+										met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
 								}
 
-								display_characteristic(j, n, met.MinLength, met.MaxLength,
+								display_characteristic(j, n, 
+									met.MinMaxCharacteristics.MinCost, 
+									met.MinMaxCharacteristics.MaxCost,
 									met.Rankings[j].Cost);
-								display_characteristic(j, n + 1, met.MinStrength, met.MaxStrength,
+								display_characteristic(j, n + 1, 
+									met.MinMaxCharacteristics.MinStrength, 
+									met.MinMaxCharacteristics.MaxStrength,
 									met.Rankings[j].Strength);
 								display_characteristic(j, n + 2,
-									met.MinDistance.modulus.Value, met.MaxDistance.modulus.Value,
+									met.MinMaxCharacteristics.MinDistance.modulus.Value, 
+									met.MinMaxCharacteristics.MaxDistance.modulus.Value,
 									met.Rankings[j].SummaryDistance.modulus);
 								display_characteristic(j, n + 3,
-									met.MinDistance.square.Value, met.MaxDistance.square.Value,
+									met.MinMaxCharacteristics.MinDistance.square.Value, 
+									met.MinMaxCharacteristics.MaxDistance.square.Value,
 									met.Rankings[j].SummaryDistance.square);
 								display_characteristic(j, n + 4,
-									INF, INF,
+									INF, 
+									INF,
 									met.Rankings[j].CostsExperts);
 							}
 						}
@@ -872,9 +880,9 @@ namespace Group_choice_algos_fuzzy
 					// вывести на экран победителей
 					if (met.Winners != null && met.Winners.Count > 0)
 					{
-						string text = met.ConnectedLabel;
+						string text = met.VisualFormConnectedControls.ConnectedLabel;
 						text += $"Недоминируемые альтернативы: {string.Join(",", met.Winners.Select(x => ind2letter[x]))}";
-						met.ConnectedLabel = text;
+						met.VisualFormConnectedControls.ConnectedLabel = text;
 					}
 				}
 			}
