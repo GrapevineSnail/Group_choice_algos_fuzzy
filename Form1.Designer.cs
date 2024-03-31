@@ -29,22 +29,18 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle21 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle22 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle23 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle24 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle25 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle26 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle27 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle28 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle29 = new System.Windows.Forms.DataGridViewCellStyle();
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle30 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
 			this.flowLayoutPanel_output_tables = new System.Windows.Forms.FlowLayoutPanel();
 			this.groupBox_HP_max_length = new System.Windows.Forms.GroupBox();
-			this.dg_HP_max_length = new System.Windows.Forms.DataGridView();
-			this.groupBox_HP_max_strength = new System.Windows.Forms.GroupBox();
-			this.dg_HP_max_strength = new System.Windows.Forms.DataGridView();
+			this.dg_HP = new System.Windows.Forms.DataGridView();
 			this.groupBox_Schulze_method = new System.Windows.Forms.GroupBox();
 			this.dg_Schulze_method = new System.Windows.Forms.DataGridView();
 			this.groupBox_All_rankings = new System.Windows.Forms.GroupBox();
@@ -55,8 +51,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_SY = new System.Windows.Forms.CheckBox();
 			this.cb_All_rankings = new System.Windows.Forms.CheckBox();
 			this.cb_Schulze_method = new System.Windows.Forms.CheckBox();
-			this.cb_HP_max_strength = new System.Windows.Forms.CheckBox();
-			this.cb_HP_max_length = new System.Windows.Forms.CheckBox();
+			this.cb_HP = new System.Windows.Forms.CheckBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.textBox_file = new System.Windows.Forms.TextBox();
 			this.button_read_file = new System.Windows.Forms.Button();
@@ -81,9 +76,7 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.SuspendLayout();
 			this.flowLayoutPanel_output_tables.SuspendLayout();
 			this.groupBox_HP_max_length.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_length)).BeginInit();
-			this.groupBox_HP_max_strength.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_strength)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.dg_HP)).BeginInit();
 			this.groupBox_Schulze_method.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dg_Schulze_method)).BeginInit();
 			this.groupBox_All_rankings.SuspendLayout();
@@ -135,7 +128,6 @@ namespace Group_choice_algos_fuzzy
 			// 
 			this.flowLayoutPanel_output_tables.AutoScroll = true;
 			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_HP_max_length);
-			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_HP_max_strength);
 			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_Schulze_method);
 			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_All_rankings);
 			this.flowLayoutPanel_output_tables.Controls.Add(this.groupBox_SY);
@@ -151,7 +143,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// groupBox_HP_max_length
 			// 
-			this.groupBox_HP_max_length.Controls.Add(this.dg_HP_max_length);
+			this.groupBox_HP_max_length.Controls.Add(this.dg_HP);
 			this.groupBox_HP_max_length.Location = new System.Drawing.Point(3, 3);
 			this.groupBox_HP_max_length.MinimumSize = new System.Drawing.Size(400, 50);
 			this.groupBox_HP_max_length.Name = "groupBox_HP_max_length";
@@ -163,79 +155,38 @@ namespace Group_choice_algos_fuzzy
 			// 
 			// dg_HP_max_length
 			// 
-			this.dg_HP_max_length.AllowUserToAddRows = false;
-			this.dg_HP_max_length.AllowUserToDeleteRows = false;
-			this.dg_HP_max_length.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
-			this.dg_HP_max_length.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllHeaders;
-			this.dg_HP_max_length.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-			dataGridViewCellStyle21.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle21.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle21.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle21.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle21.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle21.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle21.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_HP_max_length.DefaultCellStyle = dataGridViewCellStyle21;
-			this.dg_HP_max_length.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.dg_HP_max_length.Location = new System.Drawing.Point(3, 16);
-			this.dg_HP_max_length.MinimumSize = new System.Drawing.Size(100, 1);
-			this.dg_HP_max_length.Name = "dg_HP_max_length";
-			this.dg_HP_max_length.ReadOnly = true;
-			this.dg_HP_max_length.RowHeadersWidth = 115;
-			dataGridViewCellStyle22.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle22.Format = "0.####";
-			dataGridViewCellStyle22.NullValue = null;
-			dataGridViewCellStyle22.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_HP_max_length.RowsDefaultCellStyle = dataGridViewCellStyle22;
-			this.dg_HP_max_length.ShowEditingIcon = false;
-			this.dg_HP_max_length.Size = new System.Drawing.Size(394, 31);
-			this.dg_HP_max_length.TabIndex = 3;
-			// 
-			// groupBox_HP_max_strength
-			// 
-			this.groupBox_HP_max_strength.Controls.Add(this.dg_HP_max_strength);
-			this.groupBox_HP_max_strength.Location = new System.Drawing.Point(3, 59);
-			this.groupBox_HP_max_strength.MinimumSize = new System.Drawing.Size(400, 50);
-			this.groupBox_HP_max_strength.Name = "groupBox_HP_max_strength";
-			this.groupBox_HP_max_strength.Size = new System.Drawing.Size(400, 50);
-			this.groupBox_HP_max_strength.TabIndex = 20;
-			this.groupBox_HP_max_strength.TabStop = false;
-			this.groupBox_HP_max_strength.Text = "Гамильтоновы пути наибольшей силы";
-			// 
-			// dg_HP_max_strength
-			// 
-			this.dg_HP_max_strength.AllowUserToAddRows = false;
-			this.dg_HP_max_strength.AllowUserToDeleteRows = false;
-			this.dg_HP_max_strength.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
-			this.dg_HP_max_strength.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllHeaders;
-			this.dg_HP_max_strength.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-			dataGridViewCellStyle23.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle23.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle23.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle23.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle23.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle23.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle23.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_HP_max_strength.DefaultCellStyle = dataGridViewCellStyle23;
-			this.dg_HP_max_strength.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.dg_HP_max_strength.Location = new System.Drawing.Point(3, 16);
-			this.dg_HP_max_strength.MinimumSize = new System.Drawing.Size(100, 1);
-			this.dg_HP_max_strength.Name = "dg_HP_max_strength";
-			this.dg_HP_max_strength.ReadOnly = true;
-			this.dg_HP_max_strength.RowHeadersWidth = 115;
-			dataGridViewCellStyle24.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle24.Format = "0.####";
-			dataGridViewCellStyle24.NullValue = null;
-			dataGridViewCellStyle24.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_HP_max_strength.RowsDefaultCellStyle = dataGridViewCellStyle24;
-			this.dg_HP_max_strength.ShowEditingIcon = false;
-			this.dg_HP_max_strength.Size = new System.Drawing.Size(394, 31);
-			this.dg_HP_max_strength.TabIndex = 1;
+			this.dg_HP.AllowUserToAddRows = false;
+			this.dg_HP.AllowUserToDeleteRows = false;
+			this.dg_HP.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
+			this.dg_HP.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllHeaders;
+			this.dg_HP.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
+			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_HP.DefaultCellStyle = dataGridViewCellStyle1;
+			this.dg_HP.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.dg_HP.Location = new System.Drawing.Point(3, 16);
+			this.dg_HP.MinimumSize = new System.Drawing.Size(100, 1);
+			this.dg_HP.Name = "dg_HP_max_length";
+			this.dg_HP.ReadOnly = true;
+			this.dg_HP.RowHeadersWidth = 115;
+			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+			dataGridViewCellStyle2.Format = "0.####";
+			dataGridViewCellStyle2.NullValue = null;
+			dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_HP.RowsDefaultCellStyle = dataGridViewCellStyle2;
+			this.dg_HP.ShowEditingIcon = false;
+			this.dg_HP.Size = new System.Drawing.Size(394, 31);
+			this.dg_HP.TabIndex = 3;
 			// 
 			// groupBox_Schulze_method
 			// 
 			this.groupBox_Schulze_method.Controls.Add(this.dg_Schulze_method);
-			this.groupBox_Schulze_method.Location = new System.Drawing.Point(3, 115);
+			this.groupBox_Schulze_method.Location = new System.Drawing.Point(3, 59);
 			this.groupBox_Schulze_method.MinimumSize = new System.Drawing.Size(400, 50);
 			this.groupBox_Schulze_method.Name = "groupBox_Schulze_method";
 			this.groupBox_Schulze_method.Size = new System.Drawing.Size(400, 50);
@@ -250,25 +201,25 @@ namespace Group_choice_algos_fuzzy
 			this.dg_Schulze_method.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
 			this.dg_Schulze_method.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllHeaders;
 			this.dg_Schulze_method.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-			dataGridViewCellStyle25.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle25.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle25.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle25.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle25.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle25.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle25.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_Schulze_method.DefaultCellStyle = dataGridViewCellStyle25;
+			dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_Schulze_method.DefaultCellStyle = dataGridViewCellStyle3;
 			this.dg_Schulze_method.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_Schulze_method.Location = new System.Drawing.Point(3, 16);
 			this.dg_Schulze_method.MinimumSize = new System.Drawing.Size(100, 1);
 			this.dg_Schulze_method.Name = "dg_Schulze_method";
 			this.dg_Schulze_method.ReadOnly = true;
 			this.dg_Schulze_method.RowHeadersWidth = 115;
-			dataGridViewCellStyle26.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle26.Format = "0.####";
-			dataGridViewCellStyle26.NullValue = null;
-			dataGridViewCellStyle26.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_Schulze_method.RowsDefaultCellStyle = dataGridViewCellStyle26;
+			dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+			dataGridViewCellStyle4.Format = "0.####";
+			dataGridViewCellStyle4.NullValue = null;
+			dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_Schulze_method.RowsDefaultCellStyle = dataGridViewCellStyle4;
 			this.dg_Schulze_method.ShowEditingIcon = false;
 			this.dg_Schulze_method.Size = new System.Drawing.Size(394, 31);
 			this.dg_Schulze_method.TabIndex = 1;
@@ -276,7 +227,7 @@ namespace Group_choice_algos_fuzzy
 			// groupBox_All_rankings
 			// 
 			this.groupBox_All_rankings.Controls.Add(this.dg_All_rankings);
-			this.groupBox_All_rankings.Location = new System.Drawing.Point(3, 171);
+			this.groupBox_All_rankings.Location = new System.Drawing.Point(3, 115);
 			this.groupBox_All_rankings.MinimumSize = new System.Drawing.Size(400, 50);
 			this.groupBox_All_rankings.Name = "groupBox_All_rankings";
 			this.groupBox_All_rankings.Size = new System.Drawing.Size(400, 50);
@@ -291,25 +242,25 @@ namespace Group_choice_algos_fuzzy
 			this.dg_All_rankings.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
 			this.dg_All_rankings.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllHeaders;
 			this.dg_All_rankings.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-			dataGridViewCellStyle27.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle27.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle27.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle27.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle27.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle27.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle27.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_All_rankings.DefaultCellStyle = dataGridViewCellStyle27;
+			dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_All_rankings.DefaultCellStyle = dataGridViewCellStyle5;
 			this.dg_All_rankings.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_All_rankings.Location = new System.Drawing.Point(3, 16);
 			this.dg_All_rankings.MinimumSize = new System.Drawing.Size(100, 1);
 			this.dg_All_rankings.Name = "dg_All_rankings";
 			this.dg_All_rankings.ReadOnly = true;
 			this.dg_All_rankings.RowHeadersWidth = 115;
-			dataGridViewCellStyle28.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle28.Format = "0.####";
-			dataGridViewCellStyle28.NullValue = null;
-			dataGridViewCellStyle28.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_All_rankings.RowsDefaultCellStyle = dataGridViewCellStyle28;
+			dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+			dataGridViewCellStyle6.Format = "0.####";
+			dataGridViewCellStyle6.NullValue = null;
+			dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_All_rankings.RowsDefaultCellStyle = dataGridViewCellStyle6;
 			this.dg_All_rankings.ShowEditingIcon = false;
 			this.dg_All_rankings.Size = new System.Drawing.Size(394, 31);
 			this.dg_All_rankings.TabIndex = 1;
@@ -317,7 +268,7 @@ namespace Group_choice_algos_fuzzy
 			// groupBox_SY
 			// 
 			this.groupBox_SY.Controls.Add(this.dg_SY);
-			this.groupBox_SY.Location = new System.Drawing.Point(3, 227);
+			this.groupBox_SY.Location = new System.Drawing.Point(3, 171);
 			this.groupBox_SY.MinimumSize = new System.Drawing.Size(400, 50);
 			this.groupBox_SY.Name = "groupBox_SY";
 			this.groupBox_SY.Size = new System.Drawing.Size(400, 50);
@@ -332,25 +283,25 @@ namespace Group_choice_algos_fuzzy
 			this.dg_SY.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
 			this.dg_SY.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllHeaders;
 			this.dg_SY.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-			dataGridViewCellStyle29.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-			dataGridViewCellStyle29.BackColor = System.Drawing.SystemColors.Window;
-			dataGridViewCellStyle29.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			dataGridViewCellStyle29.ForeColor = System.Drawing.SystemColors.ControlText;
-			dataGridViewCellStyle29.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-			dataGridViewCellStyle29.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-			dataGridViewCellStyle29.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_SY.DefaultCellStyle = dataGridViewCellStyle29;
+			dataGridViewCellStyle7.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+			dataGridViewCellStyle7.BackColor = System.Drawing.SystemColors.Window;
+			dataGridViewCellStyle7.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			dataGridViewCellStyle7.ForeColor = System.Drawing.SystemColors.ControlText;
+			dataGridViewCellStyle7.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+			dataGridViewCellStyle7.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+			dataGridViewCellStyle7.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_SY.DefaultCellStyle = dataGridViewCellStyle7;
 			this.dg_SY.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_SY.Location = new System.Drawing.Point(3, 16);
 			this.dg_SY.MinimumSize = new System.Drawing.Size(100, 1);
 			this.dg_SY.Name = "dg_SY";
 			this.dg_SY.ReadOnly = true;
 			this.dg_SY.RowHeadersWidth = 115;
-			dataGridViewCellStyle30.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-			dataGridViewCellStyle30.Format = "0.####";
-			dataGridViewCellStyle30.NullValue = null;
-			dataGridViewCellStyle30.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-			this.dg_SY.RowsDefaultCellStyle = dataGridViewCellStyle30;
+			dataGridViewCellStyle8.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+			dataGridViewCellStyle8.Format = "0.####";
+			dataGridViewCellStyle8.NullValue = null;
+			dataGridViewCellStyle8.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+			this.dg_SY.RowsDefaultCellStyle = dataGridViewCellStyle8;
 			this.dg_SY.ShowEditingIcon = false;
 			this.dg_SY.Size = new System.Drawing.Size(394, 31);
 			this.dg_SY.TabIndex = 3;
@@ -362,8 +313,7 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox4.Controls.Add(this.cb_SY);
 			this.groupBox4.Controls.Add(this.cb_All_rankings);
 			this.groupBox4.Controls.Add(this.cb_Schulze_method);
-			this.groupBox4.Controls.Add(this.cb_HP_max_strength);
-			this.groupBox4.Controls.Add(this.cb_HP_max_length);
+			this.groupBox4.Controls.Add(this.cb_HP);
 			this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.groupBox4.Location = new System.Drawing.Point(3, 149);
 			this.groupBox4.Name = "groupBox4";
@@ -378,7 +328,7 @@ namespace Group_choice_algos_fuzzy
 			this.cb_SY.Checked = true;
 			this.cb_SY.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.cb_SY.Dock = System.Windows.Forms.DockStyle.Top;
-			this.cb_SY.Location = new System.Drawing.Point(3, 84);
+			this.cb_SY.Location = new System.Drawing.Point(3, 67);
 			this.cb_SY.Name = "cb_SY";
 			this.cb_SY.Size = new System.Drawing.Size(408, 17);
 			this.cb_SY.TabIndex = 5;
@@ -389,7 +339,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			this.cb_All_rankings.AutoSize = true;
 			this.cb_All_rankings.Dock = System.Windows.Forms.DockStyle.Top;
-			this.cb_All_rankings.Location = new System.Drawing.Point(3, 67);
+			this.cb_All_rankings.Location = new System.Drawing.Point(3, 50);
 			this.cb_All_rankings.Name = "cb_All_rankings";
 			this.cb_All_rankings.Size = new System.Drawing.Size(408, 17);
 			this.cb_All_rankings.TabIndex = 4;
@@ -400,34 +350,23 @@ namespace Group_choice_algos_fuzzy
 			// 
 			this.cb_Schulze_method.AutoSize = true;
 			this.cb_Schulze_method.Dock = System.Windows.Forms.DockStyle.Top;
-			this.cb_Schulze_method.Location = new System.Drawing.Point(3, 50);
+			this.cb_Schulze_method.Location = new System.Drawing.Point(3, 33);
 			this.cb_Schulze_method.Name = "cb_Schulze_method";
 			this.cb_Schulze_method.Size = new System.Drawing.Size(408, 17);
 			this.cb_Schulze_method.TabIndex = 2;
 			this.cb_Schulze_method.Text = "Ранжирование по Алгоритму Шульце";
 			this.cb_Schulze_method.UseVisualStyleBackColor = true;
 			// 
-			// cb_HP_max_strength
+			// cb_HP
 			// 
-			this.cb_HP_max_strength.AutoSize = true;
-			this.cb_HP_max_strength.Dock = System.Windows.Forms.DockStyle.Top;
-			this.cb_HP_max_strength.Location = new System.Drawing.Point(3, 33);
-			this.cb_HP_max_strength.Name = "cb_HP_max_strength";
-			this.cb_HP_max_strength.Size = new System.Drawing.Size(408, 17);
-			this.cb_HP_max_strength.TabIndex = 1;
-			this.cb_HP_max_strength.Text = "Гамильтоновы пути наибольшей силы";
-			this.cb_HP_max_strength.UseVisualStyleBackColor = true;
-			// 
-			// cb_HP_max_length
-			// 
-			this.cb_HP_max_length.AutoSize = true;
-			this.cb_HP_max_length.Dock = System.Windows.Forms.DockStyle.Top;
-			this.cb_HP_max_length.Location = new System.Drawing.Point(3, 16);
-			this.cb_HP_max_length.Name = "cb_HP_max_length";
-			this.cb_HP_max_length.Size = new System.Drawing.Size(408, 17);
-			this.cb_HP_max_length.TabIndex = 0;
-			this.cb_HP_max_length.Text = "Гамильтоновы пути максимальной стоимости";
-			this.cb_HP_max_length.UseVisualStyleBackColor = true;
+			this.cb_HP.AutoSize = true;
+			this.cb_HP.Dock = System.Windows.Forms.DockStyle.Top;
+			this.cb_HP.Location = new System.Drawing.Point(3, 16);
+			this.cb_HP.Name = "cb_HP";
+			this.cb_HP.Size = new System.Drawing.Size(408, 17);
+			this.cb_HP.TabIndex = 0;
+			this.cb_HP.Text = "Гамильтоновы пути";
+			this.cb_HP.UseVisualStyleBackColor = true;
 			// 
 			// groupBox2
 			// 
@@ -704,9 +643,7 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.PerformLayout();
 			this.flowLayoutPanel_output_tables.ResumeLayout(false);
 			this.groupBox_HP_max_length.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_length)).EndInit();
-			this.groupBox_HP_max_strength.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)(this.dg_HP_max_strength)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.dg_HP)).EndInit();
 			this.groupBox_Schulze_method.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.dg_Schulze_method)).EndInit();
 			this.groupBox_All_rankings.ResumeLayout(false);
@@ -744,15 +681,12 @@ namespace Group_choice_algos_fuzzy
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.CheckBox cb_All_rankings;
 		private System.Windows.Forms.CheckBox cb_Schulze_method;
-		private System.Windows.Forms.CheckBox cb_HP_max_strength;
-		private System.Windows.Forms.CheckBox cb_HP_max_length;
+		private System.Windows.Forms.CheckBox cb_HP;
 		private System.Windows.Forms.TextBox textBox_file;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_tables;
 		private System.Windows.Forms.GroupBox groupBox_HP_max_length;
-		private System.Windows.Forms.DataGridView dg_HP_max_length;
-		private System.Windows.Forms.GroupBox groupBox_HP_max_strength;
-		private System.Windows.Forms.DataGridView dg_HP_max_strength;
+		private System.Windows.Forms.DataGridView dg_HP;
 		private System.Windows.Forms.GroupBox groupBox_Schulze_method;
 		private System.Windows.Forms.DataGridView dg_Schulze_method;
 		private System.Windows.Forms.GroupBox groupBox_All_rankings;

@@ -4,9 +4,12 @@ using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using static Group_choice_algos_fuzzy.AuxiliaryFuncs;
 using static Group_choice_algos_fuzzy.Constants;
-using static Group_choice_algos_fuzzy.Form1;
+using static Group_choice_algos_fuzzy.Model;
+using System.Drawing;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -609,6 +612,13 @@ namespace Group_choice_algos_fuzzy
 		}
 		#endregion CONSTRUCTORS
 
+		#region FIELDS
+		private FuzzyRelation _Asymmetric;
+		private FuzzyRelation _Symmetric;
+		private FuzzyRelation _DestroyedCycles;
+		private FuzzyRelation _TransClosured;
+		#endregion FIELDS
+
 		#region PROPERTIES
 		public new double this[int i, int j]
 		{
@@ -618,6 +628,7 @@ namespace Group_choice_algos_fuzzy
 				if (!is_value_of_membership_func(value))
 					throw new MyException(EX_bad_fuzzy_relation_matrix);
 				base[i, j] = value;
+				ClearDerivativeFields();
 			}
 		}
 		public double this[Tuple<int, int> pair]
@@ -628,15 +639,71 @@ namespace Group_choice_algos_fuzzy
 				if (!is_value_of_membership_func(value))
 					throw new MyException(EX_bad_fuzzy_relation_matrix);
 				base[pair.Item1, pair.Item2] = value;
+				ClearDerivativeFields();
 			}
 		}
 		public Matrix ToMatrix
 		{
 			get { return base.Self; }
 		}
+		public FuzzyRelation Asymmetric
+		{
+			get
+			{
+				if (_Asymmetric is null)
+				{
+					_Asymmetric = this.AsymmetricPart.ToFuzzy;
+				}
+				return _Asymmetric;
+			}
+			set { _Asymmetric = value; }
+		}
+		public FuzzyRelation Symmetric
+		{
+			get
+			{
+				if (_Symmetric is null)
+				{
+					_Symmetric = this.SymmetricPart.ToFuzzy;
+				}
+				return _Symmetric;
+			}
+			set { _Symmetric = value; }
+		}
+		public FuzzyRelation DestroyedCycles
+		{
+			get
+			{
+				if (_DestroyedCycles is null)
+				{
+					_DestroyedCycles = this.DestroyCycles();
+				}
+				return _DestroyedCycles;
+			}
+			set { _DestroyedCycles = value; }
+		}
+		public FuzzyRelation TransClosured
+		{
+			get
+			{
+				if (_TransClosured is null)
+				{
+					_TransClosured = this.TransitiveClosure();
+				}
+				return _TransClosured;
+			}
+			set { _TransClosured = value; }
+		}
 		#endregion PROPERTIES
 
 		#region FUNCTIONS
+		public void ClearDerivativeFields()
+		{
+			Asymmetric = null;
+			Symmetric = null;
+			DestroyedCycles = null;
+			TransClosured = null;
+		}
 		/// <summary>
 		/// все элементы (пары), в том числе с принадлежностью 0
 		/// </summary>
@@ -936,7 +1003,7 @@ namespace Group_choice_algos_fuzzy
 
 		#region FIELDS
 		private List<int> _Path;//список вершин в пути-ранжировании
-		public int MethodID;//каким методом получено
+		public int MethodID = -1;//каким методом получено
 		public RankingCharacteristic Cost;//общая стоимость пути
 		public RankingCharacteristic CostsExperts; //вектор стоимостей по каждому эксперту-характеристике
 		public RankingCharacteristic Strength; //сила пути (пропускная способность)
@@ -950,7 +1017,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_Path = value;
-				SetRankingParams(AggregatedMatrix.R, FuzzyRelation.ToMatrixList(R_list));
+				UpdateRankingParams(AggregatedMatrix.R, FuzzyRelation.ToMatrixList(R_list));
 			}
 		}
 		public int[] Rank2Array
@@ -959,7 +1026,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_Path = value.ToList();
-				SetRankingParams(AggregatedMatrix.R, FuzzyRelation.ToMatrixList(R_list));
+				UpdateRankingParams(AggregatedMatrix.R, FuzzyRelation.ToMatrixList(R_list));
 			}
 		}
 		/// <summary>
@@ -1033,7 +1100,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// вычисление всех параметров ранжирования
 		/// </summary>
-		private void SetRankingParams(Matrix weight_matrix, List<Matrix> other_matrices)
+		private void UpdateRankingParams(Matrix weight_matrix, List<Matrix> other_matrices)
 		{
 			if (Rank2List != null)
 			{
@@ -1120,6 +1187,10 @@ namespace Group_choice_algos_fuzzy
 			else
 				return true;
 		}
+		public static Ranking List2Rank(List<int> path)
+		{
+			return new Ranking(path);
+		}
 		#endregion FUNCTIONS
 	}
 
@@ -1129,21 +1200,20 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Method
 	{
-		public Method(int id)		{			ID = id; }
+		public Method(int id) { ID = id; }
 
 		#region FIELDS
 		public int ID = -1;//обозначение метода
 		private List<Ranking> _Rankings;//выдаваемые методом ранжирования
-		private bool[] _IsInPareto;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
+		private RankingsCharacteristics _RanksCharacteristics;
 		private List<int> _Winners;//победители - недоминируемые альтернативы
 		private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
 		private ConnectedControls _VisualFormConnectedControls;
-		private MethodCharacteristics _MinMaxCharacteristics;
 		#endregion FIELDS
 
 		#region SUBCLASSES
 		/// <summary>
-		/// связанные с методом элементы управления на форме
+		/// связанные с методом элементы управления (control-ы) на форме
 		/// </summary>
 		public class ConnectedControls //: Method
 		{
@@ -1225,10 +1295,13 @@ namespace Group_choice_algos_fuzzy
 				ConnectedTableFrame?.Parent?.Hide();
 			}
 		}
-		public class MethodCharacteristics //: Method
+		/// <summary>
+		/// характеристики совокупности ранжирований метода
+		/// </summary>
+		public class RankingsCharacteristics //: Method
 		{
 			//public MethodCharacteristics(int id) : base(id) { }//фиктивный конструктор
-			public MethodCharacteristics(Method m) { parent_method = m; }
+			public RankingsCharacteristics(Method m) { parent_method = m; }
 			private readonly Method parent_method;
 			private double _MinCost;//минимальная длина среди ранжирований метода
 			private double _MaxCost;//максимальная длина среди ранжирований метода
@@ -1236,6 +1309,7 @@ namespace Group_choice_algos_fuzzy
 			private double _MaxStrength;//максимальная сила среди ранжирований метода
 			private Ranking.PathSummaryDistanceClass _MinDistance;//минимальное суммарн. расстояние среди ранжирований метода
 			private Ranking.PathSummaryDistanceClass _MaxDistance;//максимальное суммарн. расстояние среди ранжирований метода
+			private bool[] _IsInPareto;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
 			public double MinCost
 			{
 				get
@@ -1298,6 +1372,15 @@ namespace Group_choice_algos_fuzzy
 					return _MaxDistance;
 				}
 			}
+			public bool[] IsInPareto
+			{
+				get
+				{
+					if (_IsInPareto is null)
+						_IsInPareto = QualeEInParetoSet(parent_method.Rankings.Select(x => x.CostsExperts).ToList());
+					return _IsInPareto;
+				}
+			}
 			private bool IsInitialized(double t)
 			{
 				return t != 0 && Math.Abs(t) != INF;
@@ -1329,6 +1412,47 @@ namespace Group_choice_algos_fuzzy
 				if (L.Count == 0)
 					return INF;
 				return Enumerable.Max(L);
+			}
+			/// <summary>
+			/// задаёт индексы ранжирований, входящих в Парето-множество
+			/// </summary>
+			/// <param name="R"></param>
+			/// <returns></returns>
+			private bool[] QualeEInParetoSet(List<Ranking.RankingCharacteristic> R)
+			{
+				var r = R.Count;
+				var ans = new bool[r];
+				var Pareto_indices = Enumerable.Range(0, r).ToHashSet();
+
+				for (int i = 0; i < r; i++)
+					foreach (int j in Pareto_indices)//(int j = 0; j < r; j++)
+					{
+						var Vj = R[j].ValuesList;
+						var Vi = R[i].ValuesList;
+						var K = Vj.Count;
+						if (i != j && ParetoMORETHAN(Vj, Vi))
+						{
+							Pareto_indices.Remove(i);
+							break;
+						}
+					}
+				foreach (int i in Pareto_indices)
+					ans[i] = true;
+				return ans;
+			}
+			public static bool ParetoMORETHAN(List<double> R1, List<double> R2)
+			{
+				bool ans = false;
+				if (R1.Count != R2.Count)
+					throw new MyException(EX_bad_dimensions);
+				for (int i = 0; i < R1.Count; i++)
+				{
+					if (R1[i] < R2[i])
+						return false;//тогда уже не строго больше
+					if (R1[i] > R2[i])//если есть хотя бы один элемент, который больше
+						ans = true;
+				}
+				return ans;
 			}
 			public void Clear()
 			{
@@ -1370,19 +1494,30 @@ namespace Group_choice_algos_fuzzy
 			get
 			{
 				if (_Rankings is null)
+				{
 					_Rankings = new List<Ranking>();
+					RanksCharacteristics = null;
+				}
 				return _Rankings;
 			}
-			set { _Rankings = value; }
+			set
+			{
+				_Rankings = value;
+				if (value is null)
+					RanksCharacteristics = null;
+			}
 		}
-		public bool[] IsInPareto
+		public RankingsCharacteristics RanksCharacteristics
 		{
 			get
 			{
-				if(_IsInPareto is null)
-					_IsInPareto = set_Pareto_signs(Rankings.Select(x => x.CostsExperts).ToList());
-				return _IsInPareto;
+				if (_RanksCharacteristics is null)
+				{
+					_RanksCharacteristics = new RankingsCharacteristics(this);
+				}
+				return _RanksCharacteristics;
 			}
+			set { _RanksCharacteristics = value; }
 		}
 		public List<int> Winners
 		{
@@ -1410,341 +1545,92 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (_VisualFormConnectedControls is null)
 				{
-					//_VisualFormConnectedControls = new ConnectedControls(ID);
 					_VisualFormConnectedControls = new ConnectedControls(this);
 				}
 				return _VisualFormConnectedControls;
 			}
 			set { _VisualFormConnectedControls = value; }
 		}
-		public MethodCharacteristics MinMaxCharacteristics
-		{
-			get
-			{
-				if (_MinMaxCharacteristics is null)
-				{
-					//_MinMaxCharacteristics = new MethodCharacteristics(ID);
-					_MinMaxCharacteristics = new MethodCharacteristics(this);
-				}
-				return _MinMaxCharacteristics;
-			}
-			set { _MinMaxCharacteristics = value; }
-		}
 		#endregion PROPERTIES
 
 		#region FUNCTIONS
 		/// <summary>
-		/// задаёт индексы ранжирований, входящих в Парето-множество
-		/// </summary>
-		/// <param name="R"></param>
-		/// <returns></returns>
-		private bool[] set_Pareto_signs(List<Ranking.RankingCharacteristic> R)
-		{
-			var r = R.Count;
-			var ans = new bool[r];
-			var Pareto_indices = Enumerable.Range(0, r).ToHashSet();
-
-			for (int i = 0; i < r; i++)
-				foreach (int j in Pareto_indices)//(int j = 0; j < r; j++)
-				{
-					var Vj = R[j].ValuesList;
-					var Vi = R[i].ValuesList;
-					var K = Vj.Count;
-					if (i != j && ParetoMORETHAN(Vj, Vi))
-					{
-						Pareto_indices.Remove(i);
-						break;
-					}
-				}
-			foreach (int i in Pareto_indices)
-				ans[i] = true;
-			return ans;
-		}
-		public static bool ParetoMORETHAN(List<double> R1, List<double> R2)
-		{
-			bool ans = false;
-			if (R1.Count != R2.Count)
-				throw new MyException(EX_bad_dimensions);
-			for (int i = 0; i < R1.Count; i++)
-			{
-				if (R1[i] < R2[i])
-					return false;//тогда уже не строго больше
-				if (R1[i] > R2[i])//если есть хотя бы один элемент, который больше
-					ans = true;
-			}
-			return ans;
-		}
-		public static bool ParetoEQUALS(List<double> R1, List<double> R2)
-		{
-			if (!ParetoMORETHAN(R1, R2) && !ParetoMORETHAN(R2, R1))
-				return true;
-			return false;
-		}
-		/// <summary>
 		/// удаление ранжирований и их характеристик
 		/// </summary>
-		public void ClearRankings()
+		public void ClearResults()
 		{
-			Rankings = new List<Ranking>();
-			Winners = new List<int>();
-			Levels = new List<List<int>>();
-			_IsInPareto = null;
-			MinMaxCharacteristics.Clear();
+			Rankings = null;
+			Winners = null;
+			Levels = null;
 		}
 		#endregion FUNCTIONS
-
 	}
 
-
 	/// <summary>
-	/// все методы
+	/// операции с файлами
 	/// </summary>
-	public static class Methods
+	public static class FileOperations
 	{
-		public static Method All_various_rankings = new Method(ALL_RANKINGS);
-		public static Method All_Hamiltonian_paths = new Method(ALL_HP);
-		public static Method Hp_max_length = new Method(HP_MAX_LENGTH);
-		public static Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
-		public static Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
-		public static Method Smerchinskaya_Yashina_method = new Method(SMERCHINSKAYA_YASHINA_METHOD);
-
-		public static double MinSummaryModulusDistance;//расстояние наиближайшего ко всем агрегированного ранжирования (модули) - лин. медианы
-		public static double MinSummarySquareDistance;//расстояние наиближайшего ко всем агрегированного ранжирования (квадраты)
-		public static double MaxHamPathLength;//длина пути длиннейших Гаммильтоновых путей
-		public static double MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
-
 		/// <summary>
-		/// очищает результаты методов и характеристики этих результатов
+		/// поиск файлов в директориях
 		/// </summary>
-		public static void ClearMethods()
-		{
-			foreach (Method M in GetMethods())
-				M.ClearRankings();
-			MinSummaryModulusDistance = INF;
-			MinSummarySquareDistance = INF;
-			MaxHamPathLength = INF;
-			MaxHamPathStrength = INF;
-		}
-
-		/// <summary>
-		/// выдаёт все используемые методы
-		/// </summary>
+		/// <param name="directory_with_file"></param>
+		/// <param name="file_name"></param>
 		/// <returns></returns>
-		public static Method[] GetMethods()
+		public static bool FindFile(string file_name, out string absolute_file_name)
 		{
-			Type t = typeof(Methods);
-			return t.GetFields().Select(x => x.GetValue(t) as Method).Where(x => x != null).ToArray();
-		}
-
-		/// <summary>
-		/// выдаёт все методы, имеющие ранжирования и отмеченные к выполнению в текущей программе
-		/// </summary>
-		/// <returns></returns>
-		public static List<Method> GetMethodsExecutedWhithResult()
-		{
-			var is_rankings_of_method_exists = new List<Method>();
-			foreach (Method m in Methods.GetMethods())
+			string directory_with_file = Path.GetDirectoryName(file_name);
+			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+			file_name = Path.GetFileName(file_name);
+			Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
+			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+			string[] allFoundFiles;
+			if (!emptydirname)
 			{
-				if (m.IsExecute && m.Rankings != null && m.Rankings.Count > 0)
-					is_rankings_of_method_exists.Add(m);
-			}
-			return is_rankings_of_method_exists;
-		}
-
-		/// <summary>
-		/// создание всех возможных ранжирований данных альтернатив
-		/// </summary>
-		/// <returns></returns>
-		public static void Set_All_various_rankings(int n)
-		{
-			All_various_rankings.ClearRankings();
-			List<List<int>> permutations_of_elements(List<int> elements)
-			{
-				var l = elements.Count;
-				if (l == 0)
-					return new List<List<int>> { };
-				else if (l == 1)
-					return new List<List<int>> { new List<int> { elements[0] } };
-				else
-				{
-					List<List<int>> perms = new List<List<int>>() { };
-					for (int i = 0; i < l; i++)
-					{//выделяем 0-ой едет по всем i-тым местам и вокруг него крутим все возможные перестановки
-						List<int> elems = new List<int> { };
-						elems.AddRange(elements);
-						elems[i] = elements[0];//меняем местами 0-ой и i-ый (0-ое место скипается)
-						foreach (List<int> p in permutations_of_elements(elems.Skip(1).ToList()))
-							perms.Add(new List<int> { elements[i] }.Concat(p).ToList());
-					}
-					return perms;
-				}
-			}
-			if (n == 1)
-				All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 0 }));
-			else if (n == 2)
-			{
-				All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 0, 1 }));
-				All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 1, 0 }));
+				allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+					SearchOption.TopDirectoryOnly);
 			}
 			else
 			{
-				for (int i = 0; i < n; i++)
-					for (int j = 0; j < n; j++)
-						if (i != j)
-						{
-							List<int> middle_vetrices = new List<int> { };
-							for (int v = 0; v < n; v++)
-								if (v != i && v != j)
-									middle_vetrices.Add(v);
-							foreach (List<int> p in permutations_of_elements(middle_vetrices))
-							{
-								List<int> r = new List<int> { i }.Concat(p).Concat(new List<int> { j }).ToList();
-								All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, r));
-							}
-						}
+				allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+					SearchOption.AllDirectories);
 			}
-
-			MinSummaryModulusDistance = All_various_rankings.Rankings
-				.Select(x => x.SummaryDistance.modulus.Value).Min();
-			MinSummarySquareDistance = All_various_rankings.Rankings
-				.Select(x => x.SummaryDistance.square.Value).Min();
+			if (allFoundFiles.Length > 0)
+			{
+				absolute_file_name = allFoundFiles.First();
+				return true;
+			}
+			absolute_file_name = "";
+			return false;
 		}
 
 		/// <summary>
-		/// вычисляет все Гамильтоновы пути и сохраняет в метод в словаре
+		/// создать файл с переданным текстом
 		/// </summary>
-		/// <param name="HP"></param>
-		/// <param name="Weights_matrix"></param>
-		public static void Set_All_Hamiltonian_paths(Matrix weight_matrix)
-		{
-			All_Hamiltonian_paths.ClearRankings();
-			List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix);
-			for (int i = 0; i < HP.GetLength(0); i++)
-				for (int j = 0; j < HP.GetLength(1); j++)
-					foreach (List<int> path_from_i_to_j in HP[i, j])
-						All_Hamiltonian_paths.Rankings.Add(new Ranking(ALL_HP, path_from_i_to_j));
-		}
-
-		/// <summary>
-		/// Гамильтоновы пути максимальной длины
-		/// </summary>
-		/// <param name="Weights_matrix"></param>
+		/// <param name="text"></param>
+		/// <param name="filename"></param>
 		/// <returns></returns>
-		public static void Set_Hp_max_length(Matrix weight_matrix)
+		public static string WriteToFile(string text, string filename, bool add)
 		{
-			Hp_max_length.ClearRankings();
-			if (All_Hamiltonian_paths.Rankings.Count == 0)
-				Set_All_Hamiltonian_paths(weight_matrix);
-			MaxHamPathLength = All_Hamiltonian_paths.Rankings.Select(x => x.Cost.Value).Max();
-			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
-				if (r.Cost.Value == MaxHamPathLength)
-					Hp_max_length.Rankings.Add(r);
-		}
-
-		/// <summary>
-		/// Гамильтоновы пути наибольшей силы
-		/// </summary>
-		/// <param name="Weights_matrix"></param>
-		/// <returns></returns>
-		public static void Set_Hp_max_strength(Matrix weight_matrix)
-		{
-			Hp_max_strength.ClearRankings();
-			if (All_Hamiltonian_paths.Rankings.Count == 0)
-				Set_All_Hamiltonian_paths(weight_matrix);
-			MaxHamPathStrength = All_Hamiltonian_paths.Rankings.Select(x => x.Strength.Value).Max();
-			foreach (Ranking r in All_Hamiltonian_paths.Rankings)
-				if (r.Strength.Value == MaxHamPathStrength)
-					Hp_max_strength.Rankings.Add(r);
-		}
-
-		/// <summary>
-		/// Нахождение ранжирования и победителей методом Шульце
-		/// </summary>
-		/// <param name="Weights_matrix"></param>
-		/// <returns></returns>
-		public static void Set_Schulze_method(int n, Matrix weight_matrix)
-		{
-			Schulze_method.ClearRankings();
-			var PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
-			var pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
-			var O = new HashSet<(int, int)>();//множество пар - отношение доминирования
-			bool[] winner = Enumerable.Repeat(false, n).ToArray();
-
-			//initialization
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
+			string directory_with_file = Path.GetDirectoryName(filename);
+			filename = Path.GetFileName(filename);
+			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+			//достать название папки, если есть указание папки
+			var absolute_file_name = Path.Combine(directory_with_file, filename);
+			if (add)
+			{
+				using (StreamWriter writer = new StreamWriter(absolute_file_name, true))
 				{
-					PD[i, j] = weight_matrix[i, j];
-					pred[i, j] = i;
+					writer.WriteLineAsync(CR_LF);
+					writer.WriteLineAsync(text);
 				}
-			//calculation of the strengths of the strongest paths
-			for (int j = 0; j < n; j++)
-				for (int i = 0; i < n; i++)
-					if (j != i)//петли не смотрим
-					{
-						for (int k = 0; k < n; k++)
-						{
-							if (j != k && i != k)//петли не смотрим
-							{
-								var tok = Math.Min(PD[i, j], PD[j, k]);
-								if (PD[i, k] < tok)
-								{
-									PD[i, k] = tok;//увеличиваем силу
-									pred[i, k] = pred[j, k];//записываем узел в пути от i до k
-								}
-							}
-						}
-					}
-			//calculation of the binary relation O and the set of potential winners
-			for (int i = 0; i < n; i++)
-			{
-				winner[i] = true;
-				for (int j = 0; j < n; j++)
-					if (i != j)
-					{
-						if (PD[j, i] > PD[i, j])
-						{
-							O.Add((j, i));
-							winner[i] = false;
-						}
-						else
-							O.Remove((j, i));
-					}
 			}
-			Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей
-																								   //победители - это, буквально, недоминируемые альтернативы
-			var pair_dominant_matrix = new Matrix(PD);
-			var is_ = Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out var levels, out var ranks);
-			Schulze_method.Levels = levels;
-			if (is_)
+			else
 			{
-				foreach (var r in ranks)
-					Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, r));
+				File.WriteAllText(absolute_file_name, text);
 			}
+			return absolute_file_name;
 		}
-
-		/// <summary>
-		/// Нахождение ранжирований из агрегированной матрицы - минимальное расстояние
-		/// </summary>
-		/// <param name="weight_matrix"></param>
-		public static void Set_Smerchinskaya_Yashina_method(Matrix weight_matrix)
-		{
-			Smerchinskaya_Yashina_method.ClearRankings();
-			var R = new FuzzyRelation(weight_matrix);
-			R = R.DestroyCycles();
-			Form1.AggregatedMatrix.R_DestroyedCycles = new FuzzyRelation(R);
-			R = R.TransitiveClosure();
-			Form1.AggregatedMatrix.R_DestroyedCycles_TransClosured = new FuzzyRelation(R);
-			Smerchinskaya_Yashina_method.Winners = R.UndominatedAlternatives().ToList();
-
-			var is_ = Ranking.Matrix2RanksDemukron(R, out var levels, out var ranks);
-			Smerchinskaya_Yashina_method.Levels = levels;
-			if (is_)
-			{
-				foreach (var rr in ranks)
-					Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rr));
-			}
-		}
-
 	}
 }

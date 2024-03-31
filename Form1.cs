@@ -7,7 +7,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
-using static Group_choice_algos_fuzzy.AuxiliaryFuncs;
+using static Group_choice_algos_fuzzy.FileOperations;
+using static Group_choice_algos_fuzzy.Model;
 using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
 using static System.IO.DirectoryInfo;
 using System.ComponentModel;
@@ -21,8 +22,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			InitializeComponent();
 			//связывание методов с control-ами на форме
-			Methods.Hp_max_length.VisualFormConnectedControls.Set(cb_HP_max_length, dg_HP_max_length);
-			Methods.Hp_max_strength.VisualFormConnectedControls.Set(cb_HP_max_strength, dg_HP_max_strength);
+			Methods.All_Hamiltonian_paths.VisualFormConnectedControls.Set(cb_HP, dg_HP);
 			Methods.Schulze_method.VisualFormConnectedControls.Set(cb_Schulze_method, dg_Schulze_method);
 			Methods.All_various_rankings.VisualFormConnectedControls.Set(cb_All_rankings, dg_All_rankings);
 			Methods.Smerchinskaya_Yashina_method.VisualFormConnectedControls.Set(cb_SY, dg_SY);
@@ -45,169 +45,8 @@ namespace Group_choice_algos_fuzzy
 			interface_coloring(this);
 			clear_output();
 		}
-
-		#region GLOBALS
-		private static int _n;//количество альтернатив
-		private static int _m;//количество экспертов
-		public static int n
-		{
-			set
-			{
-				_n = value;
-				SetSymbolsForAlternatives(n);
-			}
-			get { return _n; }
-		}
-		public static int m
-		{
-			set
-			{
-				_m = value;
-			}
-			get { return _m; }
-		}
-		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
 		Form2 form2_result_matrices = null;
 		Form3 form3_input_expert_matrices = null;
-		/// <summary>
-		/// ResultRelation
-		/// </summary>
-		public static class AggregatedMatrix //агрегированная матрица матриц профилей
-		{
-			public delegate void MyEventHandler();//сигнатура
-			public static event MyEventHandler R_Changed;//для изменения картинки графа
-
-			public static FuzzyRelation Avg;//агрегированная матрица матриц профилей (среднее)
-			public static FuzzyRelation Med;//агрегированная матрица матриц профилей (медианные)
-			private static FuzzyRelation _R;//текущая используемая агрегированная матрица
-			private static FuzzyRelation _R_TransClosured;
-			private static FuzzyRelation _R_DestroyedCycles;
-			private static FuzzyRelation _R_DestroyedCycles_TransClosured;
-			private static FuzzyRelation _R_Asymmetric;
-			private static FuzzyRelation _R_Asymmetric_TransClosured;
-			private static FuzzyRelation _R_Asymmetric_DestroyedCycles;
-			private static FuzzyRelation _R_Asymmetric_DestroyedCycles_TransClosured;
-
-			public static FuzzyRelation R
-			{
-				set
-				{
-					_R = value;
-					R_TransClosured = new FuzzyRelation(n);
-					R_DestroyedCycles = new FuzzyRelation(n);
-					R_Asymmetric = new FuzzyRelation(n);
-
-					R_Changed();
-				}
-				get { return _R; }
-			}
-			public static FuzzyRelation R_TransClosured
-			{
-				set
-				{
-					_R_TransClosured = value;
-
-					R_Changed();
-				}
-				get { return _R_TransClosured; }
-			}
-			public static FuzzyRelation R_DestroyedCycles
-			{
-				set
-				{
-					_R_DestroyedCycles = value;
-					R_DestroyedCycles_TransClosured = new FuzzyRelation(n);
-
-					R_Changed();
-				}
-				get { return _R_DestroyedCycles; }
-			}
-			public static FuzzyRelation R_DestroyedCycles_TransClosured
-			{
-				set
-				{
-					_R_DestroyedCycles_TransClosured = value;
-
-					R_Changed();
-				}
-				get { return _R_DestroyedCycles_TransClosured; }
-			}
-			public static FuzzyRelation R_Asymmetric
-			{
-				set
-				{
-					_R_Asymmetric = value;
-					R_Asymmetric_TransClosured = new FuzzyRelation(n);
-					R_Asymmetric_DestroyedCycles = new FuzzyRelation(n);
-
-					R_Changed();
-				}
-				get { return _R_Asymmetric; }
-			}
-			public static FuzzyRelation R_Asymmetric_TransClosured
-			{
-				set
-				{
-					_R_Asymmetric_TransClosured = value;
-
-					R_Changed();
-				}
-				get { return _R_Asymmetric_TransClosured; }
-			}
-			public static FuzzyRelation R_Asymmetric_DestroyedCycles
-			{
-				set
-				{
-
-					_R_Asymmetric_DestroyedCycles = value;
-					R_Asymmetric_DestroyedCycles_TransClosured = new FuzzyRelation(n);
-
-					R_Changed();
-				}
-				get { return _R_Asymmetric_DestroyedCycles; }
-			}
-			public static FuzzyRelation R_Asymmetric_DestroyedCycles_TransClosured
-			{
-				set
-				{
-					_R_Asymmetric_DestroyedCycles_TransClosured = value;
-
-					R_Changed();
-				}
-				get { return _R_Asymmetric_DestroyedCycles_TransClosured; }
-			}
-
-
-			public static void ClearAggregatedMatrices()
-			{
-				Avg = new FuzzyRelation(n);
-				Med = new FuzzyRelation(n);
-				R = new FuzzyRelation(n);
-			}
-			public static void SetDerivatives()//сомнительно, переделать
-			{
-				_R_Asymmetric = _R.AsymmetricPart.ToFuzzy;
-				_R_TransClosured = _R.TransitiveClosure();
-				_R_DestroyedCycles = _R.DestroyCycles();
-				_R_DestroyedCycles_TransClosured = _R_DestroyedCycles.TransitiveClosure();
-
-				R_Changed();
-			}
-			public static (List<Matrix> Matrices, List<string> Labels) GetRelations2Draw()
-			{
-				var M = new List<Matrix>{
-					AggregatedMatrix.R, AggregatedMatrix.R_TransClosured,
-					AggregatedMatrix.R_DestroyedCycles, AggregatedMatrix.R_DestroyedCycles_TransClosured,
-					AggregatedMatrix.R_Asymmetric};
-				var L = new List<string>{
-					"R", "Tr(R)",
-					"Acyclic(R)", "Tr(Acyclic(R))",
-					"Asym(R)"};
-				var ans = (M, L);
-				return ans;
-			}
-
-		}
 
 		#region Обновление матриц экспертов (Model)
 		public List<Matrix> ExpertMatricesInUI;
@@ -308,8 +147,6 @@ namespace Group_choice_algos_fuzzy
 		}
 		#endregion Обновление матриц экспертов (Model)
 
-
-		#endregion GLOBALS
 
 
 		public void R_UpdateGraphPicture()
@@ -496,8 +333,6 @@ namespace Group_choice_algos_fuzzy
 					throw new MyException(EX_bad_expert_profile);
 				R_list = ExpertsRelationsList;
 				R_Set(R_list);
-				AggregatedMatrix.SetDerivatives();
-
 				var checkbuttons = Methods.GetMethods().Select(x => x.IsExecute);
 				if (checkbuttons.All(x => x == false))
 					throw new MyException(EX_choose_method);
@@ -506,14 +341,10 @@ namespace Group_choice_algos_fuzzy
 					Methods.Set_All_various_rankings(n);
 				if (Methods.All_Hamiltonian_paths.IsExecute)
 					Methods.Set_All_Hamiltonian_paths(AggregatedMatrix.R);
-				if (Methods.Hp_max_length.IsExecute)
-					Methods.Set_Hp_max_length(AggregatedMatrix.R);
-				if (Methods.Hp_max_strength.IsExecute)
-					Methods.Set_Hp_max_strength(AggregatedMatrix.R);
 				if (Methods.Schulze_method.IsExecute)
 					Methods.Set_Schulze_method(n, AggregatedMatrix.R);
 				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
-					Methods.Set_Smerchinskaya_Yashina_method(AggregatedMatrix.R);
+					Methods.Set_Smerchinskaya_Yashina_method();
 
 				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
 				//foreach (Method met in is_rankings_of_method_exist)
@@ -711,8 +542,8 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:{CR_LF}" +
-					$"'модуль разности': {Methods.MinSummaryModulusDistance}{CR_LF}" +
-					$"'квадрат разности': {Methods.MinSummarySquareDistance}{CR_LF}";
+					$"'модуль разности': {Methods.MethodsCharacteristics.MinSummaryDistance.modulus.Value}{CR_LF}" +
+					$"'квадрат разности': {Methods.MethodsCharacteristics.MinSummaryDistance.square.Value}{CR_LF}";
 				string for_print_matrices(Matrix M)
 				{
 					return M?.Matrix2String(true);
@@ -724,16 +555,16 @@ namespace Group_choice_algos_fuzzy
 						+ for_print_matrices(AggregatedMatrix.R);
 
 					tex += CR_LF + $"Асимметричная часть As(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R_Asymmetric);
+						+ for_print_matrices(AggregatedMatrix.R.Asymmetric);
 
 					tex += CR_LF + $"Транзитивное замыкание Tr(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R_TransClosured);
+						+ for_print_matrices(AggregatedMatrix.R.TransClosured);
 
 					tex += CR_LF + $"Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R_DestroyedCycles);
+						+ for_print_matrices(AggregatedMatrix.R.DestroyedCycles);
 
 					tex += CR_LF + $"Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R_DestroyedCycles_TransClosured);
+						+ for_print_matrices(AggregatedMatrix.R.DestroyedCycles.TransClosured);
 				}
 				label3.Text = tex;
 				void set_column(DataGridView dgv, int j)
@@ -828,7 +659,7 @@ namespace Group_choice_algos_fuzzy
 								{
 									met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Value = string.Join(CR_LF,
 										characteristic.ValuesList);
-									if (met.IsInPareto[j])
+									if (met.RanksCharacteristics.IsInPareto[j])
 										met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
 								}
 							}
@@ -854,20 +685,20 @@ namespace Group_choice_algos_fuzzy
 								}
 
 								display_characteristic(j, n, 
-									met.MinMaxCharacteristics.MinCost, 
-									met.MinMaxCharacteristics.MaxCost,
+									met.RanksCharacteristics.MinCost, 
+									met.RanksCharacteristics.MaxCost,
 									met.Rankings[j].Cost);
 								display_characteristic(j, n + 1, 
-									met.MinMaxCharacteristics.MinStrength, 
-									met.MinMaxCharacteristics.MaxStrength,
+									met.RanksCharacteristics.MinStrength, 
+									met.RanksCharacteristics.MaxStrength,
 									met.Rankings[j].Strength);
 								display_characteristic(j, n + 2,
-									met.MinMaxCharacteristics.MinDistance.modulus.Value, 
-									met.MinMaxCharacteristics.MaxDistance.modulus.Value,
+									met.RanksCharacteristics.MinDistance.modulus.Value, 
+									met.RanksCharacteristics.MaxDistance.modulus.Value,
 									met.Rankings[j].SummaryDistance.modulus);
 								display_characteristic(j, n + 3,
-									met.MinMaxCharacteristics.MinDistance.square.Value, 
-									met.MinMaxCharacteristics.MaxDistance.square.Value,
+									met.RanksCharacteristics.MinDistance.square.Value, 
+									met.RanksCharacteristics.MaxDistance.square.Value,
 									met.Rankings[j].SummaryDistance.square);
 								display_characteristic(j, n + 4,
 									INF, 

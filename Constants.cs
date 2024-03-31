@@ -99,6 +99,7 @@ namespace Group_choice_algos_fuzzy
 		//название на ествественном языке для вывода в интерфейс
 		public static Dictionary<int, string> MethodsInfo = new Dictionary<int, string>{
 			{ ALL_RANKINGS, "Всевозможные ранжирования" },
+			{ ALL_HP, "Гамильтоновы пути" },
 			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
 			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
 			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
