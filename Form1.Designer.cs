@@ -151,9 +151,9 @@ namespace Group_choice_algos_fuzzy
 			this.groupBox_HP_max_length.Size = new System.Drawing.Size(400, 50);
 			this.groupBox_HP_max_length.TabIndex = 19;
 			this.groupBox_HP_max_length.TabStop = false;
-			this.groupBox_HP_max_length.Text = "Гамильтоновы пути максимальной стоимости";
+			this.groupBox_HP_max_length.Text = "Гамильтоновы пути";
 			// 
-			// dg_HP_max_length
+			// dg_HP
 			// 
 			this.dg_HP.AllowUserToAddRows = false;
 			this.dg_HP.AllowUserToDeleteRows = false;
@@ -171,7 +171,7 @@ namespace Group_choice_algos_fuzzy
 			this.dg_HP.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.dg_HP.Location = new System.Drawing.Point(3, 16);
 			this.dg_HP.MinimumSize = new System.Drawing.Size(100, 1);
-			this.dg_HP.Name = "dg_HP_max_length";
+			this.dg_HP.Name = "dg_HP";
 			this.dg_HP.ReadOnly = true;
 			this.dg_HP.RowHeadersWidth = 115;
 			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;

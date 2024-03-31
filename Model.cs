@@ -121,10 +121,13 @@ namespace Group_choice_algos_fuzzy
 						if (!IsInitialized(_MinSummaryDistance))
 						{
 							_MinSummaryDistance = new Ranking.PathSummaryDistanceClass();
-							_MinSummaryDistance.modulus.Value = All_various_rankings.Rankings
-								.Select(x => x.SummaryDistance.modulus.Value).Min();
-							_MinSummaryDistance.square.Value = All_various_rankings.Rankings
-								.Select(x => x.SummaryDistance.square.Value).Min();
+							if (All_various_rankings.HasResults)
+							{
+								_MinSummaryDistance.modulus.Value = All_various_rankings.Rankings
+									.Select(x => x.SummaryDistance.modulus.Value).Min();
+								_MinSummaryDistance.square.Value = All_various_rankings.Rankings
+									.Select(x => x.SummaryDistance.square.Value).Min();
+							}
 						}
 						return _MinSummaryDistance;
 					}
@@ -171,7 +174,7 @@ namespace Group_choice_algos_fuzzy
 				var is_method_results_exist = new List<Method>();
 				foreach (Method m in Methods.GetMethods())
 				{
-					if (m.IsExecute && (!(m.Rankings is null) || !(m.Levels is null) || !(m.Winners is null)))
+					if (m.IsExecute && m.HasResults)
 						is_method_results_exist.Add(m);
 				}
 				return is_method_results_exist;

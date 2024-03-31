@@ -965,19 +965,36 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public class RankingCharacteristic
 		{
-			public RankingCharacteristic(string label) { Label = label; }
-			public RankingCharacteristic(string label, double value) { Label = label; Value = value; }
-			public string Label = "";
-			public double Value = INF;
-			public List<double> ValuesList = new List<double>();
+			public RankingCharacteristic(string label) { SetDefaults(); Label = label; }
+			public RankingCharacteristic(string label, double value)
+			{
+				SetDefaults();
+				Label = label;
+				Value = value;
+			}
+			public string Label;
+			public double Value;
+			public List<double> ValuesList;
+			public void SetDefaults()
+			{
+				Label = "";
+				Value = INF;
+				ValuesList = new List<double>();
+			}
 		}
 		/// <summary>
 		/// суммарное расстояние до всех остальных входных ранжирований
 		/// </summary>
 		public class PathSummaryDistanceClass
 		{
-			public RankingCharacteristic modulus = new RankingCharacteristic("Сумм. расстояние 'модуль разности'");
-			public RankingCharacteristic square = new RankingCharacteristic("Сумм. расстояние 'квадрат разности'");
+			public PathSummaryDistanceClass() { SetDefaults(); }
+			public RankingCharacteristic modulus; 
+			public RankingCharacteristic square; 
+			public void SetDefaults()
+			{
+				modulus = new RankingCharacteristic("Сумм. расстояние 'модуль разности'");
+				square = new RankingCharacteristic("Сумм. расстояние 'квадрат разности'");
+			}
 		}
 
 		#region CONSTRUCTORS
@@ -1102,7 +1119,15 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		private void UpdateRankingParams(Matrix weight_matrix, List<Matrix> other_matrices)
 		{
-			if (Rank2List != null)
+			if(_Path is null)
+			{
+				MethodID = -1;
+				Cost = null;
+				Strength = null;
+				CostsExperts = null;
+				SummaryDistance = null;
+			}
+			else
 			{
 				Cost = new RankingCharacteristic("Стоимость", PathCost(Rank2List, weight_matrix));
 				Strength = new RankingCharacteristic("Сила", PathStrength(Rank2List, weight_matrix));
@@ -1118,7 +1143,7 @@ namespace Group_choice_algos_fuzzy
 						SummaryDistance.square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
 					}
 				}
-			}
+			}					   
 		}
 		/// <summary>
 		/// создаёт ранжирование на основе матрицы
@@ -1381,13 +1406,15 @@ namespace Group_choice_algos_fuzzy
 					return _IsInPareto;
 				}
 			}
-			private bool IsInitialized(double t)
+			private bool IsInitialized(object t)
 			{
-				return t != 0 && Math.Abs(t) != INF;
-			}
-			private bool IsInitialized(Ranking.PathSummaryDistanceClass t)
-			{
-				return t != null;
+				if (!parent_method.HasRankings)
+					return false;
+				if (t is double)
+					return (double)t != 0 && Math.Abs((double)t) != INF;
+				else if (t as Ranking.PathSummaryDistanceClass != null)
+					return t != null;
+				return default;
 			}
 			/// <summary>
 			/// находит минимум характеристики ранжирований
@@ -1473,6 +1500,42 @@ namespace Group_choice_algos_fuzzy
 			{
 				return (VisualFormConnectedControls.ConnectedCheckBox != null) ?
 					VisualFormConnectedControls.ConnectedCheckBox.Checked : false;
+			}
+		}
+		public bool HasRankings
+		{
+			get
+			{
+				if (Rankings is null || Rankings.Count == 0 )
+					return false;
+				return true;
+			}
+		}
+		public bool HasLevels
+		{
+			get
+			{
+				if (Levels is null || Levels.Count == 0)
+					return false;
+				return true;
+			}
+		}
+		public bool HasWinners
+		{
+			get
+			{
+				if (Winners is null || Winners.Count == 0)
+					return false;
+				return true;
+			}
+		}
+		public bool HasResults
+		{
+			get
+			{
+				if (!HasRankings && !HasLevels && !HasWinners)
+					return false;
+				return true;
 			}
 		}
 		public List<List<int>> Ranks2Lists
