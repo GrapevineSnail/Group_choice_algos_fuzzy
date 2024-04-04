@@ -37,7 +37,34 @@ namespace Group_choice_algos_fuzzy
 			get { return _m; }
 		}
 		#endregion PROPERTIES
-
+		/// <summary>
+		/// матрицы отношений экспертов
+		/// </summary>
+		public class ExpertRelMatrices
+		{
+			private List<Matrix> _M;
+			public Matrix this[int i]
+			{
+				get {
+					if (FuzzyRelation.IsFuzzyRelationMatrix(_M[i]))
+						return _M[i];
+					else
+						return null;				
+				}
+				set { _M[i] = value; }
+			}
+			public List<Matrix> FuzRelMats
+			{
+				get 
+				{
+					if (_M.All(x => FuzzyRelation.IsFuzzyRelationMatrix(x)))
+						return _M;
+					else
+						return null;
+				}
+				set	{ _M = value; }
+			}
+		}
 
 		/// <summary>
 		/// ResultRelation - агрегированная матрица матриц профилей

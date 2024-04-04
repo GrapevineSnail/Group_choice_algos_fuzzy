@@ -577,7 +577,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="mu_ij"></param>
 		/// <returns></returns>
-		private bool is_value_of_membership_func(double mu_ij)
+		private static bool is_value_of_membership_func(double mu_ij)
 		{
 			if (0 <= mu_ij && mu_ij <= 1)
 				return true;
@@ -588,7 +588,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="M"></param>
 		/// <returns></returns>
-		private bool is_fuzzy_relation_matrix(double[,] M)
+		private static bool is_fuzzy_relation_matrix(double[,] M)
 		{
 			var n = M.GetLength(0);
 			var m = M.GetLength(1);
@@ -929,6 +929,16 @@ namespace Group_choice_algos_fuzzy
 						}
 			}
 			return R;
+		}
+		/// <summary>
+		/// является ли матрица матрицей нечеткого отношения
+		/// </summary>
+		/// <returns></returns>
+		public static bool IsFuzzyRelationMatrix(Matrix M)
+		{
+			if (is_fuzzy_relation_matrix(M.matrix_base))
+				return true;
+			return false;
 		}
 		/// <summary>
 		/// преобразование списка FuzzyRelation в список Matrix
