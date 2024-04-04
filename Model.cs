@@ -91,53 +91,33 @@ namespace Group_choice_algos_fuzzy
 			private static Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
 			public static Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 			public static Method Smerchinskaya_Yashina_method = new Method(SMERCHINSKAYA_YASHINA_METHOD);
-			public static class MethodsCharacteristics
+			public struct MethodsCharacteristics
 			{
-				private static Ranking.RankingCharacteristic _MaxHamPathCost;//длина пути длиннейших Гаммильтоновых путей
-				private static Ranking.RankingCharacteristic _MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
+				private static Characteristic _MaxHamPathCost;//длина пути длиннейших Гаммильтоновых путей
+				private static Characteristic _MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
 				private static Ranking.PathSummaryDistanceClass _MinSummaryDistance;//расстояние наиближайшего ко всем агрегированного ранжирования
-				public static Ranking.RankingCharacteristic MaxHamPathCost
+				public static Characteristic MaxHamPathCost
 				{
 					get
 					{
-						if (!Ranking.RankingCharacteristic.IsInitialized(
-							_MaxHamPathCost, All_Hamiltonian_paths))
+						if (Method.IsMethodExistWithRanks(All_Hamiltonian_paths) && !Characteristic.IsInitialized(_MaxHamPathCost))
 						{
-							_MaxHamPathCost = new Ranking.RankingCharacteristic("самая большая стоимость гамильтоновых путей",
+							_MaxHamPathCost = new Characteristic("самая большая стоимость гамильтоновых путей",
 								All_Hamiltonian_paths.Rankings.Select(x => x.Cost.Value).Max());
 						}
 						return _MaxHamPathCost;
 					}
 				}
-				public static Ranking.RankingCharacteristic MaxHamPathStrength
+				public static Characteristic MaxHamPathStrength
 				{
 					get
 					{
-						if (!Ranking.RankingCharacteristic.IsInitialized(
-							_MaxHamPathStrength, All_Hamiltonian_paths))
+						if (Method.IsMethodExistWithRanks(All_Hamiltonian_paths) && !Characteristic.IsInitialized(_MaxHamPathStrength))
 						{
-							_MaxHamPathStrength = new Ranking.RankingCharacteristic("самая большая сила гамильтоновых путей",
+							_MaxHamPathStrength = new Characteristic("самая большая сила гамильтоновых путей",
 								All_Hamiltonian_paths.Rankings.Select(x => x.Strength.Value).Max());
 						}
 						return _MaxHamPathStrength;
-					}
-				}
-				public static Ranking.PathSummaryDistanceClass MinSummaryDistance
-				{
-					get
-					{
-						if (!Ranking.RankingCharacteristic.IsInitialized(_MinSummaryDistance, All_various_rankings))
-						{
-							_MinSummaryDistance = new Ranking.PathSummaryDistanceClass();
-							if (All_various_rankings.HasRankings)
-							{
-								_MinSummaryDistance.modulus.Value = All_various_rankings.Rankings
-									.Select(x => x.SummaryDistance.modulus.Value).Min();
-								_MinSummaryDistance.square.Value = All_various_rankings.Rankings
-									.Select(x => x.SummaryDistance.square.Value).Min();
-							}
-						}
-						return _MinSummaryDistance;
 					}
 				}
 				public static void Clear()
@@ -164,20 +144,6 @@ namespace Group_choice_algos_fuzzy
 			{
 				Type t = typeof(Methods);
 				return t.GetFields().Select(x => x.GetValue(t) as Method).Where(x => x != null).ToArray();
-			}
-			/// <summary>
-			/// выдаёт все методы, имеющие ответ и отмеченные к выполнению в текущей программе
-			/// </summary>
-			/// <returns></returns>
-			public static List<Method> GetMethodsExecutedWhithResult()
-			{
-				var is_method_results_exist = new List<Method>();
-				foreach (Method m in Methods.GetMethods())
-				{
-					if (m.IsExecute && m.HasResults)
-						is_method_results_exist.Add(m);
-				}
-				return is_method_results_exist;
 			}
 			/// <summary>
 			/// создание всех возможных ранжирований данных альтернатив

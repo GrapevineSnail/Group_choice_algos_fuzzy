@@ -148,7 +148,6 @@ namespace Group_choice_algos_fuzzy
 		#endregion Обновление матриц экспертов (Model)
 
 
-
 		public void R_UpdateGraphPicture()
 		{
 			var rtd = AggregatedMatrix.GetRelations2Draw();
@@ -346,7 +345,12 @@ namespace Group_choice_algos_fuzzy
 				if (Methods.Smerchinskaya_Yashina_method.IsExecute)
 					Methods.Set_Smerchinskaya_Yashina_method();
 
-				var is_rankings_of_method_exist = Methods.GetMethodsExecutedWhithResult();
+				var is_rankings_of_method_exist = new List<Method>();
+				foreach (Method m in Methods.GetMethods())
+				{
+					if (m.IsExecute && (m.HasRankings))
+						is_rankings_of_method_exist.Add(m);
+				}
 				//foreach (Method met in is_rankings_of_method_exist)
 				//	met.SetCharacteristicsBestWorst();
 				if (is_rankings_of_method_exist.Count() > 1)
@@ -541,9 +545,7 @@ namespace Group_choice_algos_fuzzy
 			deactivate_input();
 			try
 			{
-				var tex = $"Минимальное суммарное расстояние среди всевозможных ранжирований:{CR_LF}" +
-					$"'модуль разности': {Methods.MethodsCharacteristics.MinSummaryDistance.modulus.Value}{CR_LF}" +
-					$"'квадрат разности': {Methods.MethodsCharacteristics.MinSummaryDistance.square.Value}{CR_LF}";
+				var tex = $"";
 				string for_print_matrices(Matrix M)
 				{
 					return M?.Matrix2String(true);
@@ -644,7 +646,7 @@ namespace Group_choice_algos_fuzzy
 							}
 							//задать значение характеристики ранжирования и раскрасить
 							void display_characteristic(int j, int i, double min, double max,
-								Ranking.RankingCharacteristic characteristic)
+								Characteristic characteristic)
 							{
 								met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Value = characteristic.Value;
 								met.VisualFormConnectedControls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_bg_color;
@@ -685,12 +687,12 @@ namespace Group_choice_algos_fuzzy
 								}
 
 								display_characteristic(j, n, 
-									met.RanksCharacteristics.MinCost, 
-									met.RanksCharacteristics.MaxCost,
+									met.RanksCharacteristics.Cost.ValueMin, 
+									met.RanksCharacteristics.Cost.ValueMax,
 									met.Rankings[j].Cost);
 								display_characteristic(j, n + 1, 
-									met.RanksCharacteristics.MinStrength, 
-									met.RanksCharacteristics.MaxStrength,
+									met.RanksCharacteristics.Strength.ValueMin, 
+									met.RanksCharacteristics.Strength.ValueMax,
 									met.Rankings[j].Strength);
 								display_characteristic(j, n + 2,
 									met.RanksCharacteristics.MinDistance.modulus.Value, 
