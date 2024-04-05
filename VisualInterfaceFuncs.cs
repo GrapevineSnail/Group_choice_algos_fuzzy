@@ -7,7 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
-using static Group_choice_algos_fuzzy.Form1;
+using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.Model;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
@@ -15,7 +15,6 @@ using System.Drawing.Imaging;
 using System.Data;
 using System.Text.RegularExpressions;
 using static Group_choice_algos_fuzzy.FileOperations;
-using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
 using static System.IO.DirectoryInfo;
 using System.ComponentModel;
 using System.Reflection;
@@ -116,103 +115,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				f.Redraw(M.Select(x => x.matrix_base).ToList(), L);
 			}
-		}
-
-		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
-		{
-			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
-			dgv.DefaultCellStyle.ForeColor = font_color;
-			dgv.DefaultCellStyle.BackColor = input_bg_color;
-			dgv.DefaultCellStyle.SelectionForeColor = font_color;
-			dgv.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.Empty;
-		}
-
-		/// <summary>
-		/// настрйки для вывода DataGridView
-		/// </summary>
-		/// <param name="dgv"></param>
-		public static void SetDataGridViewDefaults(DataGridView dgv)
-		{
-			dgv.AllowUserToAddRows = false;
-			dgv.AllowUserToDeleteRows = false;
-			dgv.AllowUserToResizeRows = false;
-			dgv.AllowUserToResizeColumns = false;
-			dgv.AllowUserToOrderColumns = false;
-			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
-			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ShowEditingIcon = false;
-			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
-			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-			SetDataGridViewDefaults_FontAndColors(dgv);
-			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
-		}
-
-		/// <summary>
-		/// начальное расцвечивание формы
-		/// </summary>
-		/// <param name="main_control"></param>
-		public void interface_coloring(Control main_control)
-		{
-			try
-			{
-				foreach (Control c in main_control.Controls)
-				{
-					if (c as Button != null)
-					{
-						var b = c as Button;
-						b.BackColor = button_bg_color;
-						b.FlatAppearance.BorderColor = button_bg_color;
-					}
-					else
-						interface_coloring(c);
-				}
-			}
-			catch (MyException ex) { }
-		}
-		public static void activate_dgvs(Control.ControlCollection DGVs)
-		{
-			try
-			{
-				foreach (DataGridView dgv in DGVs)
-				{
-					int rws = dgv.RowCount;
-					int cls = dgv.ColumnCount;
-					for (int i = 0; i < rws; i++)
-					{
-						for (int j = 0; j < cls; j++)
-						{
-							color_input_cell(dgv, i, j, input_bg_color);
-						}
-					}
-					dgv.ReadOnly = false;
-				}
-			}
-			catch (MyException ex) { }
-		}
-		public static void deactivate_dgvs(Control.ControlCollection DGVs)
-		{
-			try
-			{
-				foreach (DataGridView dgv in DGVs)
-				{
-					int rws = dgv.RowCount;
-					int cls = dgv.ColumnCount;
-					for (int i = 0; i < rws; i++)
-					{
-						for (int j = 0; j < cls; j++)
-						{
-							color_input_cell(dgv, i, j, input_bg_color_disabled);
-						}
-					}
-					dgv.ReadOnly = true;
-				}
-			}
-			catch (MyException ex) { }
-		}
+		}		
 
 		/// <summary>
 		/// обновление размеров визуальных элементов после их изменения...

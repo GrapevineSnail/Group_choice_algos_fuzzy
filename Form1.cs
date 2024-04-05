@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
+using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.FileOperations;
 using static Group_choice_algos_fuzzy.Model;
 using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
@@ -26,21 +27,20 @@ namespace Group_choice_algos_fuzzy
 			ExpertRelations.UI_Controls = new ExpertRelations.ConnectedControls(
 				cb_show_input_matrices, cb_do_transitive_closure, 
 				numericUpDown_n, numericUpDown_m, flowLayoutPanel_input_tables);
-
+			//обработчик для обновления матриц
 			ExpertRelations_EventHandler += ExpertRelations.UpdateExpertMatrix;
-
-
-			Methods.All_Hamiltonian_paths.UI_Controls =
-				new Method.ConnectedControls(Methods.All_Hamiltonian_paths, cb_HP, dg_HP);
-			Methods.Schulze_method.UI_Controls =
-				new Method.ConnectedControls(Methods.Schulze_method, cb_Schulze_method, dg_Schulze_method);
-			Methods.All_various_rankings.UI_Controls =
-				new Method.ConnectedControls(Methods.All_various_rankings, cb_All_rankings, dg_All_rankings);
-			Methods.Smerchinskaya_Yashina_method.UI_Controls =
-				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY);
 
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
 			AggregatedMatrix.R_Changed += R_UpdateGraphPicture;
+
+			Methods.All_Hamiltonian_paths.UI_Controls =
+				new Method.ConnectedControls(Methods.All_Hamiltonian_paths, cb_HP, dg_HP, null);
+			Methods.Schulze_method.UI_Controls =
+				new Method.ConnectedControls(Methods.Schulze_method, cb_Schulze_method, dg_Schulze_method, null);
+			Methods.All_various_rankings.UI_Controls =
+				new Method.ConnectedControls(Methods.All_various_rankings, cb_All_rankings, dg_All_rankings, null);
+			Methods.Smerchinskaya_Yashina_method.UI_Controls =
+				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
 			VIF = new VisualInterfaceFuncs(this, form2_result_matrices, form3_input_expert_matrices);
 			Model.form1 = this;
@@ -59,7 +59,8 @@ namespace Group_choice_algos_fuzzy
 					c1.MouseDown += flowLayoutPanel_output_tables_MouseDown;
 			}
 
-			VIF.interface_coloring(this);
+			interface_coloring(this);
+			Methods.UI_Clear();
 			Methods.Clear();
 		}
 		public static Form2 form2_result_matrices = null;
@@ -71,18 +72,28 @@ namespace Group_choice_algos_fuzzy
 			var rtd = AggregatedMatrix.GetRelations2Draw();
 			OrgraphsPics_update(form2_result_matrices, rtd.Matrices, rtd.Labels);
 		}
-		public void R_Set(List<FuzzyRelation> experts_relations)
+		/// <summary>
+		/// начальное расцвечивание формы
+		/// </summary>
+		/// <param name="main_control"></param>
+		public void interface_coloring(Control main_control)
 		{
-			AggregatedMatrix.Avg = Matrix.Average(FuzzyRelation.ToMatrixList(experts_relations)).Cast2Fuzzy;
-			AggregatedMatrix.Med = Matrix.Median(FuzzyRelation.ToMatrixList(experts_relations)).Cast2Fuzzy;
-			if (rb_dist_square.Checked)
-				AggregatedMatrix.R = AggregatedMatrix.Avg;
-			else if (rb_dist_modulus.Checked)
-				AggregatedMatrix.R = AggregatedMatrix.Med;
-			else
-				throw new MyException(EX_choose_distance_func);
+			try
+			{
+				foreach (Control c in main_control.Controls)
+				{
+					if (c as Button != null)
+					{
+						var b = c as Button;
+						b.BackColor = button_bg_color;
+						b.FlatAppearance.BorderColor = button_bg_color;
+					}
+					else
+						interface_coloring(c);
+				}
+			}
+			catch (MyException ex) { }
 		}
-
 		void RefreshModel()
 		{
 			ExpertRelations.Clear();
@@ -197,199 +208,12 @@ namespace Group_choice_algos_fuzzy
 				//выполняет проверку и выводит уведомления о наличии циклов
 				ExpertRelations.UI_Controls.UI_Show();
 				var Intersect = Methods.ExecuteAlgorythms();
-				set_output_results(Intersect);
+				Methods.set_output_results(Intersect);
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
 
-		/// <summary>
-		/// вывести на экран результирующие ранжирования
-		/// </summary>
-		/// <param name="Mutual_rankings"></param>
-		private async void set_output_results(List<string> Mutual_rankings)
-		{
-			Methods.Clear();
-			deactivate_dgvs(ExpertRelations.UI_Controls.ConnectedTables);
-			try
-			{
-				var tex = $"";
-				string for_print_matrices(Matrix M)
-				{
-					return M?.Matrix2String(true);
-					//+ "Матрица смежности:\n" + M?.AdjacencyMatrix.Matrix2String(true);
-				}
-				if (AggregatedMatrix.R != null)
-				{
-					tex += CR_LF + $"Агрегированное отношение R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R);
-
-					tex += CR_LF + $"Асимметричная часть As(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R.Asymmetric);
-
-					tex += CR_LF + $"Транзитивное замыкание Tr(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R.TransClosured);
-
-					tex += CR_LF + $"Отношение с разбитыми циклами Acyc(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R.DestroyedCycles);
-
-					tex += CR_LF + $"Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R:{CR_LF}"
-						+ for_print_matrices(AggregatedMatrix.R.DestroyedCycles.TransClosured);
-				}
-				label_aggreg_matrix.Text = tex;
-				void set_column(DataGridView dgv, int j)
-				{
-					DataGridViewColumn column = new DataGridViewColumn();
-					column.CellTemplate = new DataGridViewTextBoxCell();
-					column.HeaderText = $"Ранжиро-\nвание {j + 1}";
-					column.Name = j.ToString();
-					column.HeaderCell.Style.BackColor = window_bg_color;
-					column.FillWeight = 1;
-					dgv.Columns.Add(column);
-				}
-				void set_row(DataGridView dgv, int i)
-				{
-					dgv.Rows.Add();
-					dgv.Rows[i].HeaderCell.Value = $"Место {i + 1}";
-				}
-				//создание чистого файла для вывода ранжирований в виде матриц
-				using (StreamWriter writer = new StreamWriter(OUT_FILE, false))
-				{
-					await writer.WriteLineAsync("");
-				}
-				foreach (Method met in Methods.GetMethods())
-				{
-					if (met.IsExecute == true)
-					{
-						if (met.Rankings == null || met.Rankings.Count == 0)
-						{
-							met.UI_Controls.ConnectedLabelText = "Ранжирование невозможно. ";
-							if (met.Levels != null && met.Levels.Count != 0)
-							{//ранжирований нет, но можно задать разбиение на уровни
-								int col = 0;
-								set_column(met.UI_Controls.ConnectedTableFrame, col);
-								met.UI_Controls.ConnectedTableFrame.Columns[col].HeaderText = $"Разбиение\nна уровни";
-								for (int i = 0; i < met.Levels.Count; i++)
-								{
-									set_row(met.UI_Controls.ConnectedTableFrame, i);
-								}
-								for (int i = 0; i < met.Levels.Count; i++)
-								{
-									met.UI_Controls.ConnectedTableFrame[col, i].ReadOnly = true;
-									met.UI_Controls.ConnectedTableFrame[col, i].Value =
-										string.Join(",", met.Levels[i].Select(x => ind2letter[x]).ToArray());
-								}
-							}
-						}
-						else if (met.Rankings.Count > 0)
-						{
-							//запись в файл всех полученных ранжирований метода
-							using (StreamWriter writer = new StreamWriter(OUT_FILE, true))
-							{//если есть ранжирование и оно действительно включает все альтернативы
-								await writer.WriteLineAsync(CR_LF);
-								var text = string.Join(CR_LF + CR_LF,
-									met.Rankings
-									.Where(x => x.Count == n)
-									.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
-								await writer.WriteLineAsync(text);
-							}
-
-							var r = met.Rankings.Count;
-							for (int j = 0; j < r; j++)
-							{
-								set_column(met.UI_Controls.ConnectedTableFrame, j);
-							}
-							for (int i = 0; i < n; i++)
-							{
-								set_row(met.UI_Controls.ConnectedTableFrame, i);
-							}
-
-							//добавить в конец datagrid-а строку с характеристикой ранжирования
-							int add_row_with_characteristic(string label)
-							{
-								met.UI_Controls.ConnectedTableFrame.Rows.Add();
-								int i = met.UI_Controls.ConnectedTableFrame.Rows.Count - 1;
-								met.UI_Controls.ConnectedTableFrame.Rows[i].HeaderCell.Value = label;
-								return i;
-							}
-							//задать значение характеристики ранжирования и раскрасить
-							void display_characteristic(int j, int i, double min, double max,
-								Characteristic characteristic)
-							{
-								met.UI_Controls.ConnectedTableFrame[j, i].Value = characteristic.Value;
-								met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_bg_color;
-								if (min < max)
-								{
-									if (characteristic.Value == min)
-										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_min_color;
-									else if (characteristic.Value == max)
-										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
-								}
-								else if (characteristic.ValuesList != null && characteristic.ValuesList.Count != 0)
-								{
-									met.UI_Controls.ConnectedTableFrame[j, i].Value = string.Join(CR_LF,
-										characteristic.ValuesList);
-									if (met.RanksCharacteristics.IsInPareto[j])
-										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
-								}
-							}
-
-							var some_rank = met.Rankings.First();
-							add_row_with_characteristic(some_rank.Cost.Label);
-							add_row_with_characteristic(some_rank.Strength.Label);
-							add_row_with_characteristic(some_rank.SummaryDistance.modulus.Label);
-							add_row_with_characteristic(some_rank.SummaryDistance.square.Label);
-							add_row_with_characteristic(some_rank.CostsExperts.Label);
-
-							for (int j = 0; j < r; j++)
-							{
-								for (int i = 0; i < met.Rankings[j].Count; i++)
-								{
-									met.UI_Controls.ConnectedTableFrame[j, i].ReadOnly = true;
-									met.UI_Controls.ConnectedTableFrame[j, i].Value = ind2letter[met.Rankings[j].Rank2List[i]];
-								}
-								if (Mutual_rankings.Count != 0 && Mutual_rankings.Contains(met.Rankings[j].Rank2String))
-								{
-									for (int i = 0; i < n; i++)
-										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
-								}
-
-								display_characteristic(j, n,
-									met.RanksCharacteristics.Cost.ValueMin,
-									met.RanksCharacteristics.Cost.ValueMax,
-									met.Rankings[j].Cost);
-								display_characteristic(j, n + 1,
-									met.RanksCharacteristics.Strength.ValueMin,
-									met.RanksCharacteristics.Strength.ValueMax,
-									met.Rankings[j].Strength);
-								display_characteristic(j, n + 2,
-									met.RanksCharacteristics.MinDistance.modulus.Value,
-									met.RanksCharacteristics.MaxDistance.modulus.Value,
-									met.Rankings[j].SummaryDistance.modulus);
-								display_characteristic(j, n + 3,
-									met.RanksCharacteristics.MinDistance.square.Value,
-									met.RanksCharacteristics.MaxDistance.square.Value,
-									met.Rankings[j].SummaryDistance.square);
-								display_characteristic(j, n + 4,
-									INF,
-									INF,
-									met.Rankings[j].CostsExperts);
-							}
-						}
-					}
-
-					// вывести на экран победителей
-					if (met.Winners != null && met.Winners.Count > 0)
-					{
-						string text = met.UI_Controls.ConnectedLabelText;
-						text += $"Недоминируемые альтернативы: {string.Join(",", met.Winners.Select(x => ind2letter[x]))}";
-						met.UI_Controls.ConnectedLabelText = text;
-					}
-				}
-			}
-			catch (MyException ex) { ex.Info(); }
-			Methods.UI_Show();
-			set_controls_size();
-		}
+		
 
 		/// <summary>
 		/// тестовая кнопочка, для разработчика

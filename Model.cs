@@ -7,7 +7,9 @@ using System.Data;
 using System.Reflection;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
+using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
+using System.IO;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -48,7 +50,7 @@ namespace Group_choice_algos_fuzzy
 			public class ConnectedControls : ConnectedControlsBase
 			{
 				public ConnectedControls(
-					CheckBox cb_show, CheckBox cb_doTransClos, 
+					CheckBox cb_show, CheckBox cb_doTransClos,
 					NumericUpDown n, NumericUpDown m, FlowLayoutPanel flp)
 				{
 					ConnectedCheckBox_ToShow = cb_show;
@@ -66,7 +68,6 @@ namespace Group_choice_algos_fuzzy
 				{
 					get { return ConnectedflowLayoutPanel?.Controls; }
 				}
-
 				override public void UI_Show()
 				{
 					if (ConnectedCheckBox_ToShow.Checked)
@@ -97,11 +98,31 @@ namespace Group_choice_algos_fuzzy
 				}
 				public void UI_Activate()
 				{
-					activate_dgvs(UI_Controls.ConnectedTables);
+					foreach (DataGridView dgv in UI_Controls.ConnectedTables)
+					{
+						for (int i = 0; i < dgv.RowCount; i++)
+						{
+							for (int j = 0; j < dgv.ColumnCount; j++)
+							{
+								color_input_cell(dgv, i, j, input_bg_color);
+							}
+						}
+						dgv.ReadOnly = false;
+					}
 				}
 				public void UI_Deactivate()
 				{
-					deactivate_dgvs(UI_Controls.ConnectedTables);
+					foreach (DataGridView dgv in UI_Controls.ConnectedTables)
+					{
+						for (int i = 0; i < dgv.RowCount; i++)
+						{
+							for (int j = 0; j < dgv.ColumnCount; j++)
+							{
+								color_input_cell(dgv, i, j, input_bg_color_disabled);
+							}
+						}
+						dgv.ReadOnly = true;
+					}
 				}
 				/// <summary>
 				/// сравнивалась ли альтернатива с какой-то ещё
@@ -128,13 +149,13 @@ namespace Group_choice_algos_fuzzy
 				/// </summary>
 				private void set_input_datagrids()
 				{
+					UI_Clear();
 					if (numericUpDown_n.Minimum <= n && n <= numericUpDown_n.Maximum &&
 						numericUpDown_m.Minimum <= m && m <= numericUpDown_m.Maximum)
 					{
 						numericUpDown_n.Value = n;
 						numericUpDown_m.Value = m;
 					}
-					UI_Clear();
 					try
 					{
 						bool some_contradictory_profiles = false;
@@ -275,7 +296,7 @@ namespace Group_choice_algos_fuzzy
 							throw new MyException(EX_contains_cycle);
 					}
 					catch (MyException ex) { ex.Info(); }
-					activate_dgvs(UI_Controls.ConnectedTables);
+					UI_Controls.UI_Activate();
 					set_controls_size();
 				}
 			}
@@ -320,14 +341,19 @@ namespace Group_choice_algos_fuzzy
 			{
 				//try
 				//{
-					DataGridView DGV = (DataGridView)UI_Controls.ConnectedTables[expert_index];
-					Matrix fill_values = RListMatrix[expert_index];
-					Matrix.SetToDataGridView(fill_values, DGV);
-					for (int i = 0; i < n; i++)
-						for (int j = 0; j < n; j++)
-							DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
+				DataGridView DGV = (DataGridView)UI_Controls.ConnectedTables[expert_index];
+				Matrix fill_values = RListMatrix[expert_index];
+				Matrix.SetToDataGridView(fill_values, DGV);
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < n; j++)
+						DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
 				//}
 				//catch { }
+			}
+			public static void UpdateExpertMatrix(object sender, ExpertRelationsEventArgs e)
+			{
+				RListMatrix[e.expert_index] = e.fill_values;
+				UpdateExpertDGV(e.expert_index);
 			}
 			/// <summary>
 			/// обновить рисунки графов - матриц экспертов
@@ -343,11 +369,6 @@ namespace Group_choice_algos_fuzzy
 					L.Add($"Expert{i}:");
 				}
 				OrgraphsPics_update(form3_input_expert_matrices, M, L);
-			}
-			public static void UpdateExpertMatrix(object sender, ExpertRelationsEventArgs e)
-			{
-				RListMatrix[e.expert_index] = e.fill_values;
-				UpdateExpertDGV(e.expert_index);
 			}
 			static public void UpdateExpertMatrices_wrapper(object sender, int expert_index, Matrix fill_values)
 			{
@@ -395,6 +416,26 @@ namespace Group_choice_algos_fuzzy
 				}
 				override public void UI_Show()
 				{
+					var tex = "";
+					void for_print_matrices(string name, Matrix M)
+					{
+						tex += $"{CR_LF}{name}:{CR_LF}";
+						tex += M?.Matrix2String(true);
+					}
+					if (R != null)
+					{
+						for_print_matrices("Агрегированное отношение R",
+							R);
+						for_print_matrices("Асимметричная часть As(R) агрегированного отношения R",
+							R.Asymmetric);
+						for_print_matrices("Транзитивное замыкание Tr(R) агрегированного отношения R",
+							R.TransClosured);
+						for_print_matrices("Отношение с разбитыми циклами Acyc(R) агрегированного отношения R",
+							R.DestroyedCycles);
+						for_print_matrices("Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R",
+							R.DestroyedCycles.TransClosured);
+					}
+					ConnectedLabelText = tex;
 					ConnectedLabelControl.Show();
 				}
 				override public void UI_Clear()
@@ -466,7 +507,6 @@ namespace Group_choice_algos_fuzzy
 			{
 				private static Characteristic _MaxHamPathCost;//длина пути длиннейших Гаммильтоновых путей
 				private static Characteristic _MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
-				private static Ranking.PathSummaryDistanceClass _MinSummaryDistance;//расстояние наиближайшего ко всем агрегированного ранжирования
 				public static Characteristic MaxHamPathCost
 				{
 					get
@@ -495,7 +535,6 @@ namespace Group_choice_algos_fuzzy
 				{
 					_MaxHamPathCost = null;
 					_MaxHamPathStrength = null;
-					_MinSummaryDistance = null;
 				}
 			}
 			/// <summary>
@@ -503,14 +542,17 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			public static void UI_Show()
 			{
-				try
+				foreach (Method M in GetMethods())
 				{
-					foreach (Method M in GetMethods())
-					{
-						M.UI_Controls.UI_Show();
-					}
+					M.UI_Controls.UI_Show();
 				}
-				catch (MyException ex) { }
+			}
+			public static void UI_Clear()
+			{
+				foreach (Method M in GetMethods())
+				{
+					M.UI_Controls.UI_Clear();
+				}
 			}
 			/// <summary>
 			/// очищает результаты методов и характеристики этих результатов
@@ -521,7 +563,6 @@ namespace Group_choice_algos_fuzzy
 				{
 					foreach (Method M in GetMethods())
 					{
-						M.UI_Controls.UI_Clear();
 						M.Clear();
 					}
 					MethodsCharacteristics.Clear();
@@ -857,14 +898,39 @@ namespace Group_choice_algos_fuzzy
 				catch (MyException ex) { ex.Info(); }
 				return Intersect;
 			}
+			/// <summary>
+			/// вывести на экран результирующие ранжирования
+			/// </summary>
+			/// <param name="Mutual_rankings"></param>
+			public static async void set_output_results(List<string> Mutual_rankings)
+			{
+				UI_Clear();
+				ExpertRelations.UI_Controls.UI_Deactivate();
+				AggregatedMatrix.UI_Controls.UI_Show();
+				try
+				{
+					//создание чистого файла для вывода ранжирований в виде матриц
+					FileOperations.WriteToFile("",OUT_FILE, false);
+					UI_Show();
+					foreach (Method met in GetMethods())
+					{
+						if (met.IsExecute && met.HasRankings)
+						{							
+							for (int j = 0; j < met.Rankings.Count; j++)
+							{
+								if (Mutual_rankings.Contains(met.Rankings[j].Rank2String))
+								{
+									for (int i = 0; i < n; i++)
+										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
+								}								
+							}
+						}
+					}
+					set_controls_size();
+				}
+				catch (MyException ex) { ex.Info(); }
+			}
 		}
-
-
-
-
-
-
-
 
 		#region Обновление матриц экспертов (Model)
 		//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
@@ -921,10 +987,8 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
-		
+
 		#endregion Обновление матриц экспертов (Model)
-
-
 
 	}
 }
