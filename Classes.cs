@@ -564,6 +564,23 @@ namespace Group_choice_algos_fuzzy
 			}
 			return R;
 		}
+		/// <summary>
+		/// сравнивалась ли альтернатива с какой-либо другой
+		/// </summary>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		public bool IsAlternativeCompared(int i)
+		{
+			for (int j = 0; j < m; j++)
+			{
+				if (i != j)
+				{
+					if (this[i,j] != 0 || this[j, i] != 0)
+						return true;
+				}
+			}
+			return false;
+		}
 		#endregion FUNCTIONS
 	}
 
@@ -1470,10 +1487,10 @@ namespace Group_choice_algos_fuzzy
 							else if (min < max)
 							{
 								if (characteristic.Value == min)
-									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = 
+									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor =
 										output_characteristics_min_color;
 								else if (characteristic.Value == max)
-									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = 
+									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor =
 										output_characteristics_max_color;
 							}
 						}
@@ -1670,7 +1687,7 @@ namespace Group_choice_algos_fuzzy
 				for (int i = 0; i < r; i++)
 				{
 					//foreach (int j in Pareto_indices)
-					for(int j = 0; j < r; j++)
+					for (int j = 0; j < r; j++)
 					{
 						var Vj = R[j].ValuesList;
 						var Vi = R[i].ValuesList;

@@ -23,17 +23,8 @@ using System.Reflection;
 
 namespace Group_choice_algos_fuzzy
 {
-	public class VisualInterfaceFuncs
+	public static class GraphDrawingFuncs
 	{
-		public VisualInterfaceFuncs(Form1 f1, Form2 f2, Form3 f3_input_expert_matrices) {
-			form1 = f1;
-			form2 = f2;
-			form3_input_expert_matrices = f3_input_expert_matrices;
-		}
-		public static Form1 form1;
-		public static Form2 form2;
-		public static Form3 form3_input_expert_matrices;
-
 		/// <summary>
 		/// отрисовать граф по матрице в PictureBox
 		/// </summary>
@@ -115,55 +106,6 @@ namespace Group_choice_algos_fuzzy
 			{
 				f.Redraw(M.Select(x => x.matrix_base).ToList(), L);
 			}
-		}		
-
-		/// <summary>
-		/// обновление размеров визуальных элементов после их изменения...
-		/// </summary>
-		public static void set_controls_size()
-		{
-			System.Drawing.Size get_table_size(DataGridView dgv)
-			{
-				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
-				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
-				return new System.Drawing.Size(Width, Height);
-			}
-
-			foreach (DataGridView dgv in form1.flowLayoutPanel_input_tables.Controls)
-			{
-				dgv.Dock = DockStyle.None;
-				dgv.Size = get_table_size(dgv);
-			}
-
-			foreach (Method m in Methods.GetMethods())
-			{
-				DataGridView dgv = m?.UI_Controls.ConnectedTableFrame;
-
-				if (dgv != null)
-				{
-					dgv.AutoResizeColumnHeadersHeight();
-					GroupBox frame = (GroupBox)dgv?.Parent;
-					if (frame != null)
-					{
-						frame.Dock = DockStyle.Top;
-						frame.AutoSize = true;
-					}
-					dgv.Dock = DockStyle.None;
-					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-					dgv.AutoSize = true;
-					dgv.Size = get_table_size(dgv);
-
-					System.Windows.Forms.Label lab = m?.UI_Controls.ConnectedLabelControl;
-					if (lab != null)
-					{
-						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);
-					}
-				}
-			}
 		}
-
-
-
-
 	}
 }

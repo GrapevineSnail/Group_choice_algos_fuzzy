@@ -10,7 +10,7 @@ using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.FileOperations;
 using static Group_choice_algos_fuzzy.Model;
-using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
+using static Group_choice_algos_fuzzy.GraphDrawingFuncs;
 using static System.IO.DirectoryInfo;
 using System.ComponentModel;
 using System.Reflection;
@@ -24,14 +24,19 @@ namespace Group_choice_algos_fuzzy
 			InitializeComponent();
 			//связывание модели с control-ами на форме
 
+			Model.form1 = this;
+
 			ExpertRelations.UI_Controls = new ExpertRelations.ConnectedControls(
-				cb_show_input_matrices, cb_do_transitive_closure, 
+				cb_show_input_matrices, cb_do_transitive_closure,
 				numericUpDown_n, numericUpDown_m, flowLayoutPanel_input_tables);
 			//обработчик для обновления матриц
 			ExpertRelations_EventHandler += ExpertRelations.UpdateExpertMatrix;
 
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
-			AggregatedMatrix.R_Changed += R_UpdateGraphPicture;
+			AggregatedMatrix.R_Changed += () => {
+				var rtd = AggregatedMatrix.GetRelations2Draw();
+				OrgraphsPics_update(form2_result_matrices, rtd.Matrices, rtd.Labels);
+			};
 
 			Methods.All_Hamiltonian_paths.UI_Controls =
 				new Method.ConnectedControls(Methods.All_Hamiltonian_paths, cb_HP, dg_HP, null);
@@ -42,8 +47,6 @@ namespace Group_choice_algos_fuzzy
 			Methods.Smerchinskaya_Yashina_method.UI_Controls =
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
-			VIF = new VisualInterfaceFuncs(this, form2_result_matrices, form3_input_expert_matrices);
-			Model.form1 = this;
 
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
@@ -65,13 +68,7 @@ namespace Group_choice_algos_fuzzy
 		}
 		public static Form2 form2_result_matrices = null;
 		public static Form3 form3_input_expert_matrices = null;
-		public VisualInterfaceFuncs VIF;
 
-		public void R_UpdateGraphPicture()
-		{
-			var rtd = AggregatedMatrix.GetRelations2Draw();
-			OrgraphsPics_update(form2_result_matrices, rtd.Matrices, rtd.Labels);
-		}
 		/// <summary>
 		/// начальное расцвечивание формы
 		/// </summary>
@@ -93,6 +90,50 @@ namespace Group_choice_algos_fuzzy
 				}
 			}
 			catch (MyException ex) { }
+		}
+		/// <summary>
+		/// обновление размеров визуальных элементов после их изменения...
+		/// </summary>
+		public void set_controls_size()
+		{
+			System.Drawing.Size get_table_size(DataGridView dgv)
+			{
+				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
+				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
+				return new System.Drawing.Size(Width, Height);
+			}
+
+			foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
+			{
+				dgv.Dock = DockStyle.None;
+				dgv.Size = get_table_size(dgv);
+			}
+
+			foreach (Method m in Methods.GetMethods())
+			{
+				DataGridView dgv = m?.UI_Controls.ConnectedTableFrame;
+
+				if (dgv != null)
+				{
+					dgv.AutoResizeColumnHeadersHeight();
+					GroupBox frame = (GroupBox)dgv?.Parent;
+					if (frame != null)
+					{
+						frame.Dock = DockStyle.Top;
+						frame.AutoSize = true;
+					}
+					dgv.Dock = DockStyle.None;
+					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+					dgv.AutoSize = true;
+					dgv.Size = get_table_size(dgv);
+
+					System.Windows.Forms.Label lab = m?.UI_Controls.ConnectedLabelControl;
+					if (lab != null)
+					{
+						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);
+					}
+				}
+			}
 		}
 		void RefreshModel()
 		{
@@ -213,7 +254,7 @@ namespace Group_choice_algos_fuzzy
 			catch (MyException ex) { ex.Info(); }
 		}
 
-		
+
 
 		/// <summary>
 		/// тестовая кнопочка, для разработчика
