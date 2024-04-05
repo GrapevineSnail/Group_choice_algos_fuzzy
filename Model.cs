@@ -7,6 +7,7 @@ using System.Data;
 using System.Reflection;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
+using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -15,7 +16,7 @@ namespace Group_choice_algos_fuzzy
 		#region FIELDS
 		private static int _n;//количество альтернатив
 		private static int _m;//количество экспертов
-		public static List<FuzzyRelation> R_list; //список матриц нечётких предпочтений экспертов
+		public static Form1 form1;
 		#endregion FIELDS
 
 		#region PROPERTIES
@@ -37,32 +38,323 @@ namespace Group_choice_algos_fuzzy
 			get { return _m; }
 		}
 		#endregion PROPERTIES
+
+
 		/// <summary>
-		/// матрицы отношений экспертов
+		/// матрицы нечетких отношений экспертов
 		/// </summary>
-		public class ExpertRelMatrices
+		public static class ExpertRelations
 		{
-			private List<Matrix> _M;
-			public Matrix this[int i]
+			public class ConnectedControls : ConnectedControlsBase
 			{
-				get {
-					if (FuzzyRelation.IsFuzzyRelationMatrix(_M[i]))
-						return _M[i];
-					else
-						return null;				
-				}
-				set { _M[i] = value; }
-			}
-			public List<Matrix> FuzRelMats
-			{
-				get 
+				public ConnectedControls(
+					CheckBox cb_show, CheckBox cb_doTransClos, 
+					NumericUpDown n, NumericUpDown m, FlowLayoutPanel flp)
 				{
-					if (_M.All(x => FuzzyRelation.IsFuzzyRelationMatrix(x)))
-						return _M;
-					else
-						return null;
+					ConnectedCheckBox_ToShow = cb_show;
+					ConnectedCheckBox_DoTransClosure = cb_doTransClos;
+					numericUpDown_n = n;
+					numericUpDown_m = m;
+					ConnectedflowLayoutPanel = flp;
 				}
-				set	{ _M = value; }
+				private CheckBox ConnectedCheckBox_ToShow;//выводить ли таблички для ввода
+				private CheckBox ConnectedCheckBox_DoTransClosure;//делать ли транз. замыкание после ввода
+				private FlowLayoutPanel ConnectedflowLayoutPanel;//куда кладутся все datagridview экспертов
+				private NumericUpDown numericUpDown_n;
+				private NumericUpDown numericUpDown_m;
+				public Control.ControlCollection ConnectedTables
+				{
+					get { return ConnectedflowLayoutPanel?.Controls; }
+				}
+
+				override public void UI_Show()
+				{
+					if (ConnectedCheckBox_ToShow.Checked)
+					{
+						if (ConnectedTables?.Count == 0)
+						{
+							set_input_datagrids();
+						}
+						foreach (DataGridView dgv in ConnectedTables)
+						{
+							dgv?.Show();
+							dgv?.Parent.Show();
+						}
+					}
+				}
+				override public void UI_Clear()
+				{
+					ConnectedLabelText = "";
+					foreach (DataGridView dgv in ConnectedTables)
+					{
+						dgv?.Rows.Clear();
+						dgv?.Columns.Clear();
+						dgv?.Hide();
+						dgv?.Parent?.Hide();
+						dgv?.Dispose();
+					}
+					ConnectedflowLayoutPanel.Controls.Clear();
+				}
+				public void UI_Activate()
+				{
+					activate_dgvs(UI_Controls.ConnectedTables);
+				}
+				public void UI_Deactivate()
+				{
+					deactivate_dgvs(UI_Controls.ConnectedTables);
+				}
+				/// <summary>
+				/// сравнивалась ли альтернатива с какой-то ещё
+				/// </summary>
+				/// <param name="index"></param>
+				/// <param name="dgv"></param>
+				/// <returns></returns>
+				private static bool IsCompared(int index, DataGridView dgv)
+				{
+					for (int j = 0; j < dgv.Rows.Count; j++)
+					{
+						if (index != j)
+						{
+							var ij = dgv[j, index].Value as double?;
+							var ji = dgv[index, j].Value as double?;
+							if (ij != 0 || ji != 0)
+								return true;
+						}
+					}
+					return false;
+				}
+				/// <summary>
+				/// размещение таблицы для ввода профилей
+				/// </summary>
+				private void set_input_datagrids()
+				{
+					if (numericUpDown_n.Minimum <= n && n <= numericUpDown_n.Maximum &&
+						numericUpDown_m.Minimum <= m && m <= numericUpDown_m.Maximum)
+					{
+						numericUpDown_n.Value = n;
+						numericUpDown_m.Value = m;
+					}
+					UI_Clear();
+					try
+					{
+						bool some_contradictory_profiles = false;
+						for (int expert = 0; expert < m; expert++)
+						{
+							int comparsion_trials = 0;//сколько отредактированных ячеек уже было
+							bool[] is_compared_alternative = new bool[n];//сравнима ли альтернатива
+
+							void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
+							{//что должно происходить при завершении редактирования ячейки
+								if (!ConnectedCheckBox_ToShow.Checked)
+									return;
+								try
+								{
+									FuzzyRelation changed_matrix;
+									var dd = sender as DataGridView;
+									///////
+									//int exp_index = flowLayoutPanel_input_tables.Controls.GetChildIndex(dd);
+									int exp_index = UI_Controls.ConnectedTables.IndexOf(dd);
+									///////
+									int i = e.RowIndex;
+									int j = e.ColumnIndex;
+									double Mij, Mji;
+									var p = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+									double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+									if (!p || Mij > 1 || Mij < 0 || i == j)
+									{
+										dd[j, i].Value = 0.0;
+										changed_matrix = Matrix.GetFromDataGridView(dd).Cast2Fuzzy;
+									}
+									else
+									{
+										comparsion_trials++;
+										if (Mij == 0)
+										{
+											is_compared_alternative[i] = IsCompared(i, dd);
+											is_compared_alternative[j] = IsCompared(j, dd);
+										}
+										else
+										{
+											is_compared_alternative[i] = true;
+											is_compared_alternative[j] = true;
+										}
+										changed_matrix = Matrix.GetFromDataGridView(dd).Cast2Fuzzy;
+										//транзитивное замыкание не должно содержать циклов
+										if (changed_matrix.IsHasCycle())
+											throw new MyException(EX_contains_cycle);
+										changed_matrix = PerformTransClosure(changed_matrix, out bool is_need_update);
+									}
+									UpdateExpertMatrices_wrapper(sender, exp_index, changed_matrix);
+								}
+								catch (MyException ex) { ex.Info(); }
+							}
+
+							FuzzyRelation PerformTransClosure(FuzzyRelation matrix, out bool is_need_update)
+							{
+								is_need_update = false;
+								try
+								{
+									if (ConnectedCheckBox_DoTransClosure.Checked &&
+									(comparsion_trials == n - 1 || is_compared_alternative.All(x => x == true)))
+									{
+										if (!matrix.IsTransitive())
+										{
+											is_need_update = true;
+											matrix = matrix.TransitiveClosure();
+
+										}
+									}
+									return matrix;
+								}
+								catch (MyException ex)
+								{
+									ex.Info();
+									return matrix;
+								}
+							}
+
+							FuzzyRelation input_matrix = RListFuzzyRel[expert];
+							if (input_matrix.IsHasCycle())
+							{
+								some_contradictory_profiles = true;
+							}
+							else
+							{
+								input_matrix = PerformTransClosure(input_matrix, out bool is_need_update);
+								if (is_need_update)
+								{
+									UpdateExpertMatrices_wrapper(this, expert, input_matrix);
+								}
+							}
+
+
+							if (ConnectedCheckBox_ToShow.Checked)
+							{
+								double[,] fill_values = input_matrix.matrix_base;
+								DataGridView dgv = new DataGridView();
+								SetDataGridViewDefaults(dgv);
+								dgv.CellEndEdit += CheckCellWhenValueChanged;
+								dgv.CellEndEdit += DeactivateSymmetricCell;
+								dgv.CellEndEdit += UpdateExpertGraph;
+								form1.flowLayoutPanel_input_tables.Controls.Add(dgv);
+
+								for (int j = 0; j < n; j++)
+								{
+									DataGridViewTextBoxColumn column = new DataGridViewTextBoxColumn();
+									column.Name = j.ToString();
+									column.HeaderText = $"{ind2letter[j]}";
+									column.SortMode = DataGridViewColumnSortMode.NotSortable;
+									dgv.Columns.Add(column);
+								}
+								for (int i = 0; i < n; i++)
+								{
+									dgv.Rows.Add();
+									dgv.Rows[i].HeaderCell.Value = $"{ind2letter[i]}";
+								}
+								for (int i = 0; i < dgv.Rows.Count; i++)
+								{
+									for (int j = 0; j < dgv.Columns.Count; j++)
+									{
+										dgv[j, i].ValueType = typeof(double);
+										dgv[j, i].Value = fill_values[i, j];
+										DeactivateSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
+									}
+								}
+								for (int i = 0; i < n; i++)
+								{
+									is_compared_alternative[i] = IsCompared(i, dgv);
+								}
+
+							}
+
+							UpdateExpertMatrices_wrapper(this, expert, input_matrix);
+							UpdateExpertGraph(null, null);
+
+						}
+						if (some_contradictory_profiles)
+							throw new MyException(EX_contains_cycle);
+					}
+					catch (MyException ex) { ex.Info(); }
+					activate_dgvs(UI_Controls.ConnectedTables);
+					set_controls_size();
+				}
+			}
+			private static List<Matrix> _RList;
+			public static ConnectedControls UI_Controls;
+			public static List<FuzzyRelation> RListFuzzyRel
+			{
+				get { return FuzzyRelation.ToFuzzyList(RListMatrix); }
+				set { RListMatrix = FuzzyRelation.ToMatrixList(value); }
+			}
+			public static List<Matrix> RListMatrix
+			{
+				get
+				{
+					if (_RList is null)
+						_RList = new List<Matrix>();
+					Bring2Fuzzy();
+					return _RList;
+				}
+				set
+				{
+					if (value is null)
+					{
+						UI_Controls.UI_Clear();
+					}
+					_RList = value;
+				}
+			}
+			public static void Bring2Fuzzy()
+			{
+				for (int i = 0; i < _RList.Count; i++)
+				{
+					if (!FuzzyRelation.IsFuzzyRelationMatrix(_RList[i]))
+						_RList[i] = _RList[i].NormalizeAndCast2Fuzzy;
+				}
+			}
+			public static void Clear()
+			{
+				RListMatrix = null;
+			}
+			public static void UpdateExpertDGV(int expert_index)
+			{
+				//try
+				//{
+					DataGridView DGV = (DataGridView)UI_Controls.ConnectedTables[expert_index];
+					Matrix fill_values = RListMatrix[expert_index];
+					Matrix.SetToDataGridView(fill_values, DGV);
+					for (int i = 0; i < n; i++)
+						for (int j = 0; j < n; j++)
+							DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
+				//}
+				//catch { }
+			}
+			/// <summary>
+			/// обновить рисунки графов - матриц экспертов
+			/// </summary>
+			/// <param name="sender"></param>
+			/// <param name="e"></param>
+			static public void UpdateExpertGraph(object sender, DataGridViewCellEventArgs e)
+			{
+				var M = RListMatrix;
+				var L = new List<string>();
+				for (int i = 0; i < M.Count; i++)
+				{
+					L.Add($"Expert{i}:");
+				}
+				OrgraphsPics_update(form3_input_expert_matrices, M, L);
+			}
+			public static void UpdateExpertMatrix(object sender, ExpertRelationsEventArgs e)
+			{
+				RListMatrix[e.expert_index] = e.fill_values;
+				UpdateExpertDGV(e.expert_index);
+			}
+			static public void UpdateExpertMatrices_wrapper(object sender, int expert_index, Matrix fill_values)
+			{
+				var args = new ExpertRelationsEventArgs();
+				args.expert_index = expert_index;
+				args.fill_values = fill_values;
+				ExpertRelations_EventHandler?.Invoke(sender, args);
 			}
 		}
 
@@ -71,8 +363,49 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public static class AggregatedMatrix
 		{
+			public class ConnectedControls : ConnectedControlsBase
+			{
+				public ConnectedControls(RadioButton rb_square, RadioButton rb_modulus, Label lbl)
+				{
+					Connected_rb_dist_square = rb_square;
+					Connected_rb_dist_modulus = rb_modulus;
+					ConnectedLabelControl = lbl;
+				}
+				private RadioButton connected_rb_dist_square;
+				private RadioButton connected_rb_dist_modulus;
+				public RadioButton Connected_rb_dist_square
+				{
+					get
+					{
+						if (connected_rb_dist_square is null)
+							throw new MyException(EX_choose_distance_func);
+						return connected_rb_dist_square;
+					}
+					set { connected_rb_dist_square = value; }//set text
+				}
+				public RadioButton Connected_rb_dist_modulus
+				{
+					get
+					{
+						if (connected_rb_dist_square is null)
+							throw new MyException(EX_choose_distance_func);
+						return connected_rb_dist_modulus;
+					}
+					set { connected_rb_dist_modulus = value; }//set text
+				}
+				override public void UI_Show()
+				{
+					ConnectedLabelControl.Show();
+				}
+				override public void UI_Clear()
+				{
+					ConnectedLabelText = "";
+					ConnectedLabelControl.Hide();
+				}
+			}
 			public delegate void MyEventHandler();//сигнатура
 			public static event MyEventHandler R_Changed;//для изменения картинки графа
+			public static ConnectedControls UI_Controls;//связанные control-ы на форме
 			public static FuzzyRelation Avg;//агрегированная матрица матриц профилей (среднее)
 			public static FuzzyRelation Med;//агрегированная матрица матриц профилей (медианные)
 			private static FuzzyRelation _R;//текущая используемая агрегированная матрица
@@ -85,7 +418,18 @@ namespace Group_choice_algos_fuzzy
 					R_Changed();
 				}
 			}
-			public static void ClearAggregatedMatrices()
+			public static void Set(List<FuzzyRelation> experts_relations)
+			{
+				Avg = Matrix.Average(FuzzyRelation.ToMatrixList(experts_relations)).Cast2Fuzzy;
+				Med = Matrix.Median(FuzzyRelation.ToMatrixList(experts_relations)).Cast2Fuzzy;
+				if (UI_Controls.Connected_rb_dist_square.Checked)
+					R = Avg;
+				else if (UI_Controls.Connected_rb_dist_modulus.Checked)
+					R = Med;
+				else
+					throw new MyException(EX_choose_distance_func);
+			}
+			public static void Clear()
 			{
 				Avg = new FuzzyRelation(n);
 				Med = new FuzzyRelation(n);
@@ -155,13 +499,34 @@ namespace Group_choice_algos_fuzzy
 				}
 			}
 			/// <summary>
+			/// показывает результаты выполнения методов
+			/// </summary>
+			public static void UI_Show()
+			{
+				try
+				{
+					foreach (Method M in GetMethods())
+					{
+						M.UI_Controls.UI_Show();
+					}
+				}
+				catch (MyException ex) { }
+			}
+			/// <summary>
 			/// очищает результаты методов и характеристики этих результатов
 			/// </summary>
-			public static void ClearMethods()
+			public static void Clear()
 			{
-				foreach (Method M in GetMethods())
-					M.ClearResults();
-				MethodsCharacteristics.Clear();
+				try
+				{
+					foreach (Method M in GetMethods())
+					{
+						M.UI_Controls.UI_Clear();
+						M.Clear();
+					}
+					MethodsCharacteristics.Clear();
+				}
+				catch (MyException ex) { }
 			}
 			/// <summary>
 			/// выдаёт все используемые методы
@@ -178,7 +543,7 @@ namespace Group_choice_algos_fuzzy
 			/// <returns></returns>
 			public static void Set_All_various_rankings(int n)
 			{
-				All_various_rankings.ClearResults();
+				All_various_rankings.Clear();
 				List<List<int>> permutations_of_elements(List<int> elements)
 				{
 					var l = elements.Count;
@@ -232,14 +597,14 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="Weights_matrix"></param>
 			public static void Set_All_Hamiltonian_paths(Matrix weight_matrix)
 			{
-				All_Hamiltonian_paths.ClearResults();
+				All_Hamiltonian_paths.Clear();
 				List<List<int>>[,] HP = Hamiltonian_paths_through_matrix_degree(weight_matrix, NO_EDGE);
 				for (int i = 0; i < HP.GetLength(0); i++)
 					for (int j = 0; j < HP.GetLength(1); j++)
 						foreach (List<int> path_from_i_to_j in HP[i, j])
 							All_Hamiltonian_paths.Rankings.Add(new Ranking(ALL_HP, path_from_i_to_j));
-				Hp_max_length.ClearResults();
-				Hp_max_strength.ClearResults();
+				Hp_max_length.Clear();
+				Hp_max_strength.Clear();
 				foreach (Ranking r in All_Hamiltonian_paths.Rankings)
 				{
 					if (r.Cost.Value == MethodsCharacteristics.MaxHamPathCost.Value)
@@ -371,7 +736,7 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			public static void Set_Schulze_method(int n, Matrix weight_matrix)
 			{
-				Schulze_method.ClearResults();
+				Schulze_method.Clear();
 				var PD = new double[n, n];//strength of the strongest path from alternative i to alternative j
 				var pred = new int[n, n];//is the predecessor of alternative j in the strongest path from alternative i to alternative j
 				var O = new HashSet<(int, int)>();//множество пар - отношение доминирования
@@ -433,7 +798,7 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			public static void Set_Smerchinskaya_Yashina_method()
 			{
-				Smerchinskaya_Yashina_method.ClearResults();
+				Smerchinskaya_Yashina_method.Clear();
 				Smerchinskaya_Yashina_method.Winners = AggregatedMatrix.R.DestroyedCycles.TransClosured.UndominatedAlternatives().ToList();
 				var is_ = Ranking.Matrix2RanksDemukron(AggregatedMatrix.R.DestroyedCycles.TransClosured, out var levels, out var ranks);
 				Smerchinskaya_Yashina_method.Levels = levels;
@@ -443,7 +808,123 @@ namespace Group_choice_algos_fuzzy
 						Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rr));
 				}
 			}
+			/// <summary>
+			/// запускает выполнение выбранных алгоритмов
+			/// </summary>
+			/// <param name="list_of_profiles"></param>
+			public static List<string> ExecuteAlgorythms()
+			{
+				List<string> Intersect = new List<string>();//общие ранжирования для использованных методов
+				try
+				{
+					if (ExpertRelations.RListFuzzyRel.Count == 0)
+						throw new MyException(EX_bad_expert_profile);
+					AggregatedMatrix.Set(ExpertRelations.RListFuzzyRel);
+					var checkbuttons = GetMethods().Select(x => x.IsExecute);
+					if (checkbuttons.All(x => x == false))
+						throw new MyException(EX_choose_method);
 
+					if (All_various_rankings.IsExecute)
+						Set_All_various_rankings(n);
+					if (All_Hamiltonian_paths.IsExecute)
+						Set_All_Hamiltonian_paths(AggregatedMatrix.R);
+					if (Schulze_method.IsExecute)
+						Set_Schulze_method(n, AggregatedMatrix.R);
+					if (Smerchinskaya_Yashina_method.IsExecute)
+						Set_Smerchinskaya_Yashina_method();
+
+					var is_rankings_of_method_exist = new List<Method>();
+					foreach (Method m in GetMethods())
+					{
+						if (m.IsExecute && (m.HasRankings))
+							is_rankings_of_method_exist.Add(m);
+					}
+					if (is_rankings_of_method_exist.Count() > 1)
+					{
+						bool processing_first_method = true;
+						foreach (Method met in is_rankings_of_method_exist)
+						{
+							if (processing_first_method)
+							{
+								Intersect = met.Ranks2Strings;
+								processing_first_method = false;
+							}
+							else
+								Intersect = Enumerable.Intersect(Intersect, met.Ranks2Strings).ToList();
+						}
+					}
+				}
+				catch (MyException ex) { ex.Info(); }
+				return Intersect;
+			}
 		}
+
+
+
+
+
+
+
+
+		#region Обновление матриц экспертов (Model)
+		//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
+		static public event EventHandler<ExpertRelationsEventArgs> ExpertRelations_EventHandler;
+
+		public virtual void ExpertRelations_Update(object sender, ExpertRelationsEventArgs e)
+		{
+			EventHandler<ExpertRelationsEventArgs> handler = ExpertRelations_EventHandler;
+			handler?.Invoke(this, e);
+		}
+		public class ExpertRelationsEventArgs : EventArgs
+		{
+			public int expert_index { get; set; }
+			public Matrix fill_values { get; set; }
+		}
+		static public void color_input_cell(DataGridView dgv, int row, int col, System.Drawing.Color color)
+		{
+			try
+			{
+				dgv[col, row].Style.BackColor = color;
+			}
+			catch (MyException ex) { }
+		}
+		static public void DeactivateSymmetricCell(object sender, DataGridViewCellEventArgs e)
+		{
+			try
+			{
+				var dd = sender as DataGridView;
+				int i = e.RowIndex;
+				int j = e.ColumnIndex;
+				if (i == j)
+					color_input_cell(dd, i, j, input_bg_color_disabled);
+				else
+				{
+					double Mij, Mji;
+					double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+					double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+					if (Mij == 0 && Mji != 0)
+					{
+						color_input_cell(dd, i, j, input_bg_color_disabled);
+						color_input_cell(dd, j, i, input_bg_color);
+					}
+					else if (Mij != 0 && Mji == 0)
+					{
+						color_input_cell(dd, i, j, input_bg_color);
+						color_input_cell(dd, j, i, input_bg_color_disabled);
+					}
+					else
+					{
+						color_input_cell(dd, i, j, input_bg_color);
+						color_input_cell(dd, j, i, input_bg_color);
+					}
+				}
+			}
+			catch (MyException ex) { ex.Info(); }
+		}
+		
+		#endregion Обновление матриц экспертов (Model)
+
+
+
 	}
 }

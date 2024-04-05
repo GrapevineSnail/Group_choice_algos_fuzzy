@@ -111,7 +111,11 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// превращает матрицу в нечёткое отношение
 		/// </summary>
-		public FuzzyRelation ToFuzzy { get { return new FuzzyRelation(this); } }
+		public FuzzyRelation Cast2Fuzzy { get { return new FuzzyRelation(this); } }
+		/// <summary>
+		/// нормализует матрицу и превращает матрицу в нечеткое отношение
+		/// </summary>
+		public FuzzyRelation NormalizeAndCast2Fuzzy { get { return new FuzzyRelation(this.NormalizeElems(out var _)); } }
 		#endregion PROPERTIES
 
 		#region OPERATORS
@@ -562,7 +566,6 @@ namespace Group_choice_algos_fuzzy
 		#endregion FUNCTIONS
 	}
 
-
 	/// <summary>
 	/// матрицы нечётких отношений со специфичными для нечёткости операциями
 	/// </summary>
@@ -656,7 +659,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (_Asymmetric is null)
 				{
-					_Asymmetric = this.AsymmetricPart.ToFuzzy;
+					_Asymmetric = this.AsymmetricPart.Cast2Fuzzy;
 				}
 				return _Asymmetric;
 			}
@@ -668,7 +671,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (_Symmetric is null)
 				{
-					_Symmetric = this.SymmetricPart.ToFuzzy;
+					_Symmetric = this.SymmetricPart.Cast2Fuzzy;
 				}
 				return _Symmetric;
 			}
@@ -820,7 +823,7 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public FuzzyRelation Inverse()
 		{
-			return this.Transpose().ToFuzzy;
+			return this.Transpose().Cast2Fuzzy;
 		}
 		/// <summary>
 		/// композиция нечётких бинарных отношений
@@ -843,7 +846,7 @@ namespace Group_choice_algos_fuzzy
 		public new FuzzyRelation Pow(int p)
 		{
 			if (p == 0)
-				return Eye(n).ToFuzzy;
+				return Eye(n).Cast2Fuzzy;
 			var R = new FuzzyRelation(this);
 			for (int k = 1; k < p; k++)
 				R = R.Compose(R);
@@ -906,12 +909,12 @@ namespace Group_choice_algos_fuzzy
 		public FuzzyRelation DestroyCycles()
 		{
 			var R = new FuzzyRelation(this);
-			var R_AM = R.AdjacencyMatrix.ToFuzzy;
+			var R_AM = R.AdjacencyMatrix.Cast2Fuzzy;
 			Matrix RK = Matrix.Eye(1); //матрица контуров
 			while (true)
 			{//если ещё остались контуры
 				var RKTC = R_AM.TransitiveClosure();
-				RK = R_AM.Intersect1(RKTC).Intersect1(RKTC.Transpose().ToFuzzy);
+				RK = R_AM.Intersect1(RKTC).Intersect1(RKTC.Transpose().Cast2Fuzzy);
 				if (RK.ElemSum() == 0)
 					break;
 				for (int i = 0; i < RK.n; i++)
@@ -950,6 +953,15 @@ namespace Group_choice_algos_fuzzy
 			return R_list.Select(x => x.ToMatrix).ToList();
 		}
 		/// <summary>
+		/// преобразование списка Matrix в список FuzzyRelation
+		/// </summary>
+		/// <param name="R_list"></param>
+		/// <returns></returns>
+		public static List<FuzzyRelation> ToFuzzyList(List<Matrix> R_list)
+		{
+			return R_list.Select(x => x.Cast2Fuzzy).ToList();
+		}
+		/// <summary>
 		/// индексы недоминируемых альтернатив
 		/// </summary>
 		/// <returns></returns>
@@ -966,6 +978,46 @@ namespace Group_choice_algos_fuzzy
 			return ans;
 		}
 		#endregion FUNCTIONS
+	}
+
+	/// <summary>
+	/// связанные с сущностью control-ы на форме
+	/// </summary>
+	abstract public class ConnectedControlsBase
+	{
+		private Label connectedLabel;//в какой контейнер выводить текстовые пояснения
+		public string ConnectedLabelText
+		{
+			get { return ConnectedLabelControl.Text; }
+			set
+			{
+				if (value == "" || value is null)
+				{
+					ConnectedLabelControl.ResetText();
+				}
+				else
+				{
+					ConnectedLabelControl.Text = value;
+					ConnectedLabelControl.Show();
+				}
+
+			}
+		}
+		public Label ConnectedLabelControl
+		{
+			get
+			{
+				if (connectedLabel is null)
+				{
+					connectedLabel = new Label();
+					connectedLabel.AutoSize = true;
+				}
+				return connectedLabel;
+			}
+			set { connectedLabel = value; }
+		}
+		abstract public void UI_Show();
+		abstract public void UI_Clear();
 	}
 
 	/// <summary>
@@ -1013,13 +1065,14 @@ namespace Group_choice_algos_fuzzy
 		{
 			if (t is double)
 				return (double)t != 0 && Math.Abs((double)t) != INF;
-			else if (t as Ranking.PathSummaryDistanceClass != null || 
-				t as List<int> != null  || 
+			else if (t as Ranking.PathSummaryDistanceClass != null ||
+				t as List<int> != null ||
 				t as MinNMaxCharacteristics != null)
 				return t != null;
 			return default;
 		}
 	}
+
 	/// <summary>
 	/// минимум и максимум - хакрактеристики
 	/// </summary>
@@ -1098,7 +1151,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_Path = value;
-				UpdateRankingParams(AggregatedMatrix.R, FuzzyRelation.ToMatrixList(R_list));
+				UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.RListMatrix);
 			}
 		}
 		public int[] Rank2Array
@@ -1107,7 +1160,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_Path = value.ToList();
-				UpdateRankingParams(AggregatedMatrix.R, FuzzyRelation.ToMatrixList(R_list));
+				UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.RListMatrix);
 			}
 		}
 		/// <summary>
@@ -1280,7 +1333,6 @@ namespace Group_choice_algos_fuzzy
 		#endregion FUNCTIONS
 	}
 
-
 	/// <summary>
 	/// для каждого метода существуют выдаваемые им ранжирования и др. атрибуты
 	/// </summary>
@@ -1294,19 +1346,23 @@ namespace Group_choice_algos_fuzzy
 		private MethodRankingsCharacteristics _RanksCharacteristics;
 		private List<int> _Winners;//победители - недоминируемые альтернативы
 		private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
-		private ConnectedControls _VisualFormConnectedControls;
+		public ConnectedControls UI_Controls;
 		#endregion FIELDS
 
 		#region SUBCLASSES
 		/// <summary>
 		/// связанные с методом элементы управления (control-ы) на форме
 		/// </summary>
-		public class ConnectedControls
+		public class ConnectedControls : ConnectedControlsBase
 		{
-			public ConnectedControls(Method m) { parent_method = m; }
+			public ConnectedControls(Method m, CheckBox checkBox, DataGridView dgv)
+			{
+				parent_method = m;
+				ConnectedCheckBox = checkBox;
+				ConnectedTableFrame = dgv;
+			}
 			private readonly Method parent_method;
 			private CheckBox connectedCheckBox;//чекбокс - будем ли запускать метод
-			private Label connectedLabel;//в какой контейнер выводить текстовые пояснения к методу
 			private DataGridView connectedTableFrame;//в какой контейнер выводить результаты работы метода
 			public CheckBox ConnectedCheckBox
 			{
@@ -1317,38 +1373,6 @@ namespace Group_choice_algos_fuzzy
 					connectedCheckBox.Text = MethodsInfo[parent_method.ID];
 				}
 			}
-			public string ConnectedLabel
-			{
-				get { return connectedLabel != null ? connectedLabel.Text : ""; }
-				set
-				{
-					if (value == "" || value is null)
-					{
-						connectedLabel?.ResetText();
-						connectedLabel?.Hide();
-						//connectedLabel?.Dispose();
-					}
-					else
-					{
-						if (connectedLabel is null)
-						{
-							connectedLabel = new Label();
-							connectedLabel.AutoSize = true;
-							connectedLabel.Location = new System.Drawing.Point(
-								0, connectedTableFrame.Location.Y + connectedTableFrame.Height);
-							connectedTableFrame?.Parent?.Controls.Add(connectedLabel);
-						}
-						connectedLabel.Text = value;
-						connectedLabel.Show();
-					}
-
-				}
-			}
-			public Label ConnectedLabel_control
-			{
-				get { return connectedLabel; }
-				set { connectedLabel = value; }
-			}
 			public DataGridView ConnectedTableFrame
 			{
 				get { return connectedTableFrame; }
@@ -1358,12 +1382,7 @@ namespace Group_choice_algos_fuzzy
 					((GroupBox)connectedTableFrame?.Parent).Text = MethodsInfo[parent_method.ID];
 				}
 			}
-			public void Set(CheckBox checkBox, DataGridView dgv)
-			{
-				ConnectedCheckBox = checkBox;
-				ConnectedTableFrame = dgv;
-			}
-			public void ShowOutput()
+			override public void UI_Show()
 			{
 				if (parent_method.IsExecute)
 				{
@@ -1371,11 +1390,11 @@ namespace Group_choice_algos_fuzzy
 					ConnectedTableFrame?.Parent.Show();
 				}
 			}
-			public void ClearOutput()
+			override public void UI_Clear()
 			{
+				ConnectedLabelText = "";
 				ConnectedTableFrame?.Rows.Clear();
 				ConnectedTableFrame?.Columns.Clear();
-				ConnectedLabel = "";
 				ConnectedTableFrame?.Hide();
 				ConnectedTableFrame?.Parent?.Hide();
 			}
@@ -1397,7 +1416,7 @@ namespace Group_choice_algos_fuzzy
 				get
 				{
 					if (IsMethodExistWithRanks(parent_method) && !Characteristic.IsInitialized(_Cost))
-						_Cost = new MinNMaxCharacteristics("", 
+						_Cost = new MinNMaxCharacteristics("",
 							parent_method.Rankings.Select(x => x.Cost.Value).ToList());
 					return _Cost;
 				}
@@ -1511,8 +1530,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			get
 			{
-				return (VisualFormConnectedControls.ConnectedCheckBox != null) ?
-					VisualFormConnectedControls.ConnectedCheckBox.Checked : false;
+				return (UI_Controls.ConnectedCheckBox != null) ?
+					UI_Controls.ConnectedCheckBox.Checked : false;
 			}
 		}
 		public bool HasRankings
@@ -1606,18 +1625,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			set { _Levels = value; }
 		}
-		public ConnectedControls VisualFormConnectedControls
-		{
-			get
-			{
-				if (_VisualFormConnectedControls is null)
-				{
-					_VisualFormConnectedControls = new ConnectedControls(this);
-				}
-				return _VisualFormConnectedControls;
-			}
-			set { _VisualFormConnectedControls = value; }
-		}
 		#endregion PROPERTIES
 
 		#region FUNCTIONS
@@ -1630,7 +1637,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// удаление ранжирований и их характеристик
 		/// </summary>
-		public void ClearResults()
+		public void Clear()
 		{
 			Rankings = null;
 			Winners = null;

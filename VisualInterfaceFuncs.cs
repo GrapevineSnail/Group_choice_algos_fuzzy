@@ -7,14 +7,34 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
+using static Group_choice_algos_fuzzy.Form1;
+using static Group_choice_algos_fuzzy.Model;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
 using System.Drawing.Imaging;
+using System.Data;
+using System.Text.RegularExpressions;
+using static Group_choice_algos_fuzzy.FileOperations;
+using static Group_choice_algos_fuzzy.VisualInterfaceFuncs;
+using static System.IO.DirectoryInfo;
+using System.ComponentModel;
+using System.Reflection;
+
+
 
 namespace Group_choice_algos_fuzzy
 {
-	class VisualInterfaceFuncs
+	public class VisualInterfaceFuncs
 	{
+		public VisualInterfaceFuncs(Form1 f1, Form2 f2, Form3 f3_input_expert_matrices) {
+			form1 = f1;
+			form2 = f2;
+			form3_input_expert_matrices = f3_input_expert_matrices;
+		}
+		public static Form1 form1;
+		public static Form2 form2;
+		public static Form3 form3_input_expert_matrices;
+
 		/// <summary>
 		/// отрисовать граф по матрице в PictureBox
 		/// </summary>
@@ -98,26 +118,6 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-		/// <summary>
-		/// сравнивалась ли альтернатива с какой-то ещё
-		/// </summary>
-		/// <param name="index"></param>
-		/// <param name="dgv"></param>
-		/// <returns></returns>
-		public static bool IsCompared(int index, DataGridView dgv)
-		{
-			for (int j = 0; j < dgv.Rows.Count; j++)
-			{
-				if (index != j)
-				{
-					var ij = dgv[j, index].Value as double?;
-					var ji = dgv[index, j].Value as double?;
-					if (ij != 0 || ji != 0)
-						return true;
-				}
-			}
-			return false;
-		}
 		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
 		{
 			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
@@ -150,6 +150,117 @@ namespace Group_choice_algos_fuzzy
 			SetDataGridViewDefaults_FontAndColors(dgv);
 			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 		}
+
+		/// <summary>
+		/// начальное расцвечивание формы
+		/// </summary>
+		/// <param name="main_control"></param>
+		public void interface_coloring(Control main_control)
+		{
+			try
+			{
+				foreach (Control c in main_control.Controls)
+				{
+					if (c as Button != null)
+					{
+						var b = c as Button;
+						b.BackColor = button_bg_color;
+						b.FlatAppearance.BorderColor = button_bg_color;
+					}
+					else
+						interface_coloring(c);
+				}
+			}
+			catch (MyException ex) { }
+		}
+		public static void activate_dgvs(Control.ControlCollection DGVs)
+		{
+			try
+			{
+				foreach (DataGridView dgv in DGVs)
+				{
+					int rws = dgv.RowCount;
+					int cls = dgv.ColumnCount;
+					for (int i = 0; i < rws; i++)
+					{
+						for (int j = 0; j < cls; j++)
+						{
+							color_input_cell(dgv, i, j, input_bg_color);
+						}
+					}
+					dgv.ReadOnly = false;
+				}
+			}
+			catch (MyException ex) { }
+		}
+		public static void deactivate_dgvs(Control.ControlCollection DGVs)
+		{
+			try
+			{
+				foreach (DataGridView dgv in DGVs)
+				{
+					int rws = dgv.RowCount;
+					int cls = dgv.ColumnCount;
+					for (int i = 0; i < rws; i++)
+					{
+						for (int j = 0; j < cls; j++)
+						{
+							color_input_cell(dgv, i, j, input_bg_color_disabled);
+						}
+					}
+					dgv.ReadOnly = true;
+				}
+			}
+			catch (MyException ex) { }
+		}
+
+		/// <summary>
+		/// обновление размеров визуальных элементов после их изменения...
+		/// </summary>
+		public static void set_controls_size()
+		{
+			System.Drawing.Size get_table_size(DataGridView dgv)
+			{
+				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
+				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
+				return new System.Drawing.Size(Width, Height);
+			}
+
+			foreach (DataGridView dgv in form1.flowLayoutPanel_input_tables.Controls)
+			{
+				dgv.Dock = DockStyle.None;
+				dgv.Size = get_table_size(dgv);
+			}
+
+			foreach (Method m in Methods.GetMethods())
+			{
+				DataGridView dgv = m?.UI_Controls.ConnectedTableFrame;
+
+				if (dgv != null)
+				{
+					dgv.AutoResizeColumnHeadersHeight();
+					GroupBox frame = (GroupBox)dgv?.Parent;
+					if (frame != null)
+					{
+						frame.Dock = DockStyle.Top;
+						frame.AutoSize = true;
+					}
+					dgv.Dock = DockStyle.None;
+					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+					dgv.AutoSize = true;
+					dgv.Size = get_table_size(dgv);
+
+					System.Windows.Forms.Label lab = m?.UI_Controls.ConnectedLabelControl;
+					if (lab != null)
+					{
+						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);
+					}
+				}
+			}
+		}
+
+
+
 
 	}
 }

@@ -67,7 +67,7 @@ namespace Group_choice_algos_fuzzy
 			this.rb_dist_modulus = new System.Windows.Forms.RadioButton();
 			this.flowLayoutPanel_output_info = new System.Windows.Forms.FlowLayoutPanel();
 			this.button_visualize_orgraph = new System.Windows.Forms.Button();
-			this.label3 = new System.Windows.Forms.Label();
+			this.label_aggreg_matrix = new System.Windows.Forms.Label();
 			this.button_for_tests = new System.Windows.Forms.Button();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.flowLayoutPanel_input_tables = new System.Windows.Forms.FlowLayoutPanel();
@@ -461,7 +461,7 @@ namespace Group_choice_algos_fuzzy
 			this.button_n_m.Name = "button_n_m";
 			this.button_n_m.Size = new System.Drawing.Size(159, 22);
 			this.button_n_m.TabIndex = 1;
-			this.button_n_m.Text = "Ввод n и m";
+			this.button_n_m.Text = "Ввести матрицы экспертов";
 			this.button_n_m.UseVisualStyleBackColor = true;
 			this.button_n_m.Click += new System.EventHandler(this.button_n_m_Click);
 			// 
@@ -536,7 +536,7 @@ namespace Group_choice_algos_fuzzy
 			// 
 			this.flowLayoutPanel_output_info.AutoScroll = true;
 			this.flowLayoutPanel_output_info.Controls.Add(this.button_visualize_orgraph);
-			this.flowLayoutPanel_output_info.Controls.Add(this.label3);
+			this.flowLayoutPanel_output_info.Controls.Add(this.label_aggreg_matrix);
 			this.flowLayoutPanel_output_info.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.flowLayoutPanel_output_info.Location = new System.Drawing.Point(423, 3);
 			this.flowLayoutPanel_output_info.Name = "flowLayoutPanel_output_info";
@@ -555,15 +555,15 @@ namespace Group_choice_algos_fuzzy
 			this.button_visualize_orgraph.UseVisualStyleBackColor = true;
 			this.button_visualize_orgraph.Click += new System.EventHandler(this.button_visualize_orgraph_Click);
 			// 
-			// label3
+			// label_aggreg_matrix
 			// 
-			this.label3.AutoSize = true;
-			this.label3.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-			this.label3.Location = new System.Drawing.Point(129, 0);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(56, 14);
-			this.label3.TabIndex = 7;
-			this.label3.Text = "Info...";
+			this.label_aggreg_matrix.AutoSize = true;
+			this.label_aggreg_matrix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+			this.label_aggreg_matrix.Location = new System.Drawing.Point(129, 0);
+			this.label_aggreg_matrix.Name = "label_aggreg_matrix";
+			this.label_aggreg_matrix.Size = new System.Drawing.Size(56, 14);
+			this.label_aggreg_matrix.TabIndex = 7;
+			this.label_aggreg_matrix.Text = "Info...";
 			// 
 			// button_for_tests
 			// 
@@ -669,42 +669,42 @@ namespace Group_choice_algos_fuzzy
 
 		#endregion
 
-		private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-		private System.Windows.Forms.GroupBox groupBox4;
-		private System.Windows.Forms.GroupBox groupBox3;
-		private System.Windows.Forms.GroupBox groupBox2;
-		private System.Windows.Forms.GroupBox groupBox1;
-		private System.Windows.Forms.Button button_run_program;
-		private System.Windows.Forms.Button button_n_m;
-		private System.Windows.Forms.Button button_read_file;
-		private System.Windows.Forms.Label label2;
-		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.CheckBox cb_All_rankings;
-		private System.Windows.Forms.CheckBox cb_Schulze_method;
-		private System.Windows.Forms.CheckBox cb_HP;
-		private System.Windows.Forms.TextBox textBox_file;
-		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_tables;
-		private System.Windows.Forms.GroupBox groupBox_HP_max_length;
-		private System.Windows.Forms.DataGridView dg_HP;
-		private System.Windows.Forms.GroupBox groupBox_Schulze_method;
-		private System.Windows.Forms.DataGridView dg_Schulze_method;
-		private System.Windows.Forms.GroupBox groupBox_All_rankings;
-		private System.Windows.Forms.DataGridView dg_All_rankings;
-		private System.Windows.Forms.NumericUpDown numericUpDown_n;
-		private System.Windows.Forms.NumericUpDown numericUpDown_m;
-		private System.Windows.Forms.GroupBox groupBox5;
-		private System.Windows.Forms.RadioButton rb_dist_square;
-		private System.Windows.Forms.RadioButton rb_dist_modulus;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_info;
-		private System.Windows.Forms.Button button_for_tests;
-		private System.Windows.Forms.GroupBox groupBox_SY;
-		private System.Windows.Forms.DataGridView dg_SY;
-		private System.Windows.Forms.CheckBox cb_SY;
-		private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input_tables;
-		private System.Windows.Forms.CheckBox cb_do_transitive_closure;
-		private System.Windows.Forms.Button button_visualize_orgraph;
-		private System.Windows.Forms.CheckBox cb_show_input_matrices;
+		public System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+		public System.Windows.Forms.GroupBox groupBox4;
+		public System.Windows.Forms.GroupBox groupBox3;
+		public System.Windows.Forms.GroupBox groupBox2;
+		public System.Windows.Forms.GroupBox groupBox1;
+		public System.Windows.Forms.Button button_run_program;
+		public System.Windows.Forms.Button button_n_m;
+		public System.Windows.Forms.Button button_read_file;
+		public System.Windows.Forms.Label label2;
+		public System.Windows.Forms.Label label1;
+		public System.Windows.Forms.CheckBox cb_All_rankings;
+		public System.Windows.Forms.CheckBox cb_Schulze_method;
+		public System.Windows.Forms.CheckBox cb_HP;
+		public System.Windows.Forms.TextBox textBox_file;
+		public System.Windows.Forms.Label label_aggreg_matrix;
+		public System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_tables;
+		public System.Windows.Forms.GroupBox groupBox_HP_max_length;
+		public System.Windows.Forms.DataGridView dg_HP;
+		public System.Windows.Forms.GroupBox groupBox_Schulze_method;
+		public System.Windows.Forms.DataGridView dg_Schulze_method;
+		public System.Windows.Forms.GroupBox groupBox_All_rankings;
+		public System.Windows.Forms.DataGridView dg_All_rankings;
+		public System.Windows.Forms.NumericUpDown numericUpDown_n;
+		public System.Windows.Forms.NumericUpDown numericUpDown_m;
+		public System.Windows.Forms.GroupBox groupBox5;
+		public System.Windows.Forms.RadioButton rb_dist_square;
+		public System.Windows.Forms.RadioButton rb_dist_modulus;
+		public System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_output_info;
+		public System.Windows.Forms.Button button_for_tests;
+		public System.Windows.Forms.GroupBox groupBox_SY;
+		public System.Windows.Forms.DataGridView dg_SY;
+		public System.Windows.Forms.CheckBox cb_SY;
+		public System.Windows.Forms.FlowLayoutPanel flowLayoutPanel_input_tables;
+		public System.Windows.Forms.CheckBox cb_do_transitive_closure;
+		public System.Windows.Forms.Button button_visualize_orgraph;
+		public System.Windows.Forms.CheckBox cb_show_input_matrices;
 	}
 }
 
