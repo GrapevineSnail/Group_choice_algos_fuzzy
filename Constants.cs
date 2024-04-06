@@ -106,7 +106,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// название на ествественном языке для вывода в интерфейс
 		/// </summary>
-		public static Dictionary<int, string> MethodsInfo = new Dictionary<int, string>{
+		public static Dictionary<int, string> MethodName = new Dictionary<int, string>{
 			{ MET_ALL_RANKINGS, "Всевозможные ранжирования" },
 			{ MET_ALL_HP, "Гамильтоновы пути" },
 			{ MET_HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
@@ -123,9 +123,9 @@ namespace Group_choice_algos_fuzzy
 		public const string CH_DIST_MODULUS = "cумм. расст. 'модуль разности'";
 		public const string CH_COST_EXPERTS = "стоимость по каждому эксперту-характеристике";
 		public const string CH_STRENGTH_EXPERTS = "сила по каждому эксперту-характеристике";
-		public const string RE_R = "Агрегированное отношение R";		
-		public const string RE_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";		
-		public const string RE_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";		
+		public const string RE_R = "Агрегированное отношение R";
+		public const string RE_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";
+		public const string RE_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";
 		public const string RE_R_Acyc = "Отношение с разбитыми циклами Acyclic(R) агрегированного отношения R";
 		public const string RE_R_Acyc_Tr = "Транзитивное замыкание Tr(Acyclic(R)) отношения с разбитыми циклами Acyclic(R) агрегированного отношения R";
 		#endregion NAMING

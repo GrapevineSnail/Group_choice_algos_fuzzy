@@ -455,7 +455,8 @@ namespace Group_choice_algos_fuzzy
 			{
 				foreach (Method M in GetMethods())
 				{
-					M.UI_Controls.UI_Show();
+					if(M.IsExecute)
+						M.UI_Controls.UI_Show();
 				}
 			}
 			public static void UI_Clear()

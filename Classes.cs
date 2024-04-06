@@ -1085,7 +1085,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public bool IsInitializedValuesList()
 		{
-			return ValuesList != null;
+			return ValuesList != null && ValuesList.Count > 0;
 		}
 		public static (double min, double max) CalcMinMax(List<double> valuelist)
 		{
@@ -1382,7 +1382,7 @@ namespace Group_choice_algos_fuzzy
 				set
 				{
 					connectedCheckBox = value;
-					connectedCheckBox.Text = MethodsInfo[parent_method.ID];
+					connectedCheckBox.Text = MethodName[parent_method.ID];
 				}
 			}
 			public DataGridView ConnectedTableFrame
@@ -1391,160 +1391,173 @@ namespace Group_choice_algos_fuzzy
 				set
 				{
 					connectedTableFrame = value;
-					((GroupBox)connectedTableFrame?.Parent).Text = MethodsInfo[parent_method.ID];
+					((GroupBox)connectedTableFrame?.Parent).Text = MethodName[parent_method.ID];
+				}
+			}
+			/// <summary>
+			/// запись в файл всех полученных ранжирований метода
+			/// </summary>
+			public void WriteRankingsToFile()
+			{
+				if (parent_method.HasRankings)
+				{
+					var text = string.Join(CR_LF + CR_LF,
+							parent_method.Rankings
+							.Where(x => x.Count == n)
+							.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
+					FileOperations.WriteToFile(text, OUT_FILE, true);
+				}
+			}
+			private void SetRankingsToDataGridView()
+			{
+				if (!parent_method.IsExecute)
+					return;
+				int SetColumn(DataGridView dgv, string header)
+				{
+					int j = dgv.Columns.Count;
+					DataGridViewColumn column = new DataGridViewColumn();
+					column.CellTemplate = new DataGridViewTextBoxCell();
+					column.HeaderCell.Style.BackColor = window_bg_color;
+					column.HeaderText = header;
+					column.FillWeight = 1;
+					dgv.Columns.Add(column);
+					return j;
+				}
+				int SetRow(DataGridView dgv, string header)
+				{
+					int i = dgv.Rows.Count;
+					DataGridViewRow row = new DataGridViewRow();
+					row.HeaderCell.Value = header;
+					dgv.Rows.Add(row);
+					return i;
+				}
+				void SetCell(DataGridView dgv, int i, int j, string value)
+				{
+					dgv[j, i].ReadOnly = true;
+					dgv[j, i].Value = value;
+				}
+				void SetCellCharacteristic(DataGridView dgv, int i, int j, string value, Color clr)
+				{
+					dgv[j, i].ReadOnly = true;
+					dgv[j, i].Style.BackColor = clr;
+					dgv[j, i].Value = value;
+				}
+				string RowHeaderForRankingAndLevel(int i)
+				{
+					return $"Место {i + 1}";
+				}
+				if (!parent_method.HasRankings)
+				{
+					parent_method.UI_Controls.ConnectedLabel.Text = INF_ranking_unavailable;
+					if (parent_method.HasLevels)
+					{//ранжирований нет, но можно задать разбиение на уровни
+						SetColumn(parent_method.UI_Controls.ConnectedTableFrame, $"Разбиение{CR_LF}на уровни");
+						for (int i = 0; i < parent_method.Levels.Count; i++)
+						{
+							SetRow(parent_method.UI_Controls.ConnectedTableFrame, RowHeaderForRankingAndLevel(i));
+						}
+						for (int i = 0; i < parent_method.Levels.Count; i++)
+						{
+							SetCell(parent_method.UI_Controls.ConnectedTableFrame,
+								i, 0, parent_method.Levels2Strings[i]);
+						}
+					}
+				}
+				else
+				{
+					//задать значение характеристики ранжирования и раскрасить
+					void display_characteristic(int i, int j, double min, double max,
+						bool highlight_best, Characteristic Characteristic)
+					{
+						string cell_text = "";
+						Color cell_colour = output_characteristics_bg_color;
+						if (Characteristic.IsInitializedValue())
+						{
+							cell_text += Characteristic.Value.ToString();
+							if (min < max)
+							{
+								if (Characteristic.Value == min)
+									cell_colour = output_characteristics_min_color;
+								else if (Characteristic.Value == max)
+									cell_colour = output_characteristics_max_color;
+							}
+						}
+						if (Characteristic.IsInitializedValuesList())
+						{
+							cell_text += string.Join(CR_LF, Characteristic.ValuesList);
+							if (highlight_best)
+								cell_colour = output_characteristics_max_color;
+						}
+						SetCellCharacteristic(parent_method.UI_Controls.ConnectedTableFrame,
+							i, j, cell_text, cell_colour);
+					}
+					for (int j = 0; j < parent_method.Rankings.Count; j++)
+					{
+						SetColumn(parent_method.UI_Controls.ConnectedTableFrame, $"Ранжиро-{CR_LF}вание {j + 1}");
+					}
+					for (int i = 0; i < n; i++)
+					{
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, RowHeaderForRankingAndLevel(i));
+					}
+					var some_rank = parent_method.Rankings.First();
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Cost.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Strength.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.SummaryDistance.modulus.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.SummaryDistance.square.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.CostsExperts.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.StrengthsExperts.Label);
+					for (int j = 0; j < parent_method.Rankings.Count; j++)
+					{
+						for (int i = 0; i < parent_method.Rankings[j].Count; i++)
+						{
+							SetCell(parent_method.UI_Controls.ConnectedTableFrame,
+								i, j, ind2letter[parent_method.Rankings[j].Rank2List[i]]);
+						}
+						var MethodCh = parent_method.RankingsCharacteristics;
+						display_characteristic(n, j,
+							MethodCh.MinMaxCost.ValueMin,
+							MethodCh.MinMaxCost.ValueMax,
+							false,
+							parent_method.Rankings[j].Cost);
+						display_characteristic(n + 1, j,
+							MethodCh.MinMaxStrength.ValueMin,
+							MethodCh.MinMaxStrength.ValueMax,
+							false,
+							parent_method.Rankings[j].Strength);
+						display_characteristic(n + 2, j,
+							MethodCh.MinMaxDistance.modulus.ValueMin,
+							MethodCh.MinMaxDistance.modulus.ValueMax,
+							false,
+							parent_method.Rankings[j].SummaryDistance.modulus);
+						display_characteristic(n + 3, j,
+							MethodCh.MinMaxDistance.square.ValueMin,
+							MethodCh.MinMaxDistance.square.ValueMax,
+							false,
+							parent_method.Rankings[j].SummaryDistance.square);
+						display_characteristic(n + 4, j,
+							INF,
+							INF,
+							MethodCh.IsInPareto_Cost[j],
+							parent_method.Rankings[j].CostsExperts);
+						display_characteristic(n + 5, j,
+							INF,
+							INF,
+							MethodCh.IsInPareto_Strength[j],
+							parent_method.Rankings[j].StrengthsExperts);
+					}
 				}
 			}
 			override public void UI_Show()
 			{
-				if (parent_method.IsExecute)
-				{
-					void set_column(DataGridView dgv, int j)
-					{
-						DataGridViewColumn column = new DataGridViewColumn();
-						column.CellTemplate = new DataGridViewTextBoxCell();
-						column.Name = j.ToString();
-						column.HeaderCell.Style.BackColor = window_bg_color;
-						column.FillWeight = 1;
-						dgv.Columns.Add(column);
-					}
-					void set_row(DataGridView dgv, int i)
-					{
-						dgv.Rows.Add();
-						dgv.Rows[i].HeaderCell.Value = $"Место {i + 1}";
-					}
-					if (!parent_method.HasRankings)
-					{
-						parent_method.UI_Controls.ConnectedLabel.Text = INF_ranking_unavailable;
-						if (parent_method.HasLevels)
-						{//ранжирований нет, но можно задать разбиение на уровни
-							int col = 0;
-							set_column(parent_method.UI_Controls.ConnectedTableFrame, col);
-							parent_method.UI_Controls.ConnectedTableFrame.Columns[col].HeaderText =
-								$"Разбиение{CR_LF}на уровни";
-							for (int i = 0; i < parent_method.Levels.Count; i++)
-							{
-								set_row(parent_method.UI_Controls.ConnectedTableFrame, i);
-							}
-							for (int i = 0; i < parent_method.Levels.Count; i++)
-							{
-								parent_method.UI_Controls.ConnectedTableFrame[col, i].ReadOnly = true;
-								parent_method.UI_Controls.ConnectedTableFrame[col, i].Value = parent_method.Levels2Strings[i];
-							}
-						}
-					}
-					else
-					{
-						//добавить в конец datagrid-а строку с характеристикой ранжирования
-						int add_row_with_characteristic(string label)
-						{
-							parent_method.UI_Controls.ConnectedTableFrame.Rows.Add();
-							int i = parent_method.UI_Controls.ConnectedTableFrame.Rows.Count - 1;
-							parent_method.UI_Controls.ConnectedTableFrame.Rows[i].HeaderCell.Value = label;
-							return i;
-						}
-						//задать значение характеристики ранжирования и раскрасить
-						void display_characteristic(int j, int i, double min, double max,
-							Characteristic characteristic)
-						{
-							parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_bg_color;
-							parent_method.UI_Controls.ConnectedTableFrame[j, i].Value = characteristic.Value;
-							if (characteristic?.ValuesList.Count > 0)
-							{
-								parent_method.UI_Controls.ConnectedTableFrame[j, i].Value = string.Join(CR_LF,
-									characteristic.ValuesList);
-								bool need_highlight = false;
-								if (characteristic.Label == CH_COST_EXPERTS)
-								{
-									need_highlight = parent_method.RankingsCharacteristics.IsInPareto_Cost[j];
-								}
-								else if (characteristic.Label == CH_STRENGTH_EXPERTS)
-								{
-									need_highlight = parent_method.RankingsCharacteristics.IsInPareto_Strength[j];
-								}
-								if (need_highlight)
-								{
-									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_max_color;
-								}
-							}
-							else if (min < max)
-							{
-								if (characteristic.Value == min)
-									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor =
-										output_characteristics_min_color;
-								else if (characteristic.Value == max)
-									parent_method.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor =
-										output_characteristics_max_color;
-							}
-						}
-
-						//запись в файл всех полученных ранжирований метода
-						var text = string.Join(CR_LF + CR_LF,
-								parent_method.Rankings
-								.Where(x => x.Count == n)
-								.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
-						FileOperations.WriteToFile(text, OUT_FILE, true);
-
-						var r = parent_method.Rankings.Count;
-						for (int j = 0; j < r; j++)
-						{
-							set_column(parent_method.UI_Controls.ConnectedTableFrame, j);
-							parent_method.UI_Controls.ConnectedTableFrame.Columns[j].HeaderText =
-								$"Ранжиро-{CR_LF}вание {j + 1}";
-						}
-						for (int i = 0; i < n; i++)
-						{
-							set_row(parent_method.UI_Controls.ConnectedTableFrame, i);
-						}
-						var some_rank = parent_method.Rankings.First();
-						add_row_with_characteristic(some_rank.Cost.Label);
-						add_row_with_characteristic(some_rank.Strength.Label);
-						add_row_with_characteristic(some_rank.SummaryDistance.modulus.Label);
-						add_row_with_characteristic(some_rank.SummaryDistance.square.Label);
-						add_row_with_characteristic(some_rank.CostsExperts.Label);
-						add_row_with_characteristic(some_rank.StrengthsExperts.Label);
-						for (int j = 0; j < r; j++)
-						{
-							for (int i = 0; i < parent_method.Rankings[j].Count; i++)
-							{
-								parent_method.UI_Controls.ConnectedTableFrame[j, i].ReadOnly = true;
-								parent_method.UI_Controls.ConnectedTableFrame[j, i].Value =
-									ind2letter[parent_method.Rankings[j].Rank2List[i]];
-							}
-							display_characteristic(j, n,
-								parent_method.RankingsCharacteristics.MinMaxCost.ValueMin,
-								parent_method.RankingsCharacteristics.MinMaxCost.ValueMax,
-								parent_method.Rankings[j].Cost);
-							display_characteristic(j, n + 1,
-								parent_method.RankingsCharacteristics.MinMaxStrength.ValueMin,
-								parent_method.RankingsCharacteristics.MinMaxStrength.ValueMax,
-								parent_method.Rankings[j].Strength);
-							display_characteristic(j, n + 2,
-								parent_method.RankingsCharacteristics.MinMaxDistance.modulus.ValueMin,
-								parent_method.RankingsCharacteristics.MinMaxDistance.modulus.ValueMax,
-								parent_method.Rankings[j].SummaryDistance.modulus);
-							display_characteristic(j, n + 3,
-								parent_method.RankingsCharacteristics.MinMaxDistance.square.ValueMin,
-								parent_method.RankingsCharacteristics.MinMaxDistance.square.ValueMax,
-								parent_method.Rankings[j].SummaryDistance.square);
-							display_characteristic(j, n + 4,
-								INF,
-								INF,
-								parent_method.Rankings[j].CostsExperts);
-							display_characteristic(j, n + 5,
-								INF,
-								INF,
-								parent_method.Rankings[j].StrengthsExperts);
-						}
-					}
-
-					ConnectedTableFrame?.Show();
-					ConnectedTableFrame?.Parent.Show();
-					parent_method.UI_Controls.ConnectedLabel.Text = parent_method.Info();
-					ConnectedTableFrame?.Parent.Controls.Add(parent_method.UI_Controls.ConnectedLabel);
-				}
+				SetRankingsToDataGridView();
+				ConnectedTableFrame?.Show();
+				ConnectedTableFrame?.Parent.Show();
+				parent_method.UI_Controls.ConnectedLabel.Text = parent_method.Info();
+				ConnectedTableFrame?.Parent.Controls.Add(parent_method.UI_Controls.ConnectedLabel);
 			}
 			override public void UI_Clear()
 			{
+				ConnectedLabel?.Dispose();
 				ConnectedLabel = null;
 				ConnectedTableFrame?.Rows.Clear();
 				ConnectedTableFrame?.Columns.Clear();
@@ -1600,7 +1613,7 @@ namespace Group_choice_algos_fuzzy
 						_MinMaxDistance.square.SetMinMax(
 							parent_method.Rankings.Select(x => x.SummaryDistance.square.Value).ToList()
 							);
-						_MinMaxDistance.square.SetMinMax(
+						_MinMaxDistance.modulus.SetMinMax(
 							parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList()
 							);
 					}
@@ -1731,22 +1744,16 @@ namespace Group_choice_algos_fuzzy
 				if (_Rankings is null)
 				{
 					_Rankings = new List<Ranking>();
-					RankingsCharacteristics = null;
 				}
 				return _Rankings;
 			}
-			set
-			{
-				_Rankings = value;
-				if (value is null)
-					RankingsCharacteristics = null;
-			}
+			set { _Rankings = value; }
 		}
 		public MethodRankingsCharacteristics RankingsCharacteristics
 		{
 			get
 			{
-				if (_RankingsCharacteristics is null)
+				if (_RankingsCharacteristics is null || Rankings is null || Rankings?.Count == 0)
 				{
 					_RankingsCharacteristics = new MethodRankingsCharacteristics(this);
 				}
@@ -1812,24 +1819,21 @@ namespace Group_choice_algos_fuzzy
 			Rankings = null;
 			Winners = null;
 			Levels = null;
+			RankingsCharacteristics = null; //очищено в свойстве
 		}
 		public string Info()
 		{
 			string text = "";
+			string TextTemplateAmong(Characteristic ch)
+			{
+				return $"Мин. и макс. {ch?.Label} среди ранжирований метода: " +
+					$"[{ch?.ValueMin}; {ch?.ValueMax}];{CR_LF}";
+			}
 			text += $"Недоминируемые альтернативы: {Winners2String}{CR_LF}";
-			text += $"Мин. и макс. стоимость среди ранжирований метода: " +
-				$"[{RankingsCharacteristics.MinMaxCost?.ValueMin}; {RankingsCharacteristics.MinMaxCost?.ValueMax}];{CR_LF}";
-			text += $"Мин. и макс. сила среди ранжирований метода: " +
-				$"[{RankingsCharacteristics.MinMaxStrength?.ValueMin}; {RankingsCharacteristics.MinMaxStrength?.ValueMax}];{CR_LF}";
-			text += $"Минимальные и максимальные суммарные расстояния среди ранжирований метода:{CR_LF}" +
-				$"Мин. {RankingsCharacteristics.MinMaxDistance?.square?.Label}: " +
-				$"{RankingsCharacteristics.MinMaxDistance?.square?.ValueMin}; {CR_LF}" +
-				$"Мин. {RankingsCharacteristics.MinMaxDistance?.modulus?.Label}: " +
-				$"{RankingsCharacteristics.MinMaxDistance?.modulus?.ValueMin}; {CR_LF}" +
-				$"Макс. {RankingsCharacteristics.MinMaxDistance?.square?.Label}: " +
-				$"{RankingsCharacteristics.MinMaxDistance?.square?.ValueMax}; {CR_LF}" +
-				$"Макс. {RankingsCharacteristics.MinMaxDistance?.modulus?.Label}: " +
-				$"{RankingsCharacteristics.MinMaxDistance?.modulus?.ValueMax}; {CR_LF}";
+			text += TextTemplateAmong(RankingsCharacteristics.MinMaxCost);
+			text += TextTemplateAmong(RankingsCharacteristics.MinMaxStrength);
+			text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistance?.square);
+			text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistance?.modulus);
 			return text;
 		}
 		#endregion FUNCTIONS
