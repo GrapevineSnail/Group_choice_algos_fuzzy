@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
+using static Group_choice_algos_fuzzy.DataGridViewOperations;
 using static Group_choice_algos_fuzzy.Model;
 using System.Drawing;
 using System.IO;
@@ -580,6 +581,19 @@ namespace Group_choice_algos_fuzzy
 				}
 			}
 			return false;
+		}
+		/// <summary>
+		/// альтернативы, которые имеют сравнение с какой-либо другой альтернативой
+		/// </summary>
+		/// <returns></returns>
+		public bool[] ComparedAlternatives()
+		{
+			bool[] ans = new bool[n];
+			for(int i = 0; i < n; i++)
+			{
+				ans[i] = IsAlternativeCompared(i);
+			}
+			return ans;
 		}
 		#endregion FUNCTIONS
 	}
@@ -1412,32 +1426,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (!parent_method.IsExecute)
 					return;
-				int SetColumn(DataGridView dgv, string header)
-				{
-					int j = dgv.Columns.Count;
-					DataGridViewColumn column = new DataGridViewColumn();
-					column.CellTemplate = new DataGridViewTextBoxCell();
-					column.HeaderCell.Style.BackColor = window_bg_color;
-					column.HeaderText = header;
-					column.FillWeight = 1;
-					dgv.Columns.Add(column);
-					return j;
-				}
-				int SetRow(DataGridView dgv, string header)
-				{
-					int i = dgv.Rows.Count;
-					DataGridViewRow row = new DataGridViewRow();
-					row.HeaderCell.Value = header;
-					dgv.Rows.Add(row);
-					return i;
-				}
-				void SetCell(DataGridView dgv, int i, int j, string value, Color clr)
-				{
-					dgv[j, i].ReadOnly = true;
-					dgv[j, i].Style.BackColor = clr;
-					dgv[j, i].Value = value;
-
-				}
+				
 				string RowHeaderForRankingAndLevel(int i)
 				{
 					return $"Место {i + 1}";
@@ -1908,6 +1897,41 @@ namespace Group_choice_algos_fuzzy
 				File.WriteAllText(absolute_file_name, text);
 			}
 			return absolute_file_name;
+		}
+	}
+
+	public static class DataGridViewOperations
+	{
+		public static int SetColumn(DataGridView dgv, string header)
+		{
+			int j = dgv.Columns.Count;
+			DataGridViewColumn column = new DataGridViewColumn();
+			column.CellTemplate = new DataGridViewTextBoxCell();
+			column.SortMode = DataGridViewColumnSortMode.NotSortable;
+			column.HeaderCell.Style.BackColor = window_bg_color;
+			column.HeaderText = header;
+			column.FillWeight = 1;
+			dgv.Columns.Add(column);
+			return j;
+		}
+		public static int SetRow(DataGridView dgv, string header)
+		{
+			int i = dgv.Rows.Count;
+			DataGridViewRow row = new DataGridViewRow();
+			row.HeaderCell.Value = header;
+			dgv.Rows.Add(row);
+			return i;
+		}
+		public static void SetCell(DataGridView dgv, int i, int j, string value, Color clr)
+		{
+			dgv[j, i].ReadOnly = true;
+			dgv[j, i].Style.BackColor = clr;
+			dgv[j, i].Value = value;
+		}
+		public static void SetDoubleCell(DataGridView dgv, int i, int j, double value)
+		{
+			dgv[j, i].ValueType = typeof(double);
+			dgv[j, i].Value = value;
 		}
 	}
 }
