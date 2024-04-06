@@ -11,7 +11,7 @@ namespace Group_choice_algos_fuzzy
 		public class MyException : Exception
 		{
 			public MyException(string message) : base(message) { }
-			#region EXCEPTIONS
+			#region EXCEPTIONS and INFO
 			public static string EX_bad_expert_profile = "Введите корректные профили экспертов";
 			public static string EX_matrix_not_square = "Матрица должна быть квадратной";
 			public static string EX_bad_dimensions = "Размерности двух объектов не совпадают";
@@ -27,7 +27,8 @@ namespace Group_choice_algos_fuzzy
 			public static string EX_choose_distance_func = "Выберите способ подсчёта расстояния между отношениями";
 			public static string EX_bad_symbol = "Неверный символ";
 			public static string EX_contains_cycle = "Введённое отношение содержит цикл";
-			#endregion EXCEPTIONS
+			public static string INF_ranking_unavailable = "Строгое ранжирование невозможно. ";
+			#endregion EXCEPTIONS and INFO
 			/// <summary>
 			/// выводить при catch 
 			/// </summary>
@@ -96,35 +97,46 @@ namespace Group_choice_algos_fuzzy
 		#endregion FILE_OPERATIONS
 
 		#region METHODS' IDs
-		public const int ALL_RANKINGS = 0;
-		public const int ALL_HP = 1;
-		public const int HP_MAX_LENGTH = 2;
-		public const int HP_MAX_STRENGTH = 3;
-		public const int SCHULZE_METHOD = 4;
-		public const int SMERCHINSKAYA_YASHINA_METHOD = 5;
+		public const int MET_ALL_RANKINGS = 0;
+		public const int MET_ALL_HP = 1;
+		public const int MET_HP_MAX_LENGTH = 2;
+		public const int MET_HP_MAX_STRENGTH = 3;
+		public const int MET_SCHULZE_METHOD = 4;
+		public const int MET_SMERCHINSKAYA_YASHINA_METHOD = 5;
 		/// <summary>
 		/// название на ествественном языке для вывода в интерфейс
 		/// </summary>
 		public static Dictionary<int, string> MethodsInfo = new Dictionary<int, string>{
-			{ ALL_RANKINGS, "Всевозможные ранжирования" },
-			{ ALL_HP, "Гамильтоновы пути" },
-			{ HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
-			{ HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
-			{ SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
-			{ SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию, с разбиением контуров" }
+			{ MET_ALL_RANKINGS, "Всевозможные ранжирования" },
+			{ MET_ALL_HP, "Гамильтоновы пути" },
+			{ MET_HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
+			{ MET_HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
+			{ MET_SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
+			{ MET_SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию, с разбиением контуров" }
 		};
 		#endregion METHODS' IDs
 
 		#region NAMING
-		public const string DIST_SQUARE = "cумм. расст. 'квадрат разности'";
-		public const string DIST_MODULUS = "cумм. расст. 'модуль разности'";
-		public const string COSTS_EXPERTS = "вектор стоимостей - оценка по каждому эксперту-характеристике";
-		public const string STRENGTHS_EXPERTS = "вектор сил - оценка по каждому эксперту-характеристике";
+		public const string CH_COST = "стоимость";
+		public const string CH_STRENGTH = "сила";
+		public const string CH_DIST_SQUARE = "cумм. расст. 'квадрат разности'";
+		public const string CH_DIST_MODULUS = "cумм. расст. 'модуль разности'";
+		public const string CH_COST_EXPERTS = "стоимость по каждому эксперту-характеристике";
+		public const string CH_STRENGTH_EXPERTS = "сила по каждому эксперту-характеристике";
+		public const string RE_R = "Агрегированное отношение R";		
+		public const string RE_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";		
+		public const string RE_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";		
+		public const string RE_R_Acyc = "Отношение с разбитыми циклами Acyclic(R) агрегированного отношения R";
+		public const string RE_R_Acyc_Tr = "Транзитивное замыкание Tr(Acyclic(R)) отношения с разбитыми циклами Acyclic(R) агрегированного отношения R";
 		#endregion NAMING
 
 		#endregion FEILDS		
 
 		#region FUNCTIONS
+		public static bool DoubleMORETHAN(double A, double B)
+		{
+			return Math.Round(A - B, DIGITS_PRECISION) > 0;//A > B +- epsilon
+		}
 		/// <summary>
 		/// задание символов, обозначающих альтернативы
 		/// </summary>

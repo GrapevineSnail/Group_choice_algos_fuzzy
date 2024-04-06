@@ -127,7 +127,7 @@ namespace Group_choice_algos_fuzzy
 					dgv.AutoSize = true;
 					dgv.Size = get_table_size(dgv);
 
-					System.Windows.Forms.Label lab = m?.UI_Controls.ConnectedLabelControl;
+					System.Windows.Forms.Label lab = m?.UI_Controls.ConnectedLabel;
 					if (lab != null)
 					{
 						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);

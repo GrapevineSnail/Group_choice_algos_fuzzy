@@ -85,7 +85,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				override public void UI_Clear()
 				{
-					ConnectedLabelText = "";
+					ConnectedLabel = null;
 					foreach (DataGridView dgv in ConnectedTables)
 					{
 						dgv?.Rows.Clear();
@@ -158,8 +158,8 @@ namespace Group_choice_algos_fuzzy
 							}
 							void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
 							{//что должно происходить при завершении редактирования ячейки
-								//if (!ConnectedCheckBox_ToShow.Checked)
-								//	return;
+							 //if (!ConnectedCheckBox_ToShow.Checked)
+							 //	return;
 								try
 								{
 									FuzzyRelation new_matrix;
@@ -284,7 +284,7 @@ namespace Group_choice_algos_fuzzy
 						UI_Controls.UI_Clear();
 					}
 					_RList = value;
-					if(_RList?.Count > 0)
+					if (_RList?.Count > 0)
 						UI_Controls.UI_Show();
 				}
 			}
@@ -296,12 +296,12 @@ namespace Group_choice_algos_fuzzy
 			{
 				try
 				{
-				DataGridView DGV = (DataGridView)UI_Controls.ConnectedTables[expert_index];
-				Matrix fill_values = RListMatrix[expert_index];
-				Matrix.SetToDataGridView(fill_values, DGV);
-				for (int i = 0; i < n; i++)
-					for (int j = 0; j < n; j++)
-						DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
+					DataGridView DGV = (DataGridView)UI_Controls.ConnectedTables[expert_index];
+					Matrix fill_values = RListMatrix[expert_index];
+					Matrix.SetToDataGridView(fill_values, DGV);
+					for (int i = 0; i < n; i++)
+						for (int j = 0; j < n; j++)
+							DeactivateSymmetricCell(DGV, new DataGridViewCellEventArgs(i, j));
 				}
 				catch { }
 			}
@@ -345,7 +345,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					Connected_rb_dist_square = rb_square;
 					Connected_rb_dist_modulus = rb_modulus;
-					ConnectedLabelControl = lbl;
+					ConnectedLabel = lbl;
 				}
 				private RadioButton connected_rb_dist_square;
 				private RadioButton connected_rb_dist_modulus;
@@ -379,24 +379,18 @@ namespace Group_choice_algos_fuzzy
 					}
 					if (R != null)
 					{
-						for_print_matrices("Агрегированное отношение R",
-							R);
-						for_print_matrices("Асимметричная часть As(R) агрегированного отношения R",
-							R.Asymmetric);
-						for_print_matrices("Транзитивное замыкание Tr(R) агрегированного отношения R",
-							R.TransClosured);
-						for_print_matrices("Отношение с разбитыми циклами Acyc(R) агрегированного отношения R",
-							R.DestroyedCycles);
-						for_print_matrices("Транзитивное замыкание Tr(Acyc(R)) отношения с разбитыми циклами Acyc(R) агрегированного отношения R",
-							R.DestroyedCycles.TransClosured);
+						for_print_matrices(RE_R, R);
+						for_print_matrices(RE_R_Asym, R.Asymmetric);
+						for_print_matrices(RE_R_Tr, R.TransClosured);
+						for_print_matrices(RE_R_Acyc, R.DestroyedCycles);
+						for_print_matrices(RE_R_Acyc_Tr, R.DestroyedCycles.TransClosured);
 					}
-					ConnectedLabelText = tex;
-					ConnectedLabelControl.Show();
+					ConnectedLabel.Text = tex;
+					ConnectedLabel.Show();
 				}
 				override public void UI_Clear()
 				{
-					ConnectedLabelText = "";
-					ConnectedLabelControl.Hide();
+					ConnectedLabel = null;
 				}
 			}
 			public delegate void MyEventHandler();//сигнатура
@@ -433,14 +427,10 @@ namespace Group_choice_algos_fuzzy
 			}
 			public static (List<Matrix> Matrices, List<string> Labels) GetRelations2Draw()
 			{
-				var M = new List<Matrix>{
-					R, R.TransClosured,
-					R.DestroyedCycles, R.DestroyedCycles.TransClosured,
+				var M = new List<Matrix>{R, R.TransClosured, R.DestroyedCycles, R.DestroyedCycles.TransClosured,
 					R.Asymmetric};
-				var L = new List<string>{
-					"R", "Tr(R)",
-					"Acyclic(R)", "Tr(Acyclic(R))",
-					"Asymmetric(R)"};
+				var L = new List<string>{RE_R, RE_R_Tr, RE_R_Acyc, RE_R_Acyc_Tr,
+					RE_R_Asym};
 				var ans = (M, L);
 				return ans;
 			}
@@ -452,46 +442,12 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public static class Methods
 		{
-			public static Method All_various_rankings = new Method(ALL_RANKINGS);
-			public static Method All_Hamiltonian_paths = new Method(ALL_HP);
-			private static Method Hp_max_length = new Method(HP_MAX_LENGTH);
-			private static Method Hp_max_strength = new Method(HP_MAX_STRENGTH);
-			public static Method Schulze_method = new Method(SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
-			public static Method Smerchinskaya_Yashina_method = new Method(SMERCHINSKAYA_YASHINA_METHOD);
-			public struct MethodsCharacteristics
-			{
-				private static Characteristic _MaxHamPathCost;//длина пути длиннейших Гаммильтоновых путей
-				private static Characteristic _MaxHamPathStrength;//сила пути сильнейших Гаммильтоновых путей
-				public static Characteristic MaxHamPathCost
-				{
-					get
-					{
-						if (Method.IsMethodExistWithRanks(All_Hamiltonian_paths) && !Characteristic.IsInitialized(_MaxHamPathCost))
-						{
-							_MaxHamPathCost = new Characteristic("самая большая стоимость гамильтоновых путей",
-								All_Hamiltonian_paths.Rankings.Select(x => x.Cost.Value).Max());
-						}
-						return _MaxHamPathCost;
-					}
-				}
-				public static Characteristic MaxHamPathStrength
-				{
-					get
-					{
-						if (Method.IsMethodExistWithRanks(All_Hamiltonian_paths) && !Characteristic.IsInitialized(_MaxHamPathStrength))
-						{
-							_MaxHamPathStrength = new Characteristic("самая большая сила гамильтоновых путей",
-								All_Hamiltonian_paths.Rankings.Select(x => x.Strength.Value).Max());
-						}
-						return _MaxHamPathStrength;
-					}
-				}
-				public static void Clear()
-				{
-					_MaxHamPathCost = null;
-					_MaxHamPathStrength = null;
-				}
-			}
+			public static Method All_various_rankings = new Method(MET_ALL_RANKINGS);
+			public static Method All_Hamiltonian_paths = new Method(MET_ALL_HP);
+			private static Method Hp_max_length = new Method(MET_HP_MAX_LENGTH);
+			private static Method Hp_max_strength = new Method(MET_HP_MAX_STRENGTH);
+			public static Method Schulze_method = new Method(MET_SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
+			public static Method Smerchinskaya_Yashina_method = new Method(MET_SMERCHINSKAYA_YASHINA_METHOD);
 			/// <summary>
 			/// показывает результаты выполнения методов
 			/// </summary>
@@ -520,7 +476,6 @@ namespace Group_choice_algos_fuzzy
 					{
 						M.Clear();
 					}
-					MethodsCharacteristics.Clear();
 				}
 				catch (MyException ex) { }
 			}
@@ -562,11 +517,11 @@ namespace Group_choice_algos_fuzzy
 					}
 				}
 				if (n == 1)
-					All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 0 }));
+					All_various_rankings.Rankings.Add(new Ranking(MET_ALL_RANKINGS, new List<int> { 0 }));
 				else if (n == 2)
 				{
-					All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 0, 1 }));
-					All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, new List<int> { 1, 0 }));
+					All_various_rankings.Rankings.Add(new Ranking(MET_ALL_RANKINGS, new List<int> { 0, 1 }));
+					All_various_rankings.Rankings.Add(new Ranking(MET_ALL_RANKINGS, new List<int> { 1, 0 }));
 				}
 				else
 				{
@@ -581,7 +536,7 @@ namespace Group_choice_algos_fuzzy
 								foreach (List<int> p in permutations_of_elements(middle_vetrices))
 								{
 									List<int> r = new List<int> { i }.Concat(p).Concat(new List<int> { j }).ToList();
-									All_various_rankings.Rankings.Add(new Ranking(ALL_RANKINGS, r));
+									All_various_rankings.Rankings.Add(new Ranking(MET_ALL_RANKINGS, r));
 								}
 							}
 				}
@@ -598,14 +553,14 @@ namespace Group_choice_algos_fuzzy
 				for (int i = 0; i < HP.GetLength(0); i++)
 					for (int j = 0; j < HP.GetLength(1); j++)
 						foreach (List<int> path_from_i_to_j in HP[i, j])
-							All_Hamiltonian_paths.Rankings.Add(new Ranking(ALL_HP, path_from_i_to_j));
+							All_Hamiltonian_paths.Rankings.Add(new Ranking(MET_ALL_HP, path_from_i_to_j));
 				Hp_max_length.Clear();
 				Hp_max_strength.Clear();
 				foreach (Ranking r in All_Hamiltonian_paths.Rankings)
 				{
-					if (r.Cost.Value == MethodsCharacteristics.MaxHamPathCost.Value)
+					if (r.Cost.Value == All_Hamiltonian_paths.RankingsCharacteristics.MinMaxCost.ValueMax)
 						Hp_max_length.Rankings.Add(r);
-					if (r.Strength.Value == MethodsCharacteristics.MaxHamPathStrength.Value)
+					if (r.Strength.Value == All_Hamiltonian_paths.RankingsCharacteristics.MinMaxStrength.ValueMax)
 						Hp_max_strength.Rankings.Add(r);
 				}
 				/// <summary>
@@ -786,7 +741,7 @@ namespace Group_choice_algos_fuzzy
 				if (is_)
 				{
 					foreach (var r in ranks)
-						Schulze_method.Rankings.Add(new Ranking(SCHULZE_METHOD, r));
+						Schulze_method.Rankings.Add(new Ranking(MET_SCHULZE_METHOD, r));
 				}
 			}
 			/// <summary>
@@ -801,7 +756,7 @@ namespace Group_choice_algos_fuzzy
 				if (is_)
 				{
 					foreach (var rr in ranks)
-						Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(SMERCHINSKAYA_YASHINA_METHOD, rr));
+						Smerchinskaya_Yashina_method.Rankings.Add(new Ranking(MET_SMERCHINSKAYA_YASHINA_METHOD, rr));
 				}
 			}
 			/// <summary>
@@ -865,19 +820,19 @@ namespace Group_choice_algos_fuzzy
 				try
 				{
 					//создание чистого файла для вывода ранжирований в виде матриц
-					FileOperations.WriteToFile("",OUT_FILE, false);
+					FileOperations.WriteToFile("", OUT_FILE, false);
 					UI_Show();
 					foreach (Method met in GetMethods())
 					{
 						if (met.IsExecute && met.HasRankings)
-						{							
+						{
 							for (int j = 0; j < met.Rankings.Count; j++)
 							{
 								if (Mutual_rankings.Contains(met.Rankings[j].Rank2String))
 								{
 									for (int i = 0; i < n; i++)
 										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
-								}								
+								}
 							}
 						}
 					}

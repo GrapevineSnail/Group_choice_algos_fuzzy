@@ -575,7 +575,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (i != j)
 				{
-					if (this[i,j] != 0 || this[j, i] != 0)
+					if (this[i, j] != 0 || this[j, i] != 0)
 						return true;
 				}
 			}
@@ -1004,24 +1004,7 @@ namespace Group_choice_algos_fuzzy
 	abstract public class ConnectedControlsBase
 	{
 		private Label connectedLabel;//в какой контейнер выводить текстовые пояснения
-		public string ConnectedLabelText
-		{
-			get { return ConnectedLabelControl.Text; }
-			set
-			{
-				if (value == "" || value is null)
-				{
-					ConnectedLabelControl.ResetText();
-				}
-				else
-				{
-					ConnectedLabelControl.Text = value;
-					ConnectedLabelControl.Show();
-				}
-
-			}
-		}
-		public Label ConnectedLabelControl
+		public Label ConnectedLabel
 		{
 			get
 			{
@@ -1035,7 +1018,15 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				if (value is null)
-					connectedLabel?.Dispose();
+				{
+					if (!(connectedLabel is null))
+						connectedLabel.Text = "";
+					connectedLabel?.Hide();
+				}
+				else
+				{
+					connectedLabel?.Show();
+				}
 				connectedLabel = value;
 			}
 		}
@@ -1050,9 +1041,11 @@ namespace Group_choice_algos_fuzzy
 	{
 		public Characteristic(string label) { Label = label; }
 		public Characteristic(string label, double value) { Label = label; Value = value; }
-		private string _Label;
-		private double _Value;
-		private List<double> _ValuesList;
+		private string _Label;//название характеристики
+		private double _Value;//числовое значение х.
+		private List<double> _ValuesList;//векторное значение х.
+		private double _ValueMin;//если есть список характеристик, в который данная х. входит
+		private double _ValueMax;//будут вычислены min и max
 		public string Label
 		{
 			get
@@ -1078,39 +1071,23 @@ namespace Group_choice_algos_fuzzy
 			}
 			set { _ValuesList = value; }
 		}
+		public double ValueMin { get { return _ValueMin; } }
+		public double ValueMax { get { return _ValueMax; } }
 		/// <summary>
 		/// проверка значения характеристики на существование
 		/// </summary>
-		/// <param name="parent">Ranking or Method</param>
-		/// <param name="t"></param>
-		/// <returns></returns>
-		public static bool IsInitialized(object t)
+		public bool IsInitializedValue()
 		{
-			if (t is double)
-				return (double)t != 0 && Math.Abs((double)t) != INF;
-			else if (t as Ranking.PathSummaryDistanceClass != null ||
-				t as List<int> != null ||
-				t as MinNMaxCharacteristics != null)
-				return t != null;
-			return default;
+			return Value != 0 && Math.Abs(Value) != INF;
 		}
-	}
-
-	/// <summary>
-	/// минимум и максимум - хакрактеристики
-	/// </summary>
-	public class MinNMaxCharacteristics : Characteristic
-	{
-		public MinNMaxCharacteristics(string label) : base(label) { }
-		public MinNMaxCharacteristics(string label, List<double> valuelist) : base(label)
+		/// <summary>
+		/// проверка значения характеристики на существование
+		/// </summary>
+		public bool IsInitializedValuesList()
 		{
-			base.ValuesList = valuelist;
-			(ValueMin, ValueMax) = Calc(valuelist);
+			return ValuesList != null;
 		}
-		private double Value;//здесь просто Value не нужен
-		public readonly double ValueMin;
-		public readonly double ValueMax;
-		public static (double min, double max) Calc(List<double> valuelist)
+		public static (double min, double max) CalcMinMax(List<double> valuelist)
 		{
 			double min = INF;
 			double max = INF;
@@ -1122,6 +1099,19 @@ namespace Group_choice_algos_fuzzy
 			}
 			return (min, max);
 		}
+		public void SetMinMax(List<double> valuelist)
+		{
+			(_ValueMin, _ValueMax) = CalcMinMax(valuelist);
+		}
+	}
+
+	/// <summary>
+	/// суммарное расстояние до всех остальных входных ранжирований
+	/// </summary>
+	public class RankingSummaryDistanceClass
+	{
+		public Characteristic modulus = new Characteristic(CH_DIST_MODULUS);
+		public Characteristic square = new Characteristic(CH_DIST_SQUARE);
 	}
 
 	/// <summary>
@@ -1129,14 +1119,6 @@ namespace Group_choice_algos_fuzzy
 	/// </summary>
 	public class Ranking
 	{
-		/// <summary>
-		/// суммарное расстояние до всех остальных входных ранжирований
-		/// </summary>
-		public class PathSummaryDistanceClass
-		{
-			public Characteristic modulus = new Characteristic(DIST_MODULUS);
-			public Characteristic square = new Characteristic(DIST_SQUARE);
-		}
 		#region CONSTRUCTORS
 		public Ranking(int[] rank)
 		{
@@ -1165,7 +1147,7 @@ namespace Group_choice_algos_fuzzy
 		public Characteristic CostsExperts; //вектор стоимостей по каждому эксперту-характеристике
 		public Characteristic Strength; //сила пути (пропускная способность)
 		public Characteristic StrengthsExperts; //вектор сил по каждому эксперту-характеристике
-		public PathSummaryDistanceClass SummaryDistance;//суммарное расстояние до всех остальных входных ранжирований
+		public RankingSummaryDistanceClass SummaryDistance;//суммарное расстояние до всех остальных входных ранжирований
 		#endregion FIELDS
 
 		#region PROPERTIES
@@ -1214,7 +1196,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			get
 			{
-				return string.Join("", _Path.Select(x => ind2sym[x]).ToList());
+				return string.Join(",", _Path.Select(x => ind2sym[x]).ToList());
 			}
 		}
 		public int Count
@@ -1224,6 +1206,39 @@ namespace Group_choice_algos_fuzzy
 		#endregion PROPERTIES
 
 		#region FUNCTIONS		
+		/// <summary>
+		/// вычисление всех параметров ранжирования
+		/// </summary>
+		private void UpdateRankingParams(Matrix weight_matrix, List<Matrix> other_matrices)
+		{
+			MethodID = -1;
+			Cost = null;
+			CostsExperts = null;
+			Strength = null;
+			StrengthsExperts = null;
+			SummaryDistance = null;
+			if (!(_Path is null))
+			{
+				Cost = new Characteristic(CH_COST, PathCost(Rank2List, weight_matrix));
+				Strength = new Characteristic(CH_STRENGTH, PathStrength(Rank2List, weight_matrix));
+				if (other_matrices != null)
+				{
+					CostsExperts = new Characteristic(CH_COST_EXPERTS);
+					StrengthsExperts = new Characteristic(CH_STRENGTH_EXPERTS);
+					foreach (var expert_matrix in other_matrices)
+					{
+						CostsExperts.ValuesList.Add(PathCost(Rank2List, expert_matrix));
+						StrengthsExperts.ValuesList.Add(PathStrength(Rank2List, expert_matrix));
+					}
+					if (Rank2List.Count == n)
+					{
+						SummaryDistance = new RankingSummaryDistanceClass();
+						SummaryDistance.modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
+						SummaryDistance.square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
+					}
+				}
+			}
+		}
 		/// <summary>
 		/// веса данного пути
 		/// </summary>
@@ -1254,39 +1269,6 @@ namespace Group_choice_algos_fuzzy
 		{
 			var wp = WeightsOfPath(vertices_list, Weights_matrix);
 			return wp.Count == 0 ? INF : wp.Min();
-		}
-		/// <summary>
-		/// вычисление всех параметров ранжирования
-		/// </summary>
-		private void UpdateRankingParams(Matrix weight_matrix, List<Matrix> other_matrices)
-		{
-			MethodID = -1;
-			Cost = null;
-			CostsExperts = null;
-			Strength = null;
-			StrengthsExperts = null;
-			SummaryDistance = null;
-			if (!(_Path is null))
-			{
-				Cost = new Characteristic("Стоимость", PathCost(Rank2List, weight_matrix));
-				Strength = new Characteristic("Сила", PathStrength(Rank2List, weight_matrix));
-				if (other_matrices != null)
-				{
-					CostsExperts = new Characteristic(COSTS_EXPERTS);
-					StrengthsExperts = new Characteristic(STRENGTHS_EXPERTS);
-					foreach (var expert_matrix in other_matrices)
-					{
-						CostsExperts.ValuesList.Add(PathCost(Rank2List, expert_matrix));
-						StrengthsExperts.ValuesList.Add(PathStrength(Rank2List, expert_matrix));
-					}
-					if (Rank2List.Count == n)
-					{
-						SummaryDistance = new PathSummaryDistanceClass();
-						SummaryDistance.modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
-						SummaryDistance.square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
-					}
-				}
-			}
 		}
 		/// <summary>
 		/// создаёт ранжирование на основе матрицы
@@ -1372,7 +1354,7 @@ namespace Group_choice_algos_fuzzy
 		#region FIELDS
 		public int ID = -1;//обозначение метода
 		private List<Ranking> _Rankings;//выдаваемые методом ранжирования
-		private MethodRankingsCharacteristics _RanksCharacteristics;
+		private MethodRankingsCharacteristics _RankingsCharacteristics;//характеристики ранжирований
 		private List<int> _Winners;//победители - недоминируемые альтернативы
 		private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
 		public ConnectedControls UI_Controls;
@@ -1389,7 +1371,7 @@ namespace Group_choice_algos_fuzzy
 				parent_method = m;
 				ConnectedCheckBox = checkBox;
 				ConnectedTableFrame = dgv;
-				ConnectedLabelControl = lbl;
+				ConnectedLabel = lbl;
 			}
 			private readonly Method parent_method;
 			private CheckBox connectedCheckBox;//чекбокс - будем ли запускать метод
@@ -1432,7 +1414,7 @@ namespace Group_choice_algos_fuzzy
 					}
 					if (!parent_method.HasRankings)
 					{
-						parent_method.UI_Controls.ConnectedLabelText = "Строгое ранжирование невозможно. ";
+						parent_method.UI_Controls.ConnectedLabel.Text = INF_ranking_unavailable;
 						if (parent_method.HasLevels)
 						{//ранжирований нет, но можно задать разбиение на уровни
 							int col = 0;
@@ -1471,13 +1453,13 @@ namespace Group_choice_algos_fuzzy
 								parent_method.UI_Controls.ConnectedTableFrame[j, i].Value = string.Join(CR_LF,
 									characteristic.ValuesList);
 								bool need_highlight = false;
-								if (characteristic.Label == COSTS_EXPERTS)
+								if (characteristic.Label == CH_COST_EXPERTS)
 								{
-									need_highlight = parent_method.RanksCharacteristics.IsInPareto_Cost[j];
+									need_highlight = parent_method.RankingsCharacteristics.IsInPareto_Cost[j];
 								}
-								else if (characteristic.Label == STRENGTHS_EXPERTS)
+								else if (characteristic.Label == CH_STRENGTH_EXPERTS)
 								{
-									need_highlight = parent_method.RanksCharacteristics.IsInPareto_Strength[j];
+									need_highlight = parent_method.RankingsCharacteristics.IsInPareto_Strength[j];
 								}
 								if (need_highlight)
 								{
@@ -1529,20 +1511,20 @@ namespace Group_choice_algos_fuzzy
 									ind2letter[parent_method.Rankings[j].Rank2List[i]];
 							}
 							display_characteristic(j, n,
-								parent_method.RanksCharacteristics.Cost.ValueMin,
-								parent_method.RanksCharacteristics.Cost.ValueMax,
+								parent_method.RankingsCharacteristics.MinMaxCost.ValueMin,
+								parent_method.RankingsCharacteristics.MinMaxCost.ValueMax,
 								parent_method.Rankings[j].Cost);
 							display_characteristic(j, n + 1,
-								parent_method.RanksCharacteristics.Strength.ValueMin,
-								parent_method.RanksCharacteristics.Strength.ValueMax,
+								parent_method.RankingsCharacteristics.MinMaxStrength.ValueMin,
+								parent_method.RankingsCharacteristics.MinMaxStrength.ValueMax,
 								parent_method.Rankings[j].Strength);
 							display_characteristic(j, n + 2,
-								parent_method.RanksCharacteristics.MinDistance.modulus.Value,
-								parent_method.RanksCharacteristics.MaxDistance.modulus.Value,
+								parent_method.RankingsCharacteristics.MinMaxDistance.modulus.ValueMin,
+								parent_method.RankingsCharacteristics.MinMaxDistance.modulus.ValueMax,
 								parent_method.Rankings[j].SummaryDistance.modulus);
 							display_characteristic(j, n + 3,
-								parent_method.RanksCharacteristics.MinDistance.square.Value,
-								parent_method.RanksCharacteristics.MaxDistance.square.Value,
+								parent_method.RankingsCharacteristics.MinMaxDistance.square.ValueMin,
+								parent_method.RankingsCharacteristics.MinMaxDistance.square.ValueMax,
 								parent_method.Rankings[j].SummaryDistance.square);
 							display_characteristic(j, n + 4,
 								INF,
@@ -1557,13 +1539,13 @@ namespace Group_choice_algos_fuzzy
 
 					ConnectedTableFrame?.Show();
 					ConnectedTableFrame?.Parent.Show();
-					parent_method.UI_Controls.ConnectedLabelText = parent_method.Info();
-					ConnectedTableFrame?.Parent.Controls.Add(parent_method.UI_Controls.ConnectedLabelControl);
+					parent_method.UI_Controls.ConnectedLabel.Text = parent_method.Info();
+					ConnectedTableFrame?.Parent.Controls.Add(parent_method.UI_Controls.ConnectedLabel);
 				}
 			}
 			override public void UI_Clear()
 			{
-				ConnectedLabelControl = null;
+				ConnectedLabel = null;
 				ConnectedTableFrame?.Rows.Clear();
 				ConnectedTableFrame?.Columns.Clear();
 				ConnectedTableFrame?.Hide();
@@ -1577,64 +1559,52 @@ namespace Group_choice_algos_fuzzy
 		{
 			public MethodRankingsCharacteristics(Method m) { parent_method = m; }
 			private readonly Method parent_method;
-			private MinNMaxCharacteristics _Cost;//мин и макс стоимость среди ранжирований метода
-			private MinNMaxCharacteristics _Strength;//мин и макс сила среди ранжирований метода
-			private Ranking.PathSummaryDistanceClass _MinDistance;//минимальное суммарн. расстояние среди ранжирований метода
-			private Ranking.PathSummaryDistanceClass _MaxDistance;//максимальное суммарн. расстояние среди ранжирований метода
+			private Characteristic _MinMaxCost;//мин и макс стоимость среди ранжирований метода
+			private Characteristic _MinMaxStrength;//мин и макс сила среди ранжирований метода
+			private RankingSummaryDistanceClass _MinMaxDistance;//мин и макс суммарн. расстояние среди ранжирований метода
 			private bool[] _IsInPareto_Cost;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
 			private bool[] _IsInPareto_Strength;
-			public MinNMaxCharacteristics Cost
+			public Characteristic MinMaxCost
 			{
 				get
 				{
-					if (IsMethodExistWithRanks(parent_method) && !Characteristic.IsInitialized(_Cost))
-						_Cost = new MinNMaxCharacteristics("",
-							parent_method.Rankings.Select(x => x.Cost.Value).ToList());
-					return _Cost;
-				}
-			}
-			public MinNMaxCharacteristics Strength
-			{
-				get
-				{
-					if (IsMethodExistWithRanks(parent_method) && !Characteristic.IsInitialized(_Strength))
-						_Strength = new MinNMaxCharacteristics("",
-							parent_method.Rankings.Select(x => x.Strength.Value).ToList());
-					return _Strength;
-				}
-			}
-			public Ranking.PathSummaryDistanceClass MinDistance
-			{
-				get
-				{
-					if (IsMethodExistWithRanks(parent_method) && !Characteristic.IsInitialized(_MinDistance))
+					if (_MinMaxCost is null)
+						_MinMaxCost = new Characteristic(CH_COST);
+					if (IsMethodExistWithRanks(parent_method))
 					{
-						_MinDistance = new Ranking.PathSummaryDistanceClass();
-						_MinDistance.modulus.Value = MinNMaxCharacteristics.Calc(
-								parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList()
-								).min;
-						_MinDistance.square.Value = MinNMaxCharacteristics.Calc(
-								parent_method.Rankings.Select(x => x.SummaryDistance.square.Value).ToList()
-								).min;
+						_MinMaxCost.SetMinMax(parent_method.Rankings.Select(x => x.Cost.Value).ToList());
 					}
-					return _MinDistance;
+					return _MinMaxCost;
 				}
 			}
-			public Ranking.PathSummaryDistanceClass MaxDistance
+			public Characteristic MinMaxStrength
 			{
 				get
 				{
-					if (IsMethodExistWithRanks(parent_method) && !Characteristic.IsInitialized(_MaxDistance))
+					if (_MinMaxStrength is null)
+						_MinMaxStrength = new Characteristic(CH_STRENGTH);
+					if (IsMethodExistWithRanks(parent_method))
 					{
-						_MaxDistance = new Ranking.PathSummaryDistanceClass();
-						_MaxDistance.modulus.Value = MinNMaxCharacteristics.Calc(
-								parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList()
-								).max;
-						_MaxDistance.square.Value = MinNMaxCharacteristics.Calc(
-								parent_method.Rankings.Select(x => x.SummaryDistance.square.Value).ToList()
-								).max;
+						_MinMaxStrength.SetMinMax(parent_method.Rankings.Select(x => x.Strength.Value).ToList());
 					}
-					return _MaxDistance;
+					return _MinMaxStrength;
+				}
+			}
+			public RankingSummaryDistanceClass MinMaxDistance
+			{
+				get
+				{
+					if (IsMethodExistWithRanks(parent_method))
+					{
+						_MinMaxDistance = new RankingSummaryDistanceClass();
+						_MinMaxDistance.square.SetMinMax(
+							parent_method.Rankings.Select(x => x.SummaryDistance.square.Value).ToList()
+							);
+						_MinMaxDistance.square.SetMinMax(
+							parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList()
+							);
+					}
+					return _MinMaxDistance;
 				}
 			}
 			public bool[] IsInPareto_Cost
@@ -1670,10 +1640,9 @@ namespace Group_choice_algos_fuzzy
 						throw new MyException(EX_bad_dimensions);
 					for (int i = 0; i < R1.Count; i++)
 					{
-						var delta = Math.Round(R1[i] - R2[i], DIGITS_PRECISION);
-						if (delta > 0)//R1[i] > R2[i]
+						if (DoubleMORETHAN(R1[i], R2[i]))//R1[i] > R2[i]
 							one_morethan = true;
-						if (delta < 0)//R1[i] < R2[i]
+						if (DoubleMORETHAN(R2[i], R1[i]))//R1[i] < R2[i]
 							one_lessthan = true;
 					}
 					if (one_morethan && !one_lessthan)
@@ -1701,13 +1670,6 @@ namespace Group_choice_algos_fuzzy
 				foreach (int i in Pareto_indices)
 					ans[i] = true;
 				return ans;
-			}
-			public void Clear()
-			{
-				_Cost = null;
-				_Strength = null;
-				_MinDistance = null;
-				_MaxDistance = null;
 			}
 		}
 		#endregion SUBCLASSES
@@ -1769,7 +1731,7 @@ namespace Group_choice_algos_fuzzy
 				if (_Rankings is null)
 				{
 					_Rankings = new List<Ranking>();
-					RanksCharacteristics = null;
+					RankingsCharacteristics = null;
 				}
 				return _Rankings;
 			}
@@ -1777,20 +1739,20 @@ namespace Group_choice_algos_fuzzy
 			{
 				_Rankings = value;
 				if (value is null)
-					RanksCharacteristics = null;
+					RankingsCharacteristics = null;
 			}
 		}
-		public MethodRankingsCharacteristics RanksCharacteristics
+		public MethodRankingsCharacteristics RankingsCharacteristics
 		{
 			get
 			{
-				if (_RanksCharacteristics is null)
+				if (_RankingsCharacteristics is null)
 				{
-					_RanksCharacteristics = new MethodRankingsCharacteristics(this);
+					_RankingsCharacteristics = new MethodRankingsCharacteristics(this);
 				}
-				return _RanksCharacteristics;
+				return _RankingsCharacteristics;
 			}
-			set { _RanksCharacteristics = value; }
+			set { _RankingsCharacteristics = value; }
 		}
 		public List<int> Winners
 		{
@@ -1855,19 +1817,19 @@ namespace Group_choice_algos_fuzzy
 		{
 			string text = "";
 			text += $"Недоминируемые альтернативы: {Winners2String}{CR_LF}";
-			text += $"Минимальная и максимальная стоимость среди ранжирований метода: " +
-				$"{RanksCharacteristics.Cost?.ValueMin}, {RanksCharacteristics.Cost?.ValueMax}; {CR_LF}";
-			text += $"Минимальная и максимальная сила среди ранжирований метода: " +
-				$"{RanksCharacteristics.Strength?.ValueMin}, {RanksCharacteristics.Strength?.ValueMax}; {CR_LF}";
+			text += $"Мин. и макс. стоимость среди ранжирований метода: " +
+				$"[{RankingsCharacteristics.MinMaxCost?.ValueMin}; {RankingsCharacteristics.MinMaxCost?.ValueMax}];{CR_LF}";
+			text += $"Мин. и макс. сила среди ранжирований метода: " +
+				$"[{RankingsCharacteristics.MinMaxStrength?.ValueMin}; {RankingsCharacteristics.MinMaxStrength?.ValueMax}];{CR_LF}";
 			text += $"Минимальные и максимальные суммарные расстояния среди ранжирований метода:{CR_LF}" +
-				$"Мин. {RanksCharacteristics.MinDistance?.square?.Label}: " +
-				$"{RanksCharacteristics.MinDistance?.square?.Value}; {CR_LF}" +
-				$"Мин. {RanksCharacteristics.MinDistance?.modulus?.Label}: " +
-				$"{RanksCharacteristics.MinDistance?.modulus?.Value}; {CR_LF}" +
-				$"Макс. {RanksCharacteristics.MaxDistance?.square?.Label}: " +
-				$"{RanksCharacteristics.MaxDistance?.square?.Value}; {CR_LF}" +
-				$"Макс. {RanksCharacteristics.MaxDistance?.modulus?.Label}: " +
-				$"{RanksCharacteristics.MaxDistance?.modulus?.Value}; {CR_LF}";
+				$"Мин. {RankingsCharacteristics.MinMaxDistance?.square?.Label}: " +
+				$"{RankingsCharacteristics.MinMaxDistance?.square?.ValueMin}; {CR_LF}" +
+				$"Мин. {RankingsCharacteristics.MinMaxDistance?.modulus?.Label}: " +
+				$"{RankingsCharacteristics.MinMaxDistance?.modulus?.ValueMin}; {CR_LF}" +
+				$"Макс. {RankingsCharacteristics.MinMaxDistance?.square?.Label}: " +
+				$"{RankingsCharacteristics.MinMaxDistance?.square?.ValueMax}; {CR_LF}" +
+				$"Макс. {RankingsCharacteristics.MinMaxDistance?.modulus?.Label}: " +
+				$"{RankingsCharacteristics.MinMaxDistance?.modulus?.ValueMax}; {CR_LF}";
 			return text;
 		}
 		#endregion FUNCTIONS
