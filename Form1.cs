@@ -246,10 +246,13 @@ namespace Group_choice_algos_fuzzy
 				{
 					ExpertRelations.RListFuzzyRel = ExpertRelations.RListFuzzyRel.Select(x => x.TransitiveClosure()).ToList();
 				}
-				//выполняет проверку и выводит уведомления о наличии циклов
 				ExpertRelations.UI_Controls.UI_Show();
-				var Intersect = Methods.ExecuteAlgorythms();
-				Methods.set_output_results(Intersect);
+				Methods.UI_Clear();
+				ExpertRelations.UI_Controls.UI_Deactivate();
+				Methods.ExecuteAlgorythms();
+				AggregatedMatrix.UI_Controls.UI_Show();
+				Methods.UI_Show();
+				form1.set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}

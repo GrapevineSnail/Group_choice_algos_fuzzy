@@ -436,11 +436,10 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-
 		/// <summary>
 		/// все методы
 		/// </summary>
-		public static class Methods
+		public static class Methods 
 		{
 			public static Method All_various_rankings = new Method(MET_ALL_RANKINGS);
 			public static Method All_Hamiltonian_paths = new Method(MET_ALL_HP);
@@ -448,14 +447,12 @@ namespace Group_choice_algos_fuzzy
 			private static Method Hp_max_strength = new Method(MET_HP_MAX_STRENGTH);
 			public static Method Schulze_method = new Method(MET_SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 			public static Method Smerchinskaya_Yashina_method = new Method(MET_SMERCHINSKAYA_YASHINA_METHOD);
-			/// <summary>
-			/// показывает результаты выполнения методов
-			/// </summary>
+			public static List<string> MutualRankings;//ранжирования, которые принадлежат всем выбранным к выполнению (IsExecute) методам
 			public static void UI_Show()
 			{
 				foreach (Method M in GetMethods())
 				{
-					if(M.IsExecute)
+					if (M.IsExecute)
 						M.UI_Controls.UI_Show();
 				}
 			}
@@ -465,20 +462,21 @@ namespace Group_choice_algos_fuzzy
 				{
 					M.UI_Controls.UI_Clear();
 				}
+				FileOperations.WriteToFile("", OUT_FILE, false);
 			}
 			/// <summary>
 			/// очищает результаты методов и характеристики этих результатов
 			/// </summary>
 			public static void Clear()
 			{
-				try
-				{
+				//try
+				//{
 					foreach (Method M in GetMethods())
 					{
 						M.Clear();
 					}
-				}
-				catch (MyException ex) { }
+				//}
+				//catch (MyException ex) { }
 			}
 			/// <summary>
 			/// выдаёт все используемые методы
@@ -785,16 +783,16 @@ namespace Group_choice_algos_fuzzy
 					if (Smerchinskaya_Yashina_method.IsExecute)
 						Set_Smerchinskaya_Yashina_method();
 
-					var is_rankings_of_method_exist = new List<Method>();
+					var methods_has_rankings = new List<Method>();
 					foreach (Method m in GetMethods())
 					{
 						if (m.IsExecute && (m.HasRankings))
-							is_rankings_of_method_exist.Add(m);
+							methods_has_rankings.Add(m);
 					}
-					if (is_rankings_of_method_exist.Count() > 1)
+					if (methods_has_rankings.Count() > 1)
 					{
 						bool processing_first_method = true;
-						foreach (Method met in is_rankings_of_method_exist)
+						foreach (Method met in methods_has_rankings)
 						{
 							if (processing_first_method)
 							{
@@ -807,39 +805,8 @@ namespace Group_choice_algos_fuzzy
 					}
 				}
 				catch (MyException ex) { ex.Info(); }
+				MutualRankings = Intersect;
 				return Intersect;
-			}
-			/// <summary>
-			/// вывести на экран результирующие ранжирования
-			/// </summary>
-			/// <param name="Mutual_rankings"></param>
-			public static async void set_output_results(List<string> Mutual_rankings)
-			{
-				UI_Clear();
-				ExpertRelations.UI_Controls.UI_Deactivate();
-				AggregatedMatrix.UI_Controls.UI_Show();
-				try
-				{
-					//создание чистого файла для вывода ранжирований в виде матриц
-					FileOperations.WriteToFile("", OUT_FILE, false);
-					UI_Show();
-					foreach (Method met in GetMethods())
-					{
-						if (met.IsExecute && met.HasRankings)
-						{
-							for (int j = 0; j < met.Rankings.Count; j++)
-							{
-								if (Mutual_rankings.Contains(met.Rankings[j].Rank2String))
-								{
-									for (int i = 0; i < n; i++)
-										met.UI_Controls.ConnectedTableFrame[j, i].Style.BackColor = output_characteristics_mutual_color;
-								}
-							}
-						}
-					}
-					form1.set_controls_size();
-				}
-				catch (MyException ex) { ex.Info(); }
 			}
 		}
 

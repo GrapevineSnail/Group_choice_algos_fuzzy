@@ -5,8 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
-using static Group_choice_algos_fuzzy.Model;
 using static Group_choice_algos_fuzzy.Constants.MyException;
+using static Group_choice_algos_fuzzy.Model;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -1042,7 +1042,7 @@ namespace Group_choice_algos_fuzzy
 		public Characteristic(string label) { Label = label; }
 		public Characteristic(string label, double value) { Label = label; Value = value; }
 		private string _Label;//название характеристики
-		private double _Value;//числовое значение х.
+		private double _Value = INF;//числовое значение х.
 		private List<double> _ValuesList;//векторное значение х.
 		private double _ValueMin;//если есть список характеристик, в который данная х. входит
 		private double _ValueMax;//будут вычислены min и max
@@ -1078,7 +1078,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public bool IsInitializedValue()
 		{
-			return Value != 0 && Math.Abs(Value) != INF;
+			return Math.Abs(Value) != INF;
 		}
 		/// <summary>
 		/// проверка значения характеристики на существование
@@ -1431,21 +1431,18 @@ namespace Group_choice_algos_fuzzy
 					dgv.Rows.Add(row);
 					return i;
 				}
-				void SetCell(DataGridView dgv, int i, int j, string value)
-				{
-					dgv[j, i].ReadOnly = true;
-					dgv[j, i].Value = value;
-				}
-				void SetCellCharacteristic(DataGridView dgv, int i, int j, string value, Color clr)
+				void SetCell(DataGridView dgv, int i, int j, string value, Color clr)
 				{
 					dgv[j, i].ReadOnly = true;
 					dgv[j, i].Style.BackColor = clr;
 					dgv[j, i].Value = value;
+
 				}
 				string RowHeaderForRankingAndLevel(int i)
 				{
 					return $"Место {i + 1}";
 				}
+
 				if (!parent_method.HasRankings)
 				{
 					parent_method.UI_Controls.ConnectedLabel.Text = INF_ranking_unavailable;
@@ -1459,7 +1456,7 @@ namespace Group_choice_algos_fuzzy
 						for (int i = 0; i < parent_method.Levels.Count; i++)
 						{
 							SetCell(parent_method.UI_Controls.ConnectedTableFrame,
-								i, 0, parent_method.Levels2Strings[i]);
+								i, 0, parent_method.Levels2Strings[i], Color.Empty);
 						}
 					}
 				}
@@ -1488,18 +1485,18 @@ namespace Group_choice_algos_fuzzy
 							if (highlight_best)
 								cell_colour = output_characteristics_max_color;
 						}
-						SetCellCharacteristic(parent_method.UI_Controls.ConnectedTableFrame,
+						SetCell(parent_method.UI_Controls.ConnectedTableFrame,
 							i, j, cell_text, cell_colour);
 					}
 					for (int j = 0; j < parent_method.Rankings.Count; j++)
 					{
 						SetColumn(parent_method.UI_Controls.ConnectedTableFrame, $"Ранжиро-{CR_LF}вание {j + 1}");
 					}
-					for (int i = 0; i < n; i++)
+					var some_rank = parent_method.Rankings.First();
+					for (int i = 0; i < some_rank.Count; i++)
 					{
 						SetRow(parent_method.UI_Controls.ConnectedTableFrame, RowHeaderForRankingAndLevel(i));
 					}
-					var some_rank = parent_method.Rankings.First();
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Cost.Label);
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Strength.Label);
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.SummaryDistance.modulus.Label);
@@ -1508,38 +1505,45 @@ namespace Group_choice_algos_fuzzy
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.StrengthsExperts.Label);
 					for (int j = 0; j < parent_method.Rankings.Count; j++)
 					{
-						for (int i = 0; i < parent_method.Rankings[j].Count; i++)
+						Ranking rank = parent_method.Rankings[j];
+						Color cell_colour = Color.Empty;
+						if (Methods.MutualRankings.Contains(rank.Rank2String))
+						{
+							cell_colour = output_characteristics_mutual_color;
+						}
+						for (int i = 0; i < rank.Count; i++)
 						{
 							SetCell(parent_method.UI_Controls.ConnectedTableFrame,
-								i, j, ind2letter[parent_method.Rankings[j].Rank2List[i]]);
+								i, j, ind2letter[rank.Rank2List[i]], cell_colour);
 						}
+						var N = rank.Count;
 						var MethodCh = parent_method.RankingsCharacteristics;
-						display_characteristic(n, j,
+						display_characteristic(N, j,
 							MethodCh.MinMaxCost.ValueMin,
 							MethodCh.MinMaxCost.ValueMax,
 							false,
 							parent_method.Rankings[j].Cost);
-						display_characteristic(n + 1, j,
+						display_characteristic(N + 1, j,
 							MethodCh.MinMaxStrength.ValueMin,
 							MethodCh.MinMaxStrength.ValueMax,
 							false,
 							parent_method.Rankings[j].Strength);
-						display_characteristic(n + 2, j,
+						display_characteristic(N + 2, j,
 							MethodCh.MinMaxDistance.modulus.ValueMin,
 							MethodCh.MinMaxDistance.modulus.ValueMax,
 							false,
 							parent_method.Rankings[j].SummaryDistance.modulus);
-						display_characteristic(n + 3, j,
+						display_characteristic(N + 3, j,
 							MethodCh.MinMaxDistance.square.ValueMin,
 							MethodCh.MinMaxDistance.square.ValueMax,
 							false,
 							parent_method.Rankings[j].SummaryDistance.square);
-						display_characteristic(n + 4, j,
+						display_characteristic(N + 4, j,
 							INF,
 							INF,
 							MethodCh.IsInPareto_Cost[j],
 							parent_method.Rankings[j].CostsExperts);
-						display_characteristic(n + 5, j,
+						display_characteristic(N + 5, j,
 							INF,
 							INF,
 							MethodCh.IsInPareto_Strength[j],
