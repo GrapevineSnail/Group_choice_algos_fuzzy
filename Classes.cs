@@ -194,6 +194,9 @@ namespace Group_choice_algos_fuzzy
 		#endregion OPERATORS
 
 		#region FUNCTIONS
+		/// <summary>
+		/// есть ли ребро на основании символов, обозначающих отсутствие ребра
+		/// </summary>
 		public bool HasEdge((int i, int j) edge, double[] no_edge_symbol)
 		{
 			return !no_edge_symbol.Contains(this[edge.i, edge.j]);
@@ -542,7 +545,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					input_matrix[i, j] =
 						double.TryParse(dgv[i, j]?.Value?.ToString(), out var Mij) ?
-						Mij:0;
+						Mij : 0;
 				}
 			return input_matrix;
 		}
@@ -598,9 +601,34 @@ namespace Group_choice_algos_fuzzy
 		public bool[] ComparedAlternatives()
 		{
 			bool[] ans = new bool[n];
-			for(int i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				ans[i] = IsAlternativeCompared(i);
+			}
+			return ans;
+		}
+		/// <summary>
+		/// количество ребер в графе
+		/// </summary>
+		/// <param name="count_solitary_loop">подсчитывать ли петли (ребро из вершины в неё саму)</param>
+		/// <returns></returns>
+		public int EdgesCount(bool count_solitary_loop)
+		{
+			int ans = 0;
+			for (int i = 0; i < n; i++)
+			{
+				for (int j = 0; j < n; j++)
+				{
+					if (!count_solitary_loop && i==j)
+					{ }
+					else
+					{
+						if (this.HasEdge((i, j), new double[] { NO_EDGE, INF }))
+						{
+							ans++;
+						}
+					}
+				}
 			}
 			return ans;
 		}
@@ -1435,7 +1463,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (!parent_method.IsExecute)
 					return;
-				
+
 				string RowHeaderForRankingAndLevel(int i)
 				{
 					return $"Место {i + 1}";
@@ -1907,6 +1935,39 @@ namespace Group_choice_algos_fuzzy
 			}
 			return absolute_file_name;
 		}
+
+		public static List<Matrix> ReadFileWithMatrices(string filename, out string absolute_file_name)
+		{
+			List<Matrix> matrices = new List<Matrix>();
+			FindFile(filename, out absolute_file_name);
+
+			string[] lines = File.ReadAllLines(absolute_file_name)
+				.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
+			filename = absolute_file_name;
+			char[] chars_for_split = new char[] { ' ', '	' };
+			int _n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
+			Matrix cur_matrix = new Matrix(_n, _n);
+			for (int l = 0; l < lines.Length; l++)
+			{
+				if (lines[l].Length != 0)
+				{
+					double res;
+					double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
+						.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
+					if (numbers.Any(x => x == INF) || numbers.Length != _n)
+						throw new MyException(EX_bad_file);
+					for (int j = 0; j < numbers.Length; j++)
+						cur_matrix[l % _n, j] = numbers[j];
+				}
+				if (l % _n == _n - 1)
+					matrices.Add(new Matrix(cur_matrix));
+			}
+			if (matrices.Count == 0)
+				throw new MyException(EX_bad_file);
+			//m = matrices.Count;
+			//n = _n;
+			return matrices;
+		}
 	}
 
 	public static class GraphDrawingFuncs
@@ -1983,14 +2044,14 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// обновить рисунки графов
 		/// </summary>
-		/// <param name="f"></param>
+		/// <param name="form"></param>
 		/// <param name="M"></param>
 		/// <param name="L"></param>
-		public static void OrgraphsPics_update(IFromGraphsDraw f, List<Matrix> M, List<string> L)
+		public static void OrgraphsPics_update(IFromGraphsDraw form, List<Matrix> M, List<string> L)
 		{
-			if (f != null && !((Form)f).IsDisposed)
+			if (form != null && !((Form)form).IsDisposed)
 			{
-				f.Redraw(M.Select(x => x.matrix_base).ToList(), L);
+				form.Redraw(M.Select(x => x.matrix_base).ToList(), L);
 			}
 		}
 	}

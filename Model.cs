@@ -121,33 +121,32 @@ namespace Group_choice_algos_fuzzy
 						return true;
 					return false;
 				}
-				public void UpdateViewNM(int alts_cnt_n, int exps_cnt_m)
+				public void UpdateViewNM()
 				{
-					if (UI_Controls.numericUpDown_n.Minimum <= alts_cnt_n &&
-						alts_cnt_n <= UI_Controls.numericUpDown_n.Maximum &&
-						UI_Controls.numericUpDown_m.Minimum <= exps_cnt_m &&
-						exps_cnt_m <= UI_Controls.numericUpDown_m.Maximum)
+					if (UI_Controls.numericUpDown_n.Minimum <= n && n <= UI_Controls.numericUpDown_n.Maximum &&
+						UI_Controls.numericUpDown_m.Minimum <= m && m <= UI_Controls.numericUpDown_m.Maximum)
 					{
-						UI_Controls.numericUpDown_n.Value = alts_cnt_n;
-						UI_Controls.numericUpDown_m.Value = exps_cnt_m;
+						UI_Controls.numericUpDown_n.Value = n;
+						UI_Controls.numericUpDown_m.Value = m;
 					}
 				}
 				public void UpdateModelNM()
 				{
 					if (form1.cb_All_rankings.Checked && (
-						(int)numericUpDown_n.Value > max_count_of_alternatives ||
-						(int)numericUpDown_m.Value > max_count_of_experts
-						))
+					(int)numericUpDown_n.Value > max_count_of_alternatives ||
+					(int)numericUpDown_m.Value > max_count_of_experts
+					))
 						throw new MyException(EX_n_m_too_big);
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
 				}
-				public void UpdateView(int expert_index)
+				public DataGridView UpdateView(int expert_index)
 				{
 					var new_martix = GetModelMatrix(expert_index);
 					if (new_martix is null)
-						return;
-					DataGridView dgv = new DataGridView();
+						return null;
+					DataGridView dgv = UI_Controls.GetOutputDataGridViews.ElementAtOrDefault(expert_index);
+					dgv = new DataGridView();
 					SetDataGridViewDefaults(dgv);
 					dgv.CellEndEdit += CheckCellWhenValueChanged;
 					dgv.CellEndEdit += ColorSymmetricCell;
@@ -163,23 +162,26 @@ namespace Group_choice_algos_fuzzy
 					for (int i = 0; i < dgv.Rows.Count; i++)
 						for (int j = 0; j < dgv.Columns.Count; j++)
 							ColorSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
-					GetOutputControls.Add(dgv);
 					form1.set_controls_size();
+					return dgv;
 				}
-				public void UpdateViewAll(int alternatives_cnt_n, int experts_cnt_m)
+				public void UpdateViewAll()
 				{
-					UI_Controls.UI_Clear();
+					UI_Clear();
 					try
 					{
-						UpdateViewNM(alternatives_cnt_n, experts_cnt_m);
+						UpdateViewNM();
 						if (connectedCheckBox_ToShow.Checked)
 						{
-							for (int ex = 0; ex < experts_cnt_m; ex++)
+							for (int ex = 0; ex < m; ex++)
 							{
-								UpdateView(ex);
+								var dgv = UpdateView(ex);
+								if (!(dgv is null))
+									GetOutputControls.Add(dgv);
 							}
 							form1.set_controls_size();
 						}
+						UI_Show();
 					}
 					catch (MyException ex) { ex.Info(); }
 				}
@@ -293,10 +295,17 @@ namespace Group_choice_algos_fuzzy
 			//
 			/// 
 			///// 
-			static public int comparsion_trials = 0;//сколько отредактированных ячеек уже было
-													//// ///
-			/// 
-			//
+			/*static public int comparsion_trials = -1;//сколько отредактированных ячеек уже было
+			private static void comparsion_trials_upd()
+			{
+				if (comparsion_trials < 0)
+					comparsion_trials = 0;
+				comparsion_trials++;
+				if (comparsion_trials >= n - 1)
+					comparsion_trials = 0;//= n-1
+			}*/
+
+
 			#endregion FIELDS
 
 			/*
@@ -338,29 +347,51 @@ namespace Group_choice_algos_fuzzy
 				}
 			}
 			*/
-			public static void UpdateModelMatrix(int index, Matrix new_matrix)
+			private static Matrix NewModelMatrix(Matrix new_matrix)
 			{
-				if (_RList is null || _RList.Count == 0)
-					return;
-				_RList[index] = new_matrix;
-				_RList[index] = _RList[index].NormalizeAndCast2Fuzzy;
-				if (_RList[index].Cast2Fuzzy.IsHasCycle())
+				new_matrix = new_matrix.NormalizeAndCast2Fuzzy;
+				if (new_matrix.Cast2Fuzzy.IsHasCycle())
 				{
 					throw new MyException(EX_contains_cycle);
 				}
 				else
 				{
-					_RList[index] = PerformTransClosure(_RList[index].Cast2Fuzzy);
+					if (UI_Controls.connectedCheckBox_DoTransClosure.Checked)
+					{
+						var L = new List<int>();
+						L.Add(n-1);
+						for(int i =n-2; i>0; i--)
+						{
+							L.Add(L.Last() + i);
+						}
+
+						if (new_matrix.ComparedAlternatives().All(x => x == true) ||
+							L.Contains(new_matrix.EdgesCount(false)) )//||comparsion_trials == 0
+						{
+							if (!new_matrix.Cast2Fuzzy.IsTransitive())
+							{
+								new_matrix = new_matrix.Cast2Fuzzy.TransitiveClosure();
+							}
+						}
+					}
 				}
+				return new_matrix;
+			}
+			public static void UpdateModelMatrix(int index, Matrix new_matrix)
+			{
+				if (GetModelMatrix(index) is null)
+					return;
+				_RList[index] = NewModelMatrix(new_matrix);
 				ExpertRelations_ModelRelChanged?.Invoke(null,
 					new ExpertRelationsEventArgs(index, GetModelMatrix(index), null));
 			}
 			public static void UpdateModelMatrices(List<Matrix> new_matrices)
 			{
 				_RList = new_matrices;
-				_RList = _RList?.Select(x => x.NormalizeAndCast2Fuzzy.ToMatrix).ToList();
-				_RList = _RList?.Select(x => PerformTransClosure(x.Cast2Fuzzy).ToMatrix).ToList();
-				if (!(_RList is null) && _RList.Any(x => x.Cast2Fuzzy.IsHasCycle()))
+				if (_RList is null)
+					return;
+				_RList = _RList.Select(x => NewModelMatrix(x)).ToList();
+				if (_RList.Any(x => x.Cast2Fuzzy.IsHasCycle()))
 				{
 					throw new MyException(EX_contains_cycle);
 				}
@@ -377,20 +408,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (_RList is null)
 					_RList = new List<Matrix>();
-				return _RList;
-			}
-
-			static FuzzyRelation PerformTransClosure(FuzzyRelation matrix)
-			{
-				if (UI_Controls.connectedCheckBox_DoTransClosure.Checked &&
-				(comparsion_trials == n - 1 || matrix.ComparedAlternatives().All(x => x == true)))
-				{
-					if (!matrix.IsTransitive())
-					{
-						matrix = matrix.TransitiveClosure();
-					}
-				}
-				return matrix;
+				return new List<Matrix>(_RList);
 			}
 			public static void Clear()
 			{
@@ -446,9 +464,10 @@ namespace Group_choice_algos_fuzzy
 					}
 					else
 					{
-						comparsion_trials++;
+						//comparsion_trials_upd();
 					}
-					UpdateModelMatrix(exp_index, Matrix.GetFromDataGridView(dd));
+					ExpertRelations_InputRelChanged?.Invoke(
+						sender, new ExpertRelationsEventArgs(exp_index, Matrix.GetFromDataGridView(dd)));
 				}
 				catch (MyException ex) { ex.Info(); }
 			}
@@ -458,20 +477,21 @@ namespace Group_choice_algos_fuzzy
 			}
 			public static void UpdateExpertDataGridViews(object sender, ExpertRelationsEventArgs e)
 			{
-				UI_Controls.UpdateViewAll(n, m);
+				UI_Controls.UpdateViewAll();
 			}
 			public static void UpdateExpertMatrix(object sender, ExpertRelationsEventArgs e)
 			{
-				UpdateModelMatrix(e.expert_index, e.fill_values);
-			}
-			public static void UpdateExpertMatrices(object sender, ExpertRelationsEventArgs e)
-			{
 				try
 				{
-					for (int expert = 0; expert < e.expert_matrices?.Count; expert++)
-					{
-						UpdateModelMatrix(expert, e.expert_matrices[expert]);
-					}
+					UpdateModelMatrix(e.expert_index, e.fill_values);
+				}
+				catch (MyException ex) { ex.Info(); }
+			}
+			public static void UpdateExpertMatrices(object sender, ExpertRelationsEventArgs e)
+			{				
+				try
+				{
+					UpdateModelMatrices(e.expert_matrices);
 				}
 				catch (MyException ex) { ex.Info(); }
 			}
@@ -611,6 +631,7 @@ namespace Group_choice_algos_fuzzy
 			public static List<string> MutualRankings;//ранжирования, которые принадлежат всем выбранным к выполнению (IsExecute) методам
 			public static void UI_Show()
 			{
+				FileOperations.WriteToFile("", OUT_FILE, false);
 				foreach (Method M in GetMethods())
 				{
 					if (M.IsExecute)
@@ -630,14 +651,10 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			public static void Clear()
 			{
-				//try
-				//{
 				foreach (Method M in GetMethods())
 				{
 					M.Clear();
 				}
-				//}
-				//catch (MyException ex) { }
 			}
 			/// <summary>
 			/// выдаёт все используемые методы
@@ -970,7 +987,5 @@ namespace Group_choice_algos_fuzzy
 				return Intersect;
 			}
 		}
-
-
 	}
 }

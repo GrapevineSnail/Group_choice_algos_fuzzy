@@ -11,9 +11,6 @@ using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.FileOperations;
 using static Group_choice_algos_fuzzy.Model;
 using static Group_choice_algos_fuzzy.GraphDrawingFuncs;
-using static System.IO.DirectoryInfo;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -36,7 +33,8 @@ namespace Group_choice_algos_fuzzy
 			ExpertRelations.ExpertRelations_ModelRelsChanged += ExpertRelations.UpdateExpertDataGridViews;
 			ExpertRelations.ExpertRelations_ModelRelsChanged += ExpertRelations.UpdateExpertGraph;
 
-			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
+			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(
+				rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
 			AggregatedMatrix.R_Changed += () => {
 				var rtd = AggregatedMatrix.GetRelations2Draw();
 				OrgraphsPics_update(form2_result_matrices, rtd.Matrices, rtd.Labels);
@@ -51,34 +49,31 @@ namespace Group_choice_algos_fuzzy
 			Methods.Smerchinskaya_Yashina_method.UI_Controls =
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
-
-			button_read_file.Height = textBox_file.Height + 2;
-			button_n_m.Height = textBox_file.Height + 2;
-
-			foreach (Control c in flowLayoutPanel_input_tables.Controls)
+			foreach (Control c in ExpertRelations.UI_Controls.GetOutputControls)
 				c.MouseDown += flowLayoutPanel_input_tables_MouseDown;
-			foreach (Control c in flowLayoutPanel_output_info.Controls.OfType<Label>())
+			foreach (Control c in ExpertRelations.UI_Controls.GetOutputLabels)
 				c.MouseDown += flowLayoutPanel_output_info_MouseDown;
-			foreach (Control c in flowLayoutPanel_output_tables.Controls)
+			foreach (Control c in ExpertRelations.UI_Controls.GetOutputControls)
 			{
 				c.MouseDown += flowLayoutPanel_output_tables_MouseDown;
 				foreach (Control c1 in c.Controls)
 					c1.MouseDown += flowLayoutPanel_output_tables_MouseDown;
 			}
-
+			set_controls_size();
 			interface_coloring(this);
-			//Methods.UI_Clear();
-			//Methods.Clear();
-			RefreshModel();
+			ClearModel();
 		}
 		public static Form2 form2_result_matrices = null;
 		public static Form3 form3_input_expert_matrices = null;
 
-		void RefreshModel()
+		void ClearModel()
 		{
-			ExpertRelations.Clear();
+			Methods.UI_Clear();
+			Methods.Clear(); 
+			AggregatedMatrix.UI_Controls.UI_Clear();
 			AggregatedMatrix.Clear();
-			Methods.Clear();
+			ExpertRelations.UI_Controls.UI_Clear();
+			ExpertRelations.Clear();    
 		}
 		/// <summary>
 		/// начальное расцвечивание формы
@@ -114,7 +109,10 @@ namespace Group_choice_algos_fuzzy
 				return new System.Drawing.Size(Width, Height);
 			}
 
-			foreach (DataGridView dgv in flowLayoutPanel_input_tables.Controls)
+			button_read_file.Height = textBox_file.Height + 2;
+			button_n_m.Height = textBox_file.Height + 2;
+
+			foreach (DataGridView dgv in ExpertRelations.UI_Controls.GetOutputDataGridViews)
 			{
 				dgv.Dock = DockStyle.None;
 				dgv.Size = get_table_size(dgv);
@@ -157,7 +155,7 @@ namespace Group_choice_algos_fuzzy
 				if(numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
 					ExpertRelations.UI_Controls.UpdateModelNM();
-					RefreshModel();
+					ClearModel();
 					var matrices = new List<Matrix>(m);
 					for (int k = 0; k < m; k++)
 					{
@@ -182,39 +180,12 @@ namespace Group_choice_algos_fuzzy
 			{
 				try
 				{
-					List<Matrix> matrices = new List<Matrix>();
-					FindFile(textBox_file.Text, out string absolute_file_name);
-
-					string[] lines = File.ReadAllLines(absolute_file_name)
-						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
-					textBox_file.Text = absolute_file_name;
-					var chars_for_split = new char[] { ' ', '	' };
-					var nn = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
-					Matrix cur_matrix = new Matrix(nn, nn);
-					for (int l = 0; l < lines.Length; l++)
-					{
-						if (lines[l].Length != 0)
-						{
-							double res;
-							double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
-								.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
-							if (numbers.Any(x => x == INF) || numbers.Length != nn)
-								throw new MyException(EX_bad_file);
-							for (int j = 0; j < numbers.Length; j++)
-								cur_matrix[l % nn, j] = numbers[j];
-						}
-						if (l % nn == nn - 1)
-							matrices.Add(new Matrix(cur_matrix));
-					}
-					if (matrices.Count == 0)
-						throw new MyException(EX_bad_file);
+					List<Matrix> matrices = ReadFileWithMatrices(textBox_file.Text, out var absolute_filename);
+					textBox_file.Text = absolute_filename;
 					m = matrices.Count;
-					n = nn;
-
-					RefreshModel();
+					n = matrices.First().n;
+					ClearModel();
 					ExpertRelations.UpdateModelMatrices(matrices);
-					//ExpertRelations.ViewChanged(matrices);
-					//ExpertRelations.RListMatrix = matrices.Select(x=>x.NormalizeElems(out var _)).ToList();
 					ExpertRelations.UI_Controls.UI_Show();
 					ExpertRelations.UI_Controls.UI_Activate();
 				}
@@ -237,13 +208,13 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (cb_All_rankings.Checked && n > max_count_of_alternatives)
 					throw new MyException(EX_n_m_too_big);
-				var matrices = new List<Matrix>();
 				if (cb_do_transitive_closure.Checked)
 				{
-					matrices = matrices.Select(x => x.Cast2Fuzzy.TransClosured.ToMatrix).ToList();
+					var matrices = new List<Matrix>();
+					matrices = ExpertRelations.GetModelMatrices().Select(x => x.Cast2Fuzzy.TransClosured.ToMatrix).ToList();
+					ExpertRelations.UpdateModelMatrices(matrices);
 				}
-				ExpertRelations.UpdateModelMatrices(matrices);
-				ExpertRelations.UI_Controls.UI_Show();
+				AggregatedMatrix.UI_Controls.UI_Clear();
 				Methods.UI_Clear();
 				ExpertRelations.UI_Controls.UI_Deactivate();
 				Methods.ExecuteAlgorythms();
@@ -253,9 +224,6 @@ namespace Group_choice_algos_fuzzy
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
-
-
-
 		/// <summary>
 		/// тестовая кнопочка, для разработчика
 		/// </summary>
