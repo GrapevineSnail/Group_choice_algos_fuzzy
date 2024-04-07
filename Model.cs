@@ -167,9 +167,17 @@ namespace Group_choice_algos_fuzzy
 					if (HasNoConnectedOutputs())
 						return null;
 					Matrix new_martix = GetModelMatrix(expert_index);
-					GetOutputDataGridViews[expert_index] = NewViewTable(new_martix);
-					ColorSymmetricCells(GetOutputDataGridViews[expert_index]);
+					//GetOutputDataGridViews[expert_index] = NewViewTable(new_martix);	
+					//ColorSymmetricCells(GetOutputDataGridViews[expert_index]);				
+					GetOutputControls.Clear();
+					for (int ex = 0; ex < m; ex++)
+					{
+						var dgv = NewViewTable(GetModelMatrix(ex));
+						ColorSymmetricCells(dgv);
+						GetOutputControls.Add(dgv);
+					}
 					form1.set_controls_size();
+					UI_Show();
 					return GetOutputDataGridViews[expert_index];
 				}
 				public void UpdateViewTables()
@@ -278,10 +286,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			#endregion SUBCLASSES
 
-			//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
 			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_InputRelChanged;
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelChanged;
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelsChanged;
 			private static List<Matrix> _RList;
 			public static ConnectedControls UI_Controls;
 			private static Matrix NewModelMatrix(Matrix new_matrix)
@@ -361,7 +366,7 @@ namespace Group_choice_algos_fuzzy
 				//{
 				UpdateModelMatrix(e.expert_index, e.fill_values);
 				UI_Controls.UpdateViewTable(e.expert_index);
-				UpdateExpertGraph(sender, e);
+				UpdateExpertGraph();//sender, e);
 				//}
 				//catch (MyException ex) { ex.Info(); }
 			}
@@ -373,7 +378,7 @@ namespace Group_choice_algos_fuzzy
 				UpdateModelMatrices(matrices);
 				UI_Controls.UpdateViewTables();
 				//UpdateExpertGraph(sender, e);
-				UpdateExpertGraph(null, null);
+				UpdateExpertGraph();//null, null);
 				//}
 				//catch (MyException ex) { ex.Info(); }
 			}
@@ -382,7 +387,7 @@ namespace Group_choice_algos_fuzzy
 			/// </summary>
 			/// <param name="sender"></param>
 			/// <param name="e"></param>
-			public static void UpdateExpertGraph(object sender, ExpertRelationsEventArgs e)
+			public static void UpdateExpertGraph()//object sender, ExpertRelationsEventArgs e)
 			{
 				var M = GetModelMatrices();
 				var L = new List<string>();

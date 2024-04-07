@@ -66,6 +66,7 @@ namespace Group_choice_algos_fuzzy
 			Methods.Clear(); 
 			Methods.UI_ClearMethods();
 			AggregatedMatrix.Clear();
+			AggregatedMatrix.UI_Controls.UI_Clear();
 		}
 		/// <summary>
 		/// начальное расцвечивание формы
