@@ -12,6 +12,11 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Msagl.GraphViewerGdi;
+using System.Drawing.Imaging;
+using System.Text.RegularExpressions;
+using static System.IO.DirectoryInfo;
+using System.ComponentModel;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -534,7 +539,11 @@ namespace Group_choice_algos_fuzzy
 			var input_matrix = new Matrix(dgv.Rows.Count, dgv.Columns.Count);
 			for (int i = 0; i < input_matrix.n; i++)
 				for (int j = 0; j < input_matrix.m; j++)
-					input_matrix[i, j] = dgv[j, i].Value == null ? 0 : (double)dgv[j, i].Value;
+				{
+					input_matrix[i, j] =
+						double.TryParse(dgv[i, j]?.Value?.ToString(), out var Mij) ?
+						Mij:0;
+				}
 			return input_matrix;
 		}
 		/// <summary>
@@ -1171,7 +1180,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_Path = value;
-				UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.RListMatrix);
+				UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.GetModelMatrices());
 			}
 		}
 		public int[] Rank2Array
@@ -1180,7 +1189,7 @@ namespace Group_choice_algos_fuzzy
 			set
 			{
 				_Path = value.ToList();
-				UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.RListMatrix);
+				UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.GetModelMatrices());
 			}
 		}
 		/// <summary>
@@ -1899,6 +1908,93 @@ namespace Group_choice_algos_fuzzy
 			return absolute_file_name;
 		}
 	}
+
+	public static class GraphDrawingFuncs
+	{
+		/// <summary>
+		/// отрисовать граф по матрице в PictureBox
+		/// </summary>
+		/// <param name="matrix"></param>
+		/// <param name="pictureBox"></param>
+		/// <returns></returns>
+		public static Bitmap DrawGraph(double[,] matrix, PictureBox pictureBox)
+		{
+			try
+			{
+				var G = GenerateGraph(matrix);
+				Bitmap bitmap = DrawBitmap(G, pictureBox);
+				//bitmap.Save("graph_visualizing_output.png");
+				pictureBox.SizeChanged += (object sender, EventArgs e) =>
+				{
+					DrawBitmap(G, (PictureBox)sender);
+				};
+				return bitmap;
+			}
+			catch { }
+			return null;
+		}
+
+		/// <summary>
+		/// создадим орграф
+		/// </summary>
+		/// <param name="M">матрица весов орграфа</param>
+		/// <returns></returns>
+		public static Microsoft.Msagl.Drawing.Graph GenerateGraph(double[,] M)
+		{
+			if (M.GetLength(0) != M.GetLength(1))
+				throw new MyException(EX_matrix_not_square);
+			int n = M.GetLength(0);
+			Microsoft.Msagl.Drawing.Graph graph = new Microsoft.Msagl.Drawing.Graph("");
+			for (int i = 0; i < n; i++)
+			{
+				Microsoft.Msagl.Drawing.Node node = graph.AddNode(ind2letter[i]);
+				node.Attr.LabelMargin = 1;
+				node.Attr.FillColor = node_color;
+				node.Attr.Shape = Microsoft.Msagl.Drawing.Shape.Circle;
+				for (int j = 0; j < n; j++)
+				{
+					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
+					{
+						Microsoft.Msagl.Drawing.Edge edge = graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
+						edge.Label.FontSize = node.Label.FontSize * 0.75;
+					}
+				}
+			}
+			return graph;
+		}
+
+		/// <summary>
+		/// создать картинку графа (битмап)
+		/// </summary>
+		/// <param name="g"></param>
+		/// <param name="drawing_field"></param>
+		/// <returns></returns>
+		public static Bitmap DrawBitmap(Microsoft.Msagl.Drawing.Graph g, PictureBox drawing_field)
+		{
+			Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer = new Microsoft.Msagl.GraphViewerGdi.GraphRenderer(g);
+			renderer.CalculateLayout();
+			Bitmap bitmap = new Bitmap(
+				(int)drawing_field.Width, (int)drawing_field.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+			renderer.Render(bitmap);
+			drawing_field.Image = (Image)bitmap;
+			return bitmap;
+		}
+
+		/// <summary>
+		/// обновить рисунки графов
+		/// </summary>
+		/// <param name="f"></param>
+		/// <param name="M"></param>
+		/// <param name="L"></param>
+		public static void OrgraphsPics_update(IFromGraphsDraw f, List<Matrix> M, List<string> L)
+		{
+			if (f != null && !((Form)f).IsDisposed)
+			{
+				f.Redraw(M.Select(x => x.matrix_base).ToList(), L);
+			}
+		}
+	}
+
 
 	public static class DataGridViewOperations
 	{
