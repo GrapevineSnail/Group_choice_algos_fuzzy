@@ -216,7 +216,7 @@ namespace Group_choice_algos_fuzzy
 					{
 						lbl?.Hide();
 						//lbl.Text = "";
-						lbl?.Dispose();
+						//Dispose ne delat, vredno
 					}
 					GetOutputControls.Clear();
 				}
@@ -280,7 +280,6 @@ namespace Group_choice_algos_fuzzy
 
 			//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
 			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_InputRelChanged;
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_InputRelsChanged;
 			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelChanged;
 			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelsChanged;
 			private static List<Matrix> _RList;
@@ -288,14 +287,11 @@ namespace Group_choice_algos_fuzzy
 			private static Matrix NewModelMatrix(Matrix new_matrix)
 			{
 				new_matrix = new_matrix.NormalizeAndCast2Fuzzy;
-				if (new_matrix.Cast2Fuzzy.IsHasCycle())
+				try
 				{
-					throw new MyException(EX_contains_cycle);
-				}
-				else
-				{
-					if (UI_Controls.connectedCheckBox_DoTransClosure.Checked)
-					{						
+					if (!new_matrix.Cast2Fuzzy.IsHasCycle() && 
+						UI_Controls.connectedCheckBox_DoTransClosure.Checked)
+					{
 						var comparsions_cnt = new List<int>();//количество сравнений
 						comparsions_cnt.Add(n - 1);
 						for (int i = n - 2; i > 0; i--)
@@ -311,31 +307,41 @@ namespace Group_choice_algos_fuzzy
 								new_matrix = new_matrix.Cast2Fuzzy.TransitiveClosure();
 							}
 						}
+
 					}
 				}
+				catch (MyException ex) { ex.Info(); }
 				return new_matrix;
 			}
-			public static void UpdateModelMatrix(int index, Matrix new_matrix)
+			private static void UpdateModelMatrix(int index, Matrix new_matrix)
 			{
 				if (GetModelMatrix(index) is null)
 					return;
 				_RList[index] = NewModelMatrix(new_matrix);
+
 				//UI_Controls.UpdateViewTable(index);
-				ExpertRelations_ModelRelChanged?.Invoke(null,
-					new ExpertRelationsEventArgs(index, GetModelMatrix(index), null));
+
+				//ExpertRelations_ModelRelChanged?.Invoke(null,
+				//	new ExpertRelationsEventArgs(index, GetModelMatrix(index), null));
 			}
-			public static void UpdateModelMatrices(List<Matrix> new_matrices)
+			private static void UpdateModelMatrices(List<Matrix> new_matrices)
 			{
-				_RList = new_matrices;
-				if (_RList is null)
-					return;
-				_RList = _RList.Select(x => NewModelMatrix(x)).ToList();
-				if (_RList.Any(x => x.Cast2Fuzzy.IsHasCycle()))
+				try
 				{
-					throw new MyException(EX_contains_cycle);
+					_RList = new_matrices;
+					if (_RList is null)
+						return;
+					_RList = _RList.Select(x => NewModelMatrix(x)).ToList();
+					if (_RList.Any(x => x.Cast2Fuzzy.IsHasCycle()))
+					{
+						throw new MyException(EX_contains_cycle);
+					}
 				}
-				ExpertRelations_ModelRelsChanged?.Invoke(null,
-					new ExpertRelationsEventArgs(-1, null, GetModelMatrices()));
+				catch (MyException ex) { ex.Info(); }
+
+				//UI_Controls.UpdateViewTables();
+				//ExpertRelations_ModelRelsChanged?.Invoke(null,
+				//	new ExpertRelationsEventArgs(-1, null, GetModelMatrices()));
 			}
 			public static Matrix GetModelMatrix(int index)
 			{
@@ -349,29 +355,27 @@ namespace Group_choice_algos_fuzzy
 					_RList = new List<Matrix>();
 				return new List<Matrix>(_RList);
 			}
-			public static void UpdateExpertDataGridView(object sender, ExpertRelationsEventArgs e)
-			{
-				UI_Controls.UpdateViewTable(e.expert_index);
-			}
-			public static void UpdateExpertDataGridViews(object sender, ExpertRelationsEventArgs e)
-			{
-				UI_Controls.UpdateViewTables();
-			}
 			public static void UpdateExpertMatrix(object sender, ExpertRelationsEventArgs e)
 			{
-				try
-				{
-					UpdateModelMatrix(e.expert_index, e.fill_values);
-				}
-				catch (MyException ex) { ex.Info(); }
+				//try
+				//{
+				UpdateModelMatrix(e.expert_index, e.fill_values);
+				UI_Controls.UpdateViewTable(e.expert_index);
+				UpdateExpertGraph(sender, e);
+				//}
+				//catch (MyException ex) { ex.Info(); }
 			}
-			public static void UpdateExpertMatrices(object sender, ExpertRelationsEventArgs e)
+			public static void UpdateExpertMatrices(List<Matrix> matrices)//object sender, ExpertRelationsEventArgs e)
 			{
-				try
-				{
-					UpdateModelMatrices(e.expert_matrices);
-				}
-				catch (MyException ex) { ex.Info(); }
+				//try
+				//{
+				//UpdateModelMatrices(e.expert_matrices);
+				UpdateModelMatrices(matrices);
+				UI_Controls.UpdateViewTables();
+				//UpdateExpertGraph(sender, e);
+				UpdateExpertGraph(null, null);
+				//}
+				//catch (MyException ex) { ex.Info(); }
 			}
 			/// <summary>
 			/// обновить рисунки графов - матриц экспертов

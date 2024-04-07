@@ -544,7 +544,7 @@ namespace Group_choice_algos_fuzzy
 				for (int j = 0; j < input_matrix.m; j++)
 				{
 					input_matrix[i, j] =
-						double.TryParse(dgv[i, j]?.Value?.ToString(), out var Mij) ?
+						double.TryParse(dgv[j, i]?.Value?.ToString(), out var Mij) ?
 						Mij : 0;
 				}
 			return input_matrix;
@@ -1883,28 +1883,36 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public static bool FindFile(string file_name, out string absolute_file_name)
 		{
-			string directory_with_file = Path.GetDirectoryName(file_name);
-			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
-			file_name = Path.GetFileName(file_name);
-			Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
-			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
-			string[] allFoundFiles;
-			if (!emptydirname)
-			{
-				allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
-					SearchOption.TopDirectoryOnly);
-			}
-			else
-			{
-				allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
-					SearchOption.AllDirectories);
-			}
-			if (allFoundFiles.Length > 0)
-			{
-				absolute_file_name = allFoundFiles.First();
-				return true;
-			}
 			absolute_file_name = "";
+			try
+			{
+				string directory_with_file = Path.GetDirectoryName(file_name);
+				bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+				file_name = Path.GetFileName(file_name);
+				Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
+				directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+				string[] allFoundFiles;
+				if (!emptydirname)
+				{
+					allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+						SearchOption.TopDirectoryOnly);
+				}
+				else
+				{
+					allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+						SearchOption.AllDirectories);
+				}
+				if (allFoundFiles.Length > 0)
+				{
+					absolute_file_name = allFoundFiles.First();
+					return true;
+				}
+			}
+			catch (DirectoryNotFoundException ex)
+			{
+				throw new MyException($"{ex.Message}");
+			}
+			catch { }
 			return false;
 		}
 
@@ -1941,32 +1949,40 @@ namespace Group_choice_algos_fuzzy
 		{
 			List<Matrix> matrices = new List<Matrix>();
 			FindFile(filename, out absolute_file_name);
-
-			string[] lines = File.ReadAllLines(absolute_file_name)
-				.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
-			filename = absolute_file_name;
-			char[] chars_for_split = new char[] { ' ', '	' };
-			int _n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
-			Matrix cur_matrix = new Matrix(_n, _n);
-			for (int l = 0; l < lines.Length; l++)
+			try
 			{
-				if (lines[l].Length != 0)
+				if (absolute_file_name == "")
+					throw new FileNotFoundException();
+				string[] lines = File.ReadAllLines(absolute_file_name)
+					.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
+				filename = absolute_file_name;
+				char[] chars_for_split = new char[] { ' ', '	' };
+				int _n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
+				Matrix cur_matrix = new Matrix(_n, _n);
+				for (int l = 0; l < lines.Length; l++)
 				{
-					double res;
-					double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
-						.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
-					if (numbers.Any(x => x == INF) || numbers.Length != _n)
-						throw new MyException(EX_bad_file);
-					for (int j = 0; j < numbers.Length; j++)
-						cur_matrix[l % _n, j] = numbers[j];
+					if (lines[l].Length != 0)
+					{
+						double res;
+						double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
+							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
+						if (numbers.Any(x => x == INF) || numbers.Length != _n)
+							throw new MyException(EX_bad_file);
+						for (int j = 0; j < numbers.Length; j++)
+							cur_matrix[l % _n, j] = numbers[j];
+					}
+					if (l % _n == _n - 1)
+						matrices.Add(new Matrix(cur_matrix));
 				}
-				if (l % _n == _n - 1)
-					matrices.Add(new Matrix(cur_matrix));
+				if (matrices.Count == 0)
+					throw new MyException(EX_bad_file);
+				//m = matrices.Count;
+				//n = _n;
 			}
-			if (matrices.Count == 0)
-				throw new MyException(EX_bad_file);
-			//m = matrices.Count;
-			//n = _n;
+			catch (FileNotFoundException ex)
+			{
+				throw new MyException($"{ex.Message}");
+			}
 			return matrices;
 		}
 	}
@@ -2100,7 +2116,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			dgv?.Rows.Clear();
 			dgv?.Columns.Clear();
-			dgv?.Dispose();
+			//Dispose не делать, вредно
 		}
 		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
 		{

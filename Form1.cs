@@ -27,11 +27,6 @@ namespace Group_choice_algos_fuzzy
 				cb_show_input_matrices, cb_do_transitive_closure,
 				numericUpDown_n, numericUpDown_m, flowLayoutPanel_input_tables);
 			ExpertRelations.ExpertRelations_InputRelChanged += ExpertRelations.UpdateExpertMatrix;
-			ExpertRelations.ExpertRelations_InputRelsChanged += ExpertRelations.UpdateExpertMatrices;
-			ExpertRelations.ExpertRelations_ModelRelChanged += ExpertRelations.UpdateExpertDataGridView;
-			ExpertRelations.ExpertRelations_ModelRelChanged += ExpertRelations.UpdateExpertGraph;
-			ExpertRelations.ExpertRelations_ModelRelsChanged += ExpertRelations.UpdateExpertDataGridViews;
-			ExpertRelations.ExpertRelations_ModelRelsChanged += ExpertRelations.UpdateExpertGraph;
 
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(
 				rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
@@ -61,17 +56,16 @@ namespace Group_choice_algos_fuzzy
 			}
 			set_controls_size();
 			interface_coloring(this);
-			ClearModel();
+			ClearModelDerivatives();
 		}
 		public static Form2 form2_result_matrices = null;
 		public static Form3 form3_input_expert_matrices = null;
 
-		void ClearModel()
+		void ClearModelDerivatives()
 		{
 			Methods.Clear(); 
 			Methods.UI_ClearMethods();
 			AggregatedMatrix.Clear();
-			ExpertRelations.UpdateModelMatrices(null);
 		}
 		/// <summary>
 		/// начальное расцвечивание формы
@@ -153,13 +147,13 @@ namespace Group_choice_algos_fuzzy
 				if(numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
 					ExpertRelations.UI_Controls.UpdateModel_n_m();
-					ClearModel();
+					ClearModelDerivatives();
 					var matrices = new List<Matrix>(m);
 					for (int k = 0; k < m; k++)
 					{
 						matrices.Add(new Matrix(n));
 					}
-					ExpertRelations.UpdateModelMatrices(matrices);
+					ExpertRelations.UpdateExpertMatrices(matrices);
 				}
 				ExpertRelations.UI_Controls.UI_Show();
 				ExpertRelations.UI_Controls.UI_Activate();
@@ -182,8 +176,8 @@ namespace Group_choice_algos_fuzzy
 					textBox_file.Text = absolute_filename;
 					m = matrices.Count;
 					n = matrices.First().n;
-					ClearModel();
-					ExpertRelations.UpdateModelMatrices(matrices);
+					ClearModelDerivatives();
+					ExpertRelations.UpdateExpertMatrices(matrices);
 					ExpertRelations.UI_Controls.UI_Show();
 					ExpertRelations.UI_Controls.UI_Activate();
 				}
@@ -210,7 +204,8 @@ namespace Group_choice_algos_fuzzy
 				{
 					var matrices = new List<Matrix>();
 					matrices = ExpertRelations.GetModelMatrices().Select(x => x.Cast2Fuzzy.TransClosured.ToMatrix).ToList();
-					ExpertRelations.UpdateModelMatrices(matrices);
+					ExpertRelations.UpdateExpertMatrices(matrices);
+
 				}
 				AggregatedMatrix.UI_Controls.UI_Clear();
 				Methods.UI_ClearMethods();
