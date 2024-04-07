@@ -619,7 +619,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				for (int j = 0; j < n; j++)
 				{
-					if (!count_solitary_loop && i==j)
+					if (!count_solitary_loop && i == j)
 					{ }
 					else
 					{
@@ -2089,6 +2089,80 @@ namespace Group_choice_algos_fuzzy
 		{
 			dgv[j, i].ValueType = typeof(double);
 			dgv[j, i].Value = value;
+		}
+		public static void ClearDGV(DataGridView dgv)
+		{
+			dgv?.Rows.Clear();
+			dgv?.Columns.Clear();
+			dgv?.Dispose();
+		}
+		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
+		{
+			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
+			dgv.DefaultCellStyle.ForeColor = font_color;
+			dgv.DefaultCellStyle.BackColor = input_bg_color;
+			dgv.DefaultCellStyle.SelectionForeColor = font_color;
+			dgv.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.Empty;
+		}
+		/// <summary>
+		/// настрйки для вывода DataGridView
+		/// </summary>
+		/// <param name="dgv"></param>
+		public static void SetDataGridViewDefaults(DataGridView dgv)
+		{
+			dgv.AllowUserToAddRows = false;
+			dgv.AllowUserToDeleteRows = false;
+			dgv.AllowUserToResizeRows = false;
+			dgv.AllowUserToResizeColumns = false;
+			dgv.AllowUserToOrderColumns = false;
+			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+			dgv.ShowEditingIcon = false;
+			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
+			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+			SetDataGridViewDefaults_FontAndColors(dgv);
+			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
+		}
+		public static void ColorCell(DataGridView dgv, int row, int col, System.Drawing.Color color)
+		{
+			dgv[col, row].Style.BackColor = color;
+		}
+		public static void ColorSymmetricCell(object sender, DataGridViewCellEventArgs e)
+		{
+			var dd = sender as DataGridView;
+			int i = e.RowIndex;
+			int j = e.ColumnIndex;
+			if (i == j)
+				ColorCell(dd, i, j, input_bg_color_disabled);
+			else
+			{
+				double Mij, Mji;
+				var p1 = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+				var p2 = double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+				ColorCell(dd, i, j, input_bg_color);
+				ColorCell(dd, j, i, input_bg_color);
+				if (p1 && p2)
+				{
+					if (Mij == 0 && Mji != 0)
+					{
+						ColorCell(dd, i, j, input_bg_color_disabled);
+					}
+					else if (Mij != 0 && Mji == 0)
+					{
+						ColorCell(dd, j, i, input_bg_color_disabled);
+					}
+				}
+			}
+		}
+		public static void ColorSymmetricCells(DataGridView dgv)
+		{
+			for (int i = 0; i < dgv.Rows.Count; i++)
+				for (int j = 0; j < dgv.Columns.Count; j++)
+					ColorSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
 		}
 	}
 }

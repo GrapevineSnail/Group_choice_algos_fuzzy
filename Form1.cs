@@ -154,7 +154,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if(numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
-					ExpertRelations.UI_Controls.UpdateModelNM();
+					ExpertRelations.UI_Controls.UpdateModel_n_m();
 					ClearModel();
 					var matrices = new List<Matrix>(m);
 					for (int k = 0; k < m; k++)

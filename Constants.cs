@@ -156,37 +156,6 @@ namespace Group_choice_algos_fuzzy
 				ind2letter[i] = n > 26 ? ind2sym[i] : string.Format("{0}{1:00}", letters[i], i);
 			}
 		}
-		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
-		{
-			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
-			dgv.DefaultCellStyle.ForeColor = font_color;
-			dgv.DefaultCellStyle.BackColor = input_bg_color;
-			dgv.DefaultCellStyle.SelectionForeColor = font_color;
-			dgv.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.Empty;
-		}
-		/// <summary>
-		/// настрйки для вывода DataGridView
-		/// </summary>
-		/// <param name="dgv"></param>
-		public static void SetDataGridViewDefaults(DataGridView dgv)
-		{
-			dgv.AllowUserToAddRows = false;
-			dgv.AllowUserToDeleteRows = false;
-			dgv.AllowUserToResizeRows = false;
-			dgv.AllowUserToResizeColumns = false;
-			dgv.AllowUserToOrderColumns = false;
-			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
-			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ShowEditingIcon = false;
-			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
-			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-			SetDataGridViewDefaults_FontAndColors(dgv);
-			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
-		}
 		#endregion FUNCTIONS
 
 	}
