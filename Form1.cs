@@ -10,7 +10,7 @@ using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.FileOperations;
 using static Group_choice_algos_fuzzy.Model;
-using static Group_choice_algos_fuzzy.GraphDrawingFuncs;
+using static Group_choice_algos_fuzzy.GraphDrawingOperations;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -68,12 +68,10 @@ namespace Group_choice_algos_fuzzy
 
 		void ClearModel()
 		{
-			Methods.UI_Clear();
 			Methods.Clear(); 
-			AggregatedMatrix.UI_Controls.UI_Clear();
+			Methods.UI_ClearMethods();
 			AggregatedMatrix.Clear();
-			ExpertRelations.UI_Controls.UI_Clear();
-			ExpertRelations.Clear();    
+			ExpertRelations.UpdateModelMatrices(null);
 		}
 		/// <summary>
 		/// начальное расцвечивание формы
@@ -215,11 +213,11 @@ namespace Group_choice_algos_fuzzy
 					ExpertRelations.UpdateModelMatrices(matrices);
 				}
 				AggregatedMatrix.UI_Controls.UI_Clear();
-				Methods.UI_Clear();
+				Methods.UI_ClearMethods();
 				ExpertRelations.UI_Controls.UI_Deactivate();
 				Methods.ExecuteAlgorythms();
 				AggregatedMatrix.UI_Controls.UI_Show();
-				Methods.UI_Show();
+				Methods.UI_ShowMethods();
 				form1.set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }

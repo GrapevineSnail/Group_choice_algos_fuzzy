@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.DataGridViewOperations;
-using static Group_choice_algos_fuzzy.GraphDrawingFuncs;
+using static Group_choice_algos_fuzzy.GraphDrawingOperations;
 using System.IO;
 using System.Drawing;
 
@@ -35,10 +35,7 @@ namespace Group_choice_algos_fuzzy
 		}
 		public static int m
 		{
-			set
-			{
-				_m = value;
-			}
+			set { _m = value; }
 			get { return _m; }
 		}
 		#endregion PROPERTIES
@@ -77,15 +74,6 @@ namespace Group_choice_algos_fuzzy
 					get
 					{
 						return GetOutputControls.OfType<DataGridView>().ToList();
-						//	List<DataGridView> ans = new List<DataGridView>();
-						//	foreach (Control c in connectedFlowLayoutPanel?.Controls)
-						//	{
-						//		if (c as DataGridView != null)
-						//		{
-						//			ans.Add(c as DataGridView);
-						//		}
-						//	}
-						//	return ans;
 					}
 				}
 				public List<Label> GetOutputLabels
@@ -131,6 +119,29 @@ namespace Group_choice_algos_fuzzy
 						throw new MyException(EX_n_m_too_big);
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
+				}
+				/// <summary>
+				/// что должно происходить при завершении редактирования ячейки
+				/// </summary>
+				public void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
+				{
+					try
+					{
+						var dd = sender as DataGridView;
+						int exp_index = this.GetOutputDataGridViews.IndexOf(dd);
+						int i = e.RowIndex;
+						int j = e.ColumnIndex;
+						double Mij, Mji;
+						var p = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+						double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+						if (!p || Mij > 1 || Mij < 0 || i == j)
+						{
+							dd[j, i].Value = 0.0;
+						}
+						ExpertRelations_InputRelChanged?.Invoke(sender,
+							new ExpertRelationsEventArgs(exp_index, Matrix.GetFromDataGridView(dd)));
+					}
+					catch (MyException ex) { ex.Info(); }
 				}
 				public DataGridView NewViewTable(Matrix new_martix)
 				{
@@ -194,7 +205,6 @@ namespace Group_choice_algos_fuzzy
 				}
 				override public void UI_Clear()
 				{
-					ConnectedLabel.Dispose();
 					ConnectedLabel = null;
 					foreach (DataGridView dgv in GetOutputDataGridViews)
 					{
@@ -285,16 +295,16 @@ namespace Group_choice_algos_fuzzy
 				else
 				{
 					if (UI_Controls.connectedCheckBox_DoTransClosure.Checked)
-					{
-						var L = new List<int>();
-						L.Add(n - 1);
+					{						
+						var comparsions_cnt = new List<int>();//количество сравнений
+						comparsions_cnt.Add(n - 1);
 						for (int i = n - 2; i > 0; i--)
 						{
-							L.Add(L.Last() + i);
+							comparsions_cnt.Add(comparsions_cnt.Last() + i);
 						}
 
 						if (new_matrix.ComparedAlternatives().All(x => x == true) ||
-							L.Contains(new_matrix.EdgesCount(false)))//||comparsion_trials == 0
+							comparsions_cnt.Contains(new_matrix.EdgesCount(false)))
 						{
 							if (!new_matrix.Cast2Fuzzy.IsTransitive())
 							{
@@ -310,6 +320,7 @@ namespace Group_choice_algos_fuzzy
 				if (GetModelMatrix(index) is null)
 					return;
 				_RList[index] = NewModelMatrix(new_matrix);
+				//UI_Controls.UpdateViewTable(index);
 				ExpertRelations_ModelRelChanged?.Invoke(null,
 					new ExpertRelationsEventArgs(index, GetModelMatrix(index), null));
 			}
@@ -337,39 +348,6 @@ namespace Group_choice_algos_fuzzy
 				if (_RList is null)
 					_RList = new List<Matrix>();
 				return new List<Matrix>(_RList);
-			}
-			public static void Clear()
-			{
-				//RListMatrix = null;
-				UpdateModelMatrices(null);
-			}
-			static void CheckCellWhenValueChanged(object sender, DataGridViewCellEventArgs e)
-			{//что должно происходить при завершении редактирования ячейки
-				try
-				{
-					var dd = sender as DataGridView;
-					///////
-					//int exp_index = flowLayoutPanel_input_tables.Controls.GetChildIndex(dd);
-					int exp_index = UI_Controls.GetOutputDataGridViews.IndexOf(dd);
-					///////
-					///									
-					int i = e.RowIndex;
-					int j = e.ColumnIndex;
-					double Mij, Mji;
-					var p = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
-					double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
-					if (!p || Mij > 1 || Mij < 0 || i == j)
-					{
-						dd[j, i].Value = 0.0;
-					}
-					else
-					{
-						//comparsion_trials_upd();
-					}
-					ExpertRelations_InputRelChanged?.Invoke(
-						sender, new ExpertRelationsEventArgs(exp_index, Matrix.GetFromDataGridView(dd)));
-				}
-				catch (MyException ex) { ex.Info(); }
 			}
 			public static void UpdateExpertDataGridView(object sender, ExpertRelationsEventArgs e)
 			{
@@ -410,7 +388,6 @@ namespace Group_choice_algos_fuzzy
 				}
 				OrgraphsPics_update(Form1.form3_input_expert_matrices, M, L);
 			}
-
 		}
 
 		/// <summary>
@@ -469,8 +446,6 @@ namespace Group_choice_algos_fuzzy
 				}
 				override public void UI_Clear()
 				{
-					ConnectedLabel.Text = "";
-					ConnectedLabel.Dispose();
 					ConnectedLabel = null;
 				}
 			}
@@ -529,7 +504,7 @@ namespace Group_choice_algos_fuzzy
 			public static Method Schulze_method = new Method(MET_SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 			public static Method Smerchinskaya_Yashina_method = new Method(MET_SMERCHINSKAYA_YASHINA_METHOD);
 			public static List<string> MutualRankings;//ранжирования, которые принадлежат всем выбранным к выполнению (IsExecute) методам
-			public static void UI_Show()
+			public static void UI_ShowMethods()
 			{
 				FileOperations.WriteToFile("", OUT_FILE, false);
 				foreach (Method M in GetMethods())
@@ -538,7 +513,7 @@ namespace Group_choice_algos_fuzzy
 						M.UI_Controls.UI_Show();
 				}
 			}
-			public static void UI_Clear()
+			public static void UI_ClearMethods()
 			{
 				foreach (Method M in GetMethods())
 				{

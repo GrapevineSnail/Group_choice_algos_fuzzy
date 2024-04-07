@@ -556,7 +556,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			for (int i = 0; i < M.n; i++)
 				for (int j = 0; j < M.m; j++)
-					dgv[j, i].Value = M[i, j];
+					SetDoubleCell(dgv, i, j, M[i, j]);
 		}
 		/// <summary>
 		/// делает матрицу с элементами, нормированными на 1 (принадлежащими от 0 до 1 включительно)
@@ -617,7 +617,7 @@ namespace Group_choice_algos_fuzzy
 			int ans = 0;
 			for (int i = 0; i < n; i++)
 			{
-				for (int j = 0; j < n; j++)
+				for (int j = 0; j < m; j++)
 				{
 					if (!count_solitary_loop && i == j)
 					{ }
@@ -1073,12 +1073,13 @@ namespace Group_choice_algos_fuzzy
 					if (!(connectedLabel is null))
 						connectedLabel.Text = "";
 					connectedLabel?.Hide();
+					//connectedLabel?.Dispose();//этого делать не надо!
 				}
 				else
 				{
+					connectedLabel = value;
 					connectedLabel?.Show();
 				}
-				connectedLabel = value;
 			}
 		}
 		abstract public void UI_Show();
@@ -1481,7 +1482,7 @@ namespace Group_choice_algos_fuzzy
 						}
 						for (int i = 0; i < parent_method.Levels.Count; i++)
 						{
-							SetCell(parent_method.UI_Controls.ConnectedTableFrame,
+							SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
 								i, 0, parent_method.Levels2Strings[i], Color.Empty);
 						}
 					}
@@ -1511,7 +1512,7 @@ namespace Group_choice_algos_fuzzy
 							if (highlight_best)
 								cell_colour = output_characteristics_max_color;
 						}
-						SetCell(parent_method.UI_Controls.ConnectedTableFrame,
+						SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
 							i, j, cell_text, cell_colour);
 					}
 					for (int j = 0; j < parent_method.Rankings.Count; j++)
@@ -1539,7 +1540,7 @@ namespace Group_choice_algos_fuzzy
 						}
 						for (int i = 0; i < rank.Count; i++)
 						{
-							SetCell(parent_method.UI_Controls.ConnectedTableFrame,
+							SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
 								i, j, ind2letter[rank.Rank2List[i]], cell_colour);
 						}
 						var N = rank.Count;
@@ -1582,12 +1583,12 @@ namespace Group_choice_algos_fuzzy
 				SetRankingsToDataGridView();
 				ConnectedTableFrame?.Show();
 				ConnectedTableFrame?.Parent.Show();
-				parent_method.UI_Controls.ConnectedLabel.Text = parent_method.Info();
-				ConnectedTableFrame?.Parent.Controls.Add(parent_method.UI_Controls.ConnectedLabel);
+				ConnectedLabel.Show();
+				ConnectedLabel.Text = parent_method.Info();
+				ConnectedTableFrame?.Parent.Controls.Add(ConnectedLabel);
 			}
 			override public void UI_Clear()
 			{
-				ConnectedLabel?.Dispose();
 				ConnectedLabel = null;
 				ConnectedTableFrame?.Rows.Clear();
 				ConnectedTableFrame?.Columns.Clear();
@@ -1970,7 +1971,10 @@ namespace Group_choice_algos_fuzzy
 		}
 	}
 
-	public static class GraphDrawingFuncs
+	/// <summary>
+	/// операции с рисованием графов на форме
+	/// </summary>
+	public static class GraphDrawingOperations
 	{
 		/// <summary>
 		/// отрисовать граф по матрице в PictureBox
@@ -2056,7 +2060,9 @@ namespace Group_choice_algos_fuzzy
 		}
 	}
 
-
+	/// <summary>
+	/// операции с DataGridView
+	/// </summary>
 	public static class DataGridViewOperations
 	{
 		public static int SetColumn(DataGridView dgv, string header)
@@ -2079,7 +2085,7 @@ namespace Group_choice_algos_fuzzy
 			dgv.Rows.Add(row);
 			return i;
 		}
-		public static void SetCell(DataGridView dgv, int i, int j, string value, Color clr)
+		public static void SetReadonlyCell(DataGridView dgv, int i, int j, string value, Color clr)
 		{
 			dgv[j, i].ReadOnly = true;
 			dgv[j, i].Style.BackColor = clr;
