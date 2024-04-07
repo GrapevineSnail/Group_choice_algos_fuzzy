@@ -105,7 +105,11 @@ namespace Group_choice_algos_fuzzy
 					ConnectedLabel = null;
 					foreach (DataGridView dgv in ConnectedTables)
 					{
-						ClearDGV(dgv);
+						dgv?.Rows.Clear();
+						dgv?.Columns.Clear();
+						dgv?.Hide();
+						dgv?.Parent?.Hide();
+						dgv?.Dispose();
 					}
 					connectedFlowLayoutPanel.Controls.Clear();
 				}
@@ -168,10 +172,12 @@ namespace Group_choice_algos_fuzzy
 
 			#region FIELDS
 			//public delegate void ExpertMatricesInUI_EventHandler(object sender, ExpertMatricesEventArgs e);
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_DataGridViewChanged;
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelationChanged;
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelationsChanged;
-			private static List<Matrix> _RList;
+			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_InputViewChanged;
+			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_InputViewsChanged;
+			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelChanged;
+			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_ModelRelsChanged;
+			//private static List<Matrix> _RList;
+			public static List<Matrix> RListMatrix;
 			public static ConnectedControls UI_Controls;
 			//
 			/// 
@@ -181,12 +187,19 @@ namespace Group_choice_algos_fuzzy
 			/// 
 			//
 			#endregion FIELDS
+			/*
 			public static List<Matrix> RListMatrix
 			{
 				get
 				{
-					if (_RList is null)
-						_RList = new List<Matrix>();
+					if (_RList is null || _RList.Count == 0)
+					{
+						_RList = new List<Matrix>(m);
+						for(int ex = 0; ex<m; ex++)
+						{
+							_RList.Add(new Matrix(n));
+						}
+					}
 					return _RList;
 				}
 				set
@@ -208,10 +221,11 @@ namespace Group_choice_algos_fuzzy
 					{
 						throw new MyException(EX_contains_cycle);
 					}
-					ExpertRelations_ModelRelationsChanged?.Invoke(RListMatrix,
+					ExpertRelations_ModelRelationsChanged?.Invoke(null,
 						new ExpertRelationsEventArgs(-1, null, _RList));
 				}
 			}
+			*/
 			static FuzzyRelation PerformTransClosure(FuzzyRelation matrix)
 			{
 				if (UI_Controls.connectedCheckBox_DoTransClosure.Checked &&
@@ -227,14 +241,6 @@ namespace Group_choice_algos_fuzzy
 			public static void Clear()
 			{
 				RListMatrix = null;
-			}
-			public static void ClearDGV(DataGridView dgv)
-			{
-				dgv?.Rows.Clear();
-				dgv?.Columns.Clear();
-				dgv?.Hide();
-				dgv?.Parent?.Hide();
-				dgv?.Dispose();
 			}
 			private static void ColorCell(DataGridView dgv, int row, int col, System.Drawing.Color color)
 			{
@@ -289,7 +295,7 @@ namespace Group_choice_algos_fuzzy
 						comparsion_trials++;
 					}
 					new_matrix = Matrix.GetFromDataGridView(dd).NormalizeAndCast2Fuzzy;
-					ExpertRelations_DataGridViewChanged?.Invoke(sender, new ExpertRelationsEventArgs(exp_index, new_matrix));
+					ExpertRelations_InputViewChanged?.Invoke(sender, new ExpertRelationsEventArgs(exp_index, new_matrix));
 
 					//транзитивное замыкание не должно содержать циклов
 					if (new_matrix.IsHasCycle())
@@ -334,7 +340,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				try
 				{
-					for (int expert = 0; expert < e.expert_matrices.Count; expert++)
+					for (int expert = 0; expert < e.expert_matrices?.Count; expert++)
 					{
 						UpdateExpertDataGridView(sender, new ExpertRelationsEventArgs(
 							expert, e.expert_matrices[expert]));						
@@ -352,6 +358,18 @@ namespace Group_choice_algos_fuzzy
 				}
 				RListMatrix[e.expert_index] = new_M;
 			}
+			public static void UpdateExpertMatrices(object sender, ExpertRelationsEventArgs e)
+			{
+				try
+				{
+					for (int expert = 0; expert < e.expert_matrices?.Count; expert++)
+					{
+						UpdateExpertMatrix(sender, new ExpertRelationsEventArgs(
+							expert, e.expert_matrices[expert]));
+					}
+				}
+				catch (MyException ex) { ex.Info(); }
+			}
 			/// <summary>
 			/// обновить рисунки графов - матриц экспертов
 			/// </summary>
@@ -366,6 +384,17 @@ namespace Group_choice_algos_fuzzy
 					L.Add($"Expert{i}:");
 				}
 				OrgraphsPics_update(Form1.form3_input_expert_matrices, M, L);
+			}
+
+			public static void ModelChanged()
+			{
+				ExpertRelations_ModelRelsChanged?.Invoke(
+					null, new ExpertRelationsEventArgs(-1, null,RListMatrix));
+			}
+			public static void ViewChanged(List<Matrix> input)
+			{
+				ExpertRelations_InputViewChanged?.Invoke(
+					null, new ExpertRelationsEventArgs(-1, null, input));
 			}
 		}
 

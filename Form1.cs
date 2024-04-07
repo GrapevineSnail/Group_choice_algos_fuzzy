@@ -29,11 +29,12 @@ namespace Group_choice_algos_fuzzy
 			ExpertRelations.UI_Controls = new ExpertRelations.ConnectedControls(
 				cb_show_input_matrices, cb_do_transitive_closure,
 				numericUpDown_n, numericUpDown_m, flowLayoutPanel_input_tables);
-			ExpertRelations.ExpertRelations_DataGridViewChanged += ExpertRelations.UpdateExpertMatrix;
-			ExpertRelations.ExpertRelations_ModelRelationChanged += ExpertRelations.UpdateExpertDataGridView;
-			ExpertRelations.ExpertRelations_ModelRelationChanged += ExpertRelations.UpdateExpertGraph;
-			ExpertRelations.ExpertRelations_ModelRelationsChanged += ExpertRelations.UpdateExpertDataGridViews;
-			ExpertRelations.ExpertRelations_ModelRelationsChanged += ExpertRelations.UpdateExpertGraph;
+			ExpertRelations.ExpertRelations_InputViewChanged += ExpertRelations.UpdateExpertMatrix;
+			ExpertRelations.ExpertRelations_InputViewsChanged += ExpertRelations.UpdateExpertMatrices;
+			ExpertRelations.ExpertRelations_ModelRelChanged += ExpertRelations.UpdateExpertDataGridView;
+			ExpertRelations.ExpertRelations_ModelRelChanged += ExpertRelations.UpdateExpertGraph;
+			ExpertRelations.ExpertRelations_ModelRelsChanged += ExpertRelations.UpdateExpertDataGridViews;
+			ExpertRelations.ExpertRelations_ModelRelsChanged += ExpertRelations.UpdateExpertGraph;
 
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
 			AggregatedMatrix.R_Changed += () => {
@@ -153,12 +154,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (numericUpDown_n.Value == n && numericUpDown_m.Value == m)
-				{
-					ExpertRelations.UI_Controls.UI_Activate();
-					return;
-				}
-				else
+				if(numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
 					if (cb_All_rankings.Checked && (
 						(int)numericUpDown_n.Value > max_count_of_alternatives ||
@@ -168,14 +164,15 @@ namespace Group_choice_algos_fuzzy
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
 					RefreshModel();
-					ExpertRelations.RListMatrix = new List<Matrix>(m);
-					//for (int k = 0; k < m; k++)
-					//{
-					//	ExpertRelations.RListMatrix.Add(new Matrix(n));
-					//}
-					ExpertRelations.UI_Controls.UI_Show();
-					ExpertRelations.UI_Controls.UI_Activate();
+					ExpertRelations.RListMatrix = new List<Matrix>();//new List<Matrix>(m);
+					for (int k = 0; k < m; k++)
+					{
+						ExpertRelations.RListMatrix.Add(new Matrix(n));
+					}
 				}
+				ExpertRelations.ModelChanged();
+				ExpertRelations.UI_Controls.UI_Show();
+				ExpertRelations.UI_Controls.UI_Activate();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
@@ -221,7 +218,8 @@ namespace Group_choice_algos_fuzzy
 					n = nn;
 
 					RefreshModel();
-					ExpertRelations.RListMatrix = matrices;
+					ExpertRelations.ViewChanged(matrices);
+					//ExpertRelations.RListMatrix = matrices.Select(x=>x.NormalizeElems(out var _)).ToList();
 					ExpertRelations.UI_Controls.UI_Show();
 					ExpertRelations.UI_Controls.UI_Activate();
 				}
