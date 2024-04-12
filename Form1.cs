@@ -308,6 +308,5 @@ namespace Group_choice_algos_fuzzy
 			flowLayoutPanel_input_tables.Focus();
 		}
 
-
 	}
 }
