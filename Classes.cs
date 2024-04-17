@@ -1244,6 +1244,27 @@ namespace Group_choice_algos_fuzzy
 				return AM;
 			}
 		}
+		/// <summary>
+		/// создаёт не транзитивную матрицу смежности из профиля эксперта
+		/// </summary>
+		public Matrix Rank2NontransitiveMatrix
+		{
+			get
+			{
+				var node_list = Rank2Array;
+				var l = Rank2Array.Length;
+				if (l != node_list.Distinct().Count() || node_list.Max() >= n)
+					throw new MyException(EX_bad_expert_profile);
+				Matrix AM = Matrix.Zeros(n, n);//матрица смежности инициализирована нулями
+				for (int i = 0; i < l - 1; i++)
+				{
+					var candidate1 = node_list[i];
+					var candidate2 = node_list[i + 1];
+					AM[candidate1, candidate2] = 1;//левый лучше
+				}
+				return AM;
+			}
+		}
 		public string Rank2String
 		{
 			get
@@ -1388,10 +1409,6 @@ namespace Group_choice_algos_fuzzy
 				return false;//если это не ранжирование, а разбиение на уровни
 			else
 				return true;
-		}
-		public static Ranking List2Rank(List<int> path)
-		{
-			return new Ranking(path);
 		}
 		#endregion FUNCTIONS
 	}
