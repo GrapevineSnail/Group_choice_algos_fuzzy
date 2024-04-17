@@ -118,6 +118,7 @@ namespace Group_choice_algos_fuzzy
 				if (dgv != null)
 				{
 					dgv.AutoResizeColumnHeadersHeight();
+					dgv.AutoResizeRows();
 					GroupBox frame = (GroupBox)dgv?.Parent;
 					if (frame != null)
 					{

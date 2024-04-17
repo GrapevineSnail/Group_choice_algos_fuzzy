@@ -137,6 +137,10 @@ namespace Group_choice_algos_fuzzy
 		{
 			return Math.Round(A - B, DIGITS_PRECISION) > 0;//A > B +- epsilon
 		}
+		public static bool DoubleEQUAL(double A, double B)
+		{
+			return Math.Round(A - B, DIGITS_PRECISION) == 0;//A == B +- epsilon
+		}
 		/// <summary>
 		/// задание символов, обозначающих альтернативы
 		/// </summary>

@@ -1508,7 +1508,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					//задать значение характеристики ранжирования и раскрасить
 					void display_characteristic(int i, int j, double min, double max,
-						bool highlight_best, Characteristic Characteristic)
+						bool highlight_this_best, Characteristic Characteristic)
 					{
 						string cell_text = "";
 						Color cell_colour = output_characteristics_bg_color;
@@ -1517,16 +1517,16 @@ namespace Group_choice_algos_fuzzy
 							cell_text += Characteristic.Value.ToString();
 							if (min < max)
 							{
-								if (Characteristic.Value == min)
+								if (DoubleEQUAL(Characteristic.Value, min))
 									cell_colour = output_characteristics_min_color;
-								else if (Characteristic.Value == max)
+								else if (DoubleEQUAL(Characteristic.Value, max))
 									cell_colour = output_characteristics_max_color;
 							}
 						}
 						if (Characteristic.IsInitializedValuesList())
 						{
 							cell_text += string.Join(CR_LF, Characteristic.ValuesList);
-							if (highlight_best)
+							if (highlight_this_best)
 								cell_colour = output_characteristics_max_color;
 						}
 						SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
@@ -1695,10 +1695,10 @@ namespace Group_choice_algos_fuzzy
 			{
 				bool ParetoMORETHAN(List<double> R1, List<double> R2)
 				{
-					bool one_morethan = false;
-					bool one_lessthan = false;
 					if (R1.Count != R2.Count)
 						throw new MyException(EX_bad_dimensions);
+					bool one_morethan = false;
+					bool one_lessthan = false;
 					for (int i = 0; i < R1.Count; i++)
 					{
 						if (DoubleMORETHAN(R1[i], R2[i]))//R1[i] > R2[i]
@@ -1711,26 +1711,22 @@ namespace Group_choice_algos_fuzzy
 					return false;
 				}
 				var r = R.Count;
-				var ans = new bool[r];
-				var Pareto_indices = Enumerable.Range(0, r).ToHashSet();
-
+				var isInPareto = new bool[r];
 				for (int i = 0; i < r; i++)
 				{
-					//foreach (int j in Pareto_indices)
+					isInPareto[i] = true;
 					for (int j = 0; j < r; j++)
 					{
 						var Vj = R[j].ValuesList;
 						var Vi = R[i].ValuesList;
 						if (i != j && ParetoMORETHAN(Vj, Vi))
 						{
-							Pareto_indices.Remove(i);
+							isInPareto[i] = false;
 							break;
 						}
 					}
 				}
-				foreach (int i in Pareto_indices)
-					ans[i] = true;
-				return ans;
+				return isInPareto;
 			}
 		}
 		#endregion SUBCLASSES
@@ -2106,6 +2102,7 @@ namespace Group_choice_algos_fuzzy
 			column.SortMode = DataGridViewColumnSortMode.NotSortable;
 			column.HeaderCell.Style.BackColor = window_bg_color;
 			column.HeaderText = header;
+			column.MinimumWidth = 15;
 			column.FillWeight = 1;
 			dgv.Columns.Add(column);
 			return j;
@@ -2115,6 +2112,7 @@ namespace Group_choice_algos_fuzzy
 			int i = dgv.Rows.Count;
 			DataGridViewRow row = new DataGridViewRow();
 			row.HeaderCell.Value = header;
+			row.MinimumHeight = 15;
 			dgv.Rows.Add(row);
 			return i;
 		}
@@ -2151,16 +2149,16 @@ namespace Group_choice_algos_fuzzy
 		{
 			dgv.AllowUserToAddRows = false;
 			dgv.AllowUserToDeleteRows = false;
-			dgv.AllowUserToResizeRows = false;
-			dgv.AllowUserToResizeColumns = false;
+			dgv.AllowUserToResizeRows = true;
+			dgv.AllowUserToResizeColumns = true;
 			dgv.AllowUserToOrderColumns = false;
 			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
 			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
 			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
 			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ShowEditingIcon = false;
+			dgv.ShowEditingIcon = true;
 			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
 			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
 			SetDataGridViewDefaults_FontAndColors(dgv);
