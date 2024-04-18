@@ -139,15 +139,7 @@ namespace Group_choice_algos_fuzzy
 
 		#endregion FEILDS		
 
-		#region FUNCTIONS
-		public static bool DoubleMORETHAN(double A, double B)
-		{
-			return Math.Round(A - B, DIGITS_PRECISION) > 0;//A > B +- epsilon
-		}
-		public static bool DoubleEQUAL(double A, double B)
-		{
-			return Math.Round(A - B, DIGITS_PRECISION) == 0;//A == B +- epsilon
-		}
+		#region FUNCTIONS		
 		/// <summary>
 		/// задание символов, обозначающих альтернативы
 		/// </summary>

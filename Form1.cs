@@ -8,9 +8,9 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
-using static Group_choice_algos_fuzzy.FileOperations;
+using static Group_choice_algos_fuzzy.OPS_File;
 using static Group_choice_algos_fuzzy.Model;
-using static Group_choice_algos_fuzzy.GraphDrawingOperations;
+using static Group_choice_algos_fuzzy.OPS_GraphDrawing;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -282,7 +282,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			//входные матрицы экспертов
 			M = flowLayoutPanel_input_tables.Controls.OfType<DataGridView>()
-					   .Select(x => Matrix.GetFromDataGridView(x)).ToList();
+					   .Select(x => OPS_DataGridView.GetFromDataGridView(x)).ToList();
 			L = new List<string>();
 			for (int i = 0; i < M.Count; i++)
 			{

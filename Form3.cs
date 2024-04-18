@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static Group_choice_algos_fuzzy.GraphDrawingOperations;
+using static Group_choice_algos_fuzzy.OPS_GraphDrawing;
 
 namespace Group_choice_algos_fuzzy
 {

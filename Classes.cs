@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
-using static Group_choice_algos_fuzzy.DataGridViewOperations;
+using static Group_choice_algos_fuzzy.OPS_DataGridView;
 using static Group_choice_algos_fuzzy.Model;
 using System.Drawing;
 using System.IO;
@@ -21,518 +21,298 @@ using System.ComponentModel;
 namespace Group_choice_algos_fuzzy
 {
 	/// <summary>
-	/// матрицы
+	/// операции с double - с округлением до нужной точности
 	/// </summary>
-	public class Matrix
+	public static class OPS_Double
+	{// если выдаёт 0.099999999999999978 вместо 0.1
+		/// <summary>
+		/// A > B +- epsilon
+		/// </summary>
+		/// <param name="A"></param>
+		/// <param name="B"></param>
+		/// <returns></returns>
+		public static bool MORETHAN(double A, double B)
+		{
+			return Math.Round(A - B, DIGITS_PRECISION) > 0;
+		}
+		/// <summary>
+		/// A == B +- epsilon
+		/// </summary>
+		/// <param name="A"></param>
+		/// <param name="B"></param>
+		/// <returns></returns>
+		public static bool EQUALS(double A, double B)
+		{
+			return Math.Round(A - B, DIGITS_PRECISION) == 0;
+		}
+		public static bool LESSTHAN(double A, double B)
+		{
+			return MORETHAN(B,A);
+		}
+		public static double Plus(double A, double B)
+		{
+			return Math.Round(A + B, DIGITS_PRECISION);
+		}
+		public static double Minus(double A, double B)
+		{
+			return Math.Round(A - B, DIGITS_PRECISION);
+		}
+		public static double Mult(double A, double B)
+		{
+			return Math.Round(A * B, DIGITS_PRECISION);
+		}
+		public static double Trunc(double A)
+		{
+			return Math.Round(A, DIGITS_PRECISION);
+		}
+	}
+	/// <summary>
+	/// операции с файлами
+	/// </summary>
+	public static class OPS_File
 	{
-		#region CONSTRUCTORS
-		public Matrix(int n) { matrix_base = new double[n, n]; }
-		public Matrix(int n, int m) { matrix_base = new double[n, m]; }
-		public Matrix(double[,] M) { matrix_base = (double[,])M.Clone(); }
-		public Matrix(int[,] M)
-		{
-			matrix_base = new double[M.GetLength(0), M.GetLength(1)];
-			for (int i = 0; i < this.n; i++)
-				for (int j = 0; j < this.m; j++)
-					matrix_base[i, j] = M[i, j];
-		}
-		public Matrix(Matrix M) { matrix_base = (double[,])M.matrix_base.Clone(); }
-		#endregion CONSTRUCTORS
-
-		#region FIELDS
 		/// <summary>
-		/// "основа" матрицы - двумерный массив
+		/// поиск файлов в директориях
 		/// </summary>
-		public double[,] matrix_base = new double[,] { };
-		#endregion FIELDS
-
-		#region PROPERTIES
-		public double this[int i, int j]
+		/// <param name="directory_with_file"></param>
+		/// <param name="file_name"></param>
+		/// <returns></returns>
+		public static bool FindFile(string file_name, out string absolute_file_name)
 		{
-			get { return matrix_base[i, j]; }
-			set { matrix_base[i, j] = value; }
-		}
-		/// <summary>
-		/// количество строк матрицы
-		/// </summary>
-		public int n
-		{
-			get { return matrix_base.GetLength(0); }
-		}
-		/// <summary>
-		/// количество столбцов матрицы
-		/// </summary>
-		public int m
-		{
-			get { return matrix_base.GetLength(1); }
-		}
-		public Matrix Self { get { return this; } }
-		/// <summary>
-		/// из любой матрицы весов достаёт её асимметричную часть
-		/// </summary>
-		public Matrix AsymmetricPart
-		{//только для квадратных
-			get
+			absolute_file_name = "";
+			try
 			{
-				if (n != m)
-					throw new MyException(EX_matrix_not_square);
-				Matrix ans = new Matrix(n);
-				for (int i = 0; i < n; i++)
-					for (int j = 0; j < n; j++)
-					{// выдаёт 0.099999999999999978 вместо 0.1
-						ans[i, j] = Math.Max(Math.Round(this[i, j] - this[j, i], DIGITS_PRECISION), 0);
-					}
-				return ans;
-			}
-		}
-		/// <summary>
-		/// из любой матрицы весов достаёт её симметричную часть
-		/// </summary>
-		public Matrix SymmetricPart
-		{//только для квадратных
-			get
-			{
-				if (n != m)
-					throw new MyException(EX_matrix_not_square);
-				Matrix Sym = new Matrix(n);
-				for (int i = 0; i < n; i++)
-					for (int j = 0; j < n; j++)
-						Sym[i, j] = Math.Min(this[i, j], this[j, i]);
-				return Sym;
-			}
-		}
-		/// <summary>
-		/// из любой матрицы весов создаёт матрицу смежности
-		/// </summary>
-		public Matrix AdjacencyMatrix
-		{
-			get
-			{
-				Matrix R = new Matrix(n, m);
-				for (int i = 0; i < n; i++)
-					for (int j = 0; j < m; j++)
-						R[i, j] = (Math.Abs(this[i, j]) == INF || Math.Abs(this[i, j]) == 0) ? 0 : 1;
-				return R;
-			}
-		}
-		/// <summary>
-		/// превращает матрицу в нечёткое отношение
-		/// </summary>
-		public FuzzyRelation Cast2Fuzzy { get { return new FuzzyRelation(this); } }
-		/// <summary>
-		/// нормализует матрицу и превращает матрицу в нечеткое отношение
-		/// </summary>
-		public FuzzyRelation NormalizeAndCast2Fuzzy { get { return new FuzzyRelation(this.NormalizeElems(out var _)); } }
-		#endregion PROPERTIES
-
-		#region OPERATORS
-		public static Matrix operator *(double c, Matrix R1)
-		{
-			var R = new Matrix(R1);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
-					R[i, j] = Math.Round(c * R[i, j], DIGITS_PRECISION);
-			return R;
-		}
-		public static Matrix operator *(Matrix R1, double c)
-		{
-			return c * R1;
-		}
-		public static Matrix operator *(Matrix M1, Matrix M2)
-		{
-			int l = M1.GetLength(1); // = M2.GetLength(0);
-			Matrix R = new Matrix(M1.n, M2.m);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
+				string directory_with_file = Path.GetDirectoryName(file_name);
+				bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+				file_name = Path.GetFileName(file_name);
+				Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
+				directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+				string[] allFoundFiles;
+				if (!emptydirname)
 				{
-					double a_ij = 0;
-					for (int k = 0; k < l; k++)
-						a_ij += M1[i, k] * M2[k, j];
-					R[i, j] = Math.Round(a_ij, DIGITS_PRECISION);
+					allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+						SearchOption.TopDirectoryOnly);
 				}
-			return R;
-		}
-		public static Matrix operator /(Matrix R1, double c)
-		{
-			return (1 / c) * R1;
-		}
-		public static Matrix operator +(Matrix R1, Matrix R2)
-		{
-			var R = new Matrix(R1);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
-					R[i, j] = Math.Round(R[i, j] + R2[i, j], DIGITS_PRECISION);
-			return R;
-		}
-		public static Matrix operator -(Matrix R1, Matrix R2)
-		{
-			return R1 + (-1) * R2;
-		}
-		public static bool operator !=(Matrix R1, Matrix R2)
-		{
-			if (R1 is null || R2 is null)
-			{
-				if (R1 is null && R2 is null)
-					return false;
 				else
+				{
+					allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
+						SearchOption.AllDirectories);
+				}
+				if (allFoundFiles.Length > 0)
+				{
+					absolute_file_name = allFoundFiles.First();
 					return true;
-			}
-			if (R1.n != R2.n || R1.m != R2.m)
-				return true;
-			for (int i = 0; i < R1.n; i++)
-				for (int j = 0; j < R1.m; j++)
-				{
-					if (R1[i, j] != R2[i, j])
-						return true;
 				}
-			return false;//если одинаковые размерности и все элементы
+			}
+			catch (DirectoryNotFoundException ex)
+			{
+				throw new MyException($"{ex.Message}");
+			}
+			catch { }
+			return false;
 		}
-		public static bool operator ==(Matrix R1, Matrix R2)
-		{
-			return !(R1 != R2);
-		}
-		#endregion OPERATORS
 
-		#region FUNCTIONS
 		/// <summary>
-		/// есть ли ребро на основании символов, обозначающих отсутствие ребра
+		/// создать файл с переданным текстом
 		/// </summary>
-		public bool HasEdge((int i, int j) edge, double[] no_edge_symbol)
-		{
-			return !no_edge_symbol.Contains(this[edge.i, edge.j]);
-		}
-		/// <summary>
-		/// выводит список смежности матрицы на основании того, 
-		/// какое значение элемента матрицы считать отсутствием ребра
-		/// </summary>
-		/// <param name="condition_of_no_edge_symbol">
-		/// какое значение элемента матрицы считать отсутствием ребра - условие, лямбда-функция
-		/// </param>
+		/// <param name="text"></param>
+		/// <param name="filename"></param>
 		/// <returns></returns>
-		public List<List<int>> AdjacencyList(Func<double, bool> condition_of_no_edge_symbol)
+		public static string WriteToFile(string text, string filename, bool add)
 		{
-			var ans = new List<List<int>>();
-			for (int i = 0; i < n; i++)
+			string directory_with_file = Path.GetDirectoryName(filename);
+			filename = Path.GetFileName(filename);
+			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
+			//достать название папки, если есть указание папки
+			var absolute_file_name = Path.Combine(directory_with_file, filename);
+			if (add)
 			{
-				ans.Add(new List<int>());
-				for (int j = 0; j < m; j++)
-					if (!condition_of_no_edge_symbol(this[i, j]))
-						ans[i].Add(j);
-			}
-			return ans;
-		}
-		/// <summary>
-		/// выводит список смежности матрицы на основаноо того, какое значение элемента матрицы считать отсутствием ребра
-		/// </summary>
-		/// <param name="no_edge_symbol">
-		/// какое значение элемента матрицы считать отсутствием ребра (0, INF, -INF и т.д.)
-		/// </param>
-		/// <returns></returns>
-		public List<List<int>> AdjacencyList(double no_edge_symbol)
-		{
-			return AdjacencyList(x => x == no_edge_symbol);
-		}
-		/// <summary>
-		///  для удобства печати матриц
-		/// </summary>
-		/// <param name="use_separator"></param>
-		/// <returns></returns>
-		public string Matrix2String(bool use_separator)
-		{
-			/// удаляет последние cnt символов из строки
-			string trim_end(string s, int cnt)
-			{
-				var start = s.Length - cnt;
-				if (start < 0)
-					return "";
-				return s.Remove(s.Length - cnt, cnt);
-			}
-			int[] max_widths = new int[m];
-			for (int j = 0; j < m; j++)
-				max_widths[j] = 5;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					if (this[i, j].ToString().Length > max_widths[j])
-						max_widths[j] = this[i, j].ToString().Length;
-			var str = "";
-			var lef_bnd = use_separator ? "[" : "";
-			var rig_bnd = use_separator ? "]" : "";
-			for (int i = 0; i < n; i++)
-			{
-				for (int j = 0; j < m; j++)
+				using (StreamWriter writer = new StreamWriter(absolute_file_name, true))
 				{
-					//var fill = "_";
-					//var align = "^";
-					int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
-					//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
-					str += string.Format($"{lef_bnd}{{0,{width}}}{rig_bnd}", this[i, j]);
+					writer.WriteLine(CR_LF);
+					writer.WriteLine(text);
 				}
-				str += CR_LF;
 			}
-			return trim_end(str, 1);
-		}
-		public int GetLength(int dimension)
-		{
-			return matrix_base.GetLength(dimension);
-		}
-		/// <summary>
-		/// возвращает транспонированую матрицу
-		/// </summary>
-		/// <returns></returns>
-		public Matrix Transpose()
-		{
-			var R = new Matrix(this.n, this.m);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
-				{
-					R[i, j] = this[j, i];
-				}
-			return R;
-		}
-		/// <summary>
-		/// матрица из нулей
-		/// </summary>
-		/// <param name="n"></param>
-		/// <param name="m"></param>
-		/// <returns></returns>
-		public static Matrix Zeros(int n, int m)
-		{
-			var R = new Matrix(n, m);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
-					R[i, j] = 0;
-			return R;
-		}
-		/// <summary>
-		/// единичная матрица
-		/// </summary>
-		/// <param name="n"></param>
-		/// <returns></returns>
-		public static Matrix Eye(int n)
-		{
-			var R = new Matrix(n);
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-					R[i, j] = (i == j) ? 1 : 0;
-			return R;
-		}
-		/// <summary>
-		/// возведение в степень
-		/// </summary>
-		public Matrix Pow(int p)
-		{//квадратная матрица
-			if (this.n != this.m)
-				throw new MyException(EX_matrix_not_square);
-			var R = Eye(this.n);
-			for (int i = 0; i < p; i++)
-				R *= this;
-			return R;
-		}
-		/// <summary>
-		/// сумма матриц из списка
-		/// </summary>
-		/// <param name="M_list"></param>
-		/// <returns></returns>
-		public static Matrix Sum(List<Matrix> M_list)
-		{
-			var R = Zeros(M_list.Last().n, M_list.Last().m);
-			foreach (Matrix Rj in M_list)
-				R += Rj;
-			return R;
-		}
-		/// <summary>
-		/// среднее арифметическое матриц из списка
-		/// </summary>
-		/// <param name="M_list"></param>
-		/// <returns></returns>
-		public static Matrix Average(List<Matrix> M_list)
-		{
-			return Sum(M_list) / M_list.Count();
-		}
-		/// <summary>
-		/// матрица из медианы для каждого элемента, из списка матриц
-		/// </summary>
-		/// <param name="M_list"></param>
-		/// <returns></returns>
-		public static Matrix Median(List<Matrix> M_list)
-		{
-			var R = Zeros(M_list.Last().n, M_list.Last().m);
-			int med_index = M_list.Count / 2; // так как нумерация с 0
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
-				{
-					var Rij_list = Enumerable.Select(M_list, x => x[i, j]).OrderBy(y => y).ToArray();
-					R[i, j] = M_list.Count % 2 == 1 ? Rij_list[med_index] :
-						(Rij_list[med_index - 1] + Rij_list[med_index]) / 2;
-				}
-			return R;
-		}
-		/// <summary>
-		/// матрица из модулей её элементов
-		/// </summary>
-		public Matrix Abs()
-		{
-			var R = new Matrix(n, m);
-			for (int i = 0; i < R.n; i++)
-				for (int j = 0; j < R.m; j++)
-					R[i, j] = Math.Abs(this[i, j]);
-			return R;
-		}
-		/// <summary>
-		/// сумма всех элементов матрицы
-		/// </summary>
-		public double ElemSum()
-		{
-			double ans = 0;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					ans += this[i, j];
-			return ans;
-		}
-		/// <summary>
-		/// возвращает множество всех элементов матрицы (каждый элемент в одном экземпляре)
-		/// </summary>
-		/// <returns></returns>
-		public HashSet<double> GetElemValues()
-		{
-			HashSet<double> ans = new HashSet<double>();
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					ans.Add(this[i, j]);
-			return ans;
-		}
-		/// <summary>
-		/// минимальный ненулевой элемент матрицы
-		/// </summary>
-		public double MinElemButNotZero()
-		{
-			var elems = this.GetElemValues();
-			double ans = INF;
-			foreach (var e in elems)
-				if (e < ans && e != 0)
-					ans = e;
-			return ans;
-		}
-		/// <summary>
-		/// минимальный элемент матрицы
-		/// </summary>
-		/// <returns></returns>
-		public double MinElem()
-		{
-			return this.GetElemValues().Min();
-		}
-		/// <summary>
-		/// максимальный элемент матрицы
-		/// </summary>
-		public double MaxElem()
-		{
-			return this.GetElemValues().Max();
-		}
-		/// <summary>
-		/// расстояние между матрицами на основании выбранной функции расстояния для отдельных элементов
-		/// </summary>
-		/// <param name="M1"></param>
-		/// <param name="M2"></param>
-		/// <param name="elem_diff">функция расстояния для отдельных элементов</param>
-		/// <returns></returns>
-		private static double Distance(Matrix M1, Matrix M2, Func<double, double, double> elem_diff)
-		{// вход: матрицы одинаковой размерности
-			if (M1.n != M2.n || M1.m != M2.m)
-				throw new MyException(EX_bad_dimensions);
-			double ans = 0;
-			for (int i = 0; i < M1.n; i++)
-				for (int j = 0; j < M1.m; j++)
-				{
-					ans += elem_diff(M1[i, j], M2[i, j]);
-				}
-			return ans;
-		}
-		/// <summary>
-		/// вычисляет расстояние между матрицами из модулей разностей элементов
-		/// </summary>
-		/// <param name="M1"></param>
-		/// <param name="M2"></param>
-		/// <returns></returns>
-		public static double DistanceModulus(Matrix M1, Matrix M2)
-		{
-			Func<double, double, double> f = (x, y) => Math.Abs(x - y);
-			return Distance(M1, M2, f);
-		}
-		/// <summary>
-		/// вычисляет расстояние между матрицами из квадратов разностей элементов
-		/// </summary>
-		/// <param name="M1"></param>
-		/// <param name="M2"></param>
-		/// <returns></returns>
-		public static double DistanceSquare(Matrix M1, Matrix M2)
-		{
-			Func<double, double, double> f = (x, y) => Math.Pow(x - y, 2);
-			return Distance(M1, M2, f);
-		}
-		/// <summary>
-		/// вычисляет евклидово расстояние между двумя матрицами
-		/// </summary>
-		/// <param name="M1"></param>
-		/// <param name="M2"></param>
-		/// <returns></returns>
-		public static double DistanceEuclidean(Matrix M1, Matrix M2)
-		{
-			return Math.Sqrt(DistanceSquare(M1, M2));
-		}
-		/// <summary>
-		/// суммарное расстояние от заданной матрицы до всех остальных матриц из списка
-		/// </summary>
-		public double SumDistance(List<Matrix> List_of_other_R, Func<Matrix, Matrix, double> distance_function)
-		{
-			double sum_dist = 0;
-			foreach (Matrix other_R in List_of_other_R)
-				sum_dist += distance_function(this, other_R);
-			return sum_dist;
-		}
-		/// <summary>
-		/// является ли асимметричной (предполагает антирефлексивность)
-		/// </summary>
-		/// <returns></returns>
-		public bool IsAsymmetric()
-		{
-			for (int i = 0; i < n; i++)
-				for (int j = i; j < n; j++)
-					if (this[i, j] != 0 && this[j, i] != 0)
-						return false;
-			return true;
-		}
-		/// <summary>
-		/// есть ли в графе цикл
-		/// </summary>
-		/// <param name="AdjacencyList">список смежности</param>
-		/// <returns></returns>
-		public static bool IsHasCycle(List<List<int>> AdjacencyList)
-		{
-			int n = AdjacencyList.Count;//количество вершин
-			bool is_cycle(int start_vertex_for_search)
+			else
 			{
-				int[] color = Enumerable.Repeat(0, n).ToArray();
-				return dfs(start_vertex_for_search, color);
+				File.WriteAllText(absolute_file_name, text);
 			}
-			bool dfs(int v, int[] color)
+			return absolute_file_name;
+		}
+
+		public static List<Matrix> ReadFileWithMatrices(string filename, out string absolute_file_name)
+		{
+			List<Matrix> matrices = new List<Matrix>();
+			FindFile(filename, out absolute_file_name);
+			try
 			{
-				color[v] = 1;//зашли в вершину
-				for (int i = 0; i < AdjacencyList[v].Count; ++i)//перебрать исходящие рёбра
+				if (absolute_file_name == "")
+					throw new FileNotFoundException();
+				string[] lines = File.ReadAllLines(absolute_file_name)
+					.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
+				filename = absolute_file_name;
+				char[] chars_for_split = new char[] { ' ', '	' };
+				int _n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
+				Matrix cur_matrix = new Matrix(_n, _n);
+				for (int l = 0; l < lines.Length; l++)
 				{
-					int to = AdjacencyList[v][i];
-					if (color[to] == 0)//not visited
+					if (lines[l].Length != 0)
 					{
-						if (dfs(to, color))
-							return true;
+						double res;
+						double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
+							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
+						if (numbers.Any(x => x == INF) || numbers.Length != _n)
+							throw new MyException(EX_bad_file);
+						for (int j = 0; j < numbers.Length; j++)
+							cur_matrix[l % _n, j] = numbers[j];
 					}
-					else if (color[to] == 1)//уже заходили в to
-						return true;//нашли цикл
+					if (l % _n == _n - 1)
+						matrices.Add(new Matrix(cur_matrix));
 				}
-				color[v] = 2;//вышли из вершины
-				return false;
+				if (matrices.Count == 0)
+					throw new MyException(EX_bad_file);
+				//m = matrices.Count;
+				//n = _n;
 			}
-			var vertices = Enumerable.Range(0, n).ToArray();
-			return vertices.Any(v => is_cycle(v));
+			catch (FileNotFoundException ex)
+			{
+				throw new MyException($"{ex.Message}");
+			}
+			return matrices;
+		}
+	}
+	/// <summary>
+	/// операции с рисованием графов на форме
+	/// </summary>
+	public static class OPS_GraphDrawing
+	{
+		/// <summary>
+		/// отрисовать граф по матрице в PictureBox
+		/// </summary>
+		/// <param name="matrix"></param>
+		/// <param name="pictureBox"></param>
+		/// <returns></returns>
+		public static Bitmap DrawGraph(double[,] matrix, PictureBox pictureBox)
+		{
+			try
+			{
+				var G = GenerateGraph(matrix);
+				Bitmap bitmap = DrawBitmap(G, pictureBox);
+				//bitmap.Save("graph_visualizing_output.png");
+				pictureBox.SizeChanged += (object sender, EventArgs e) =>
+				{
+					DrawBitmap(G, (PictureBox)sender);
+				};
+				return bitmap;
+			}
+			catch { }
+			return null;
+		}
+
+		/// <summary>
+		/// создадим орграф
+		/// </summary>
+		/// <param name="M">матрица весов орграфа</param>
+		/// <returns></returns>
+		public static Microsoft.Msagl.Drawing.Graph GenerateGraph(double[,] M)
+		{
+			if (M.GetLength(0) != M.GetLength(1))
+				throw new MyException(EX_matrix_not_square);
+			int n = M.GetLength(0);
+			Microsoft.Msagl.Drawing.Graph graph = new Microsoft.Msagl.Drawing.Graph("");
+			for (int i = 0; i < n; i++)
+			{
+				Microsoft.Msagl.Drawing.Node node = graph.AddNode(ind2letter[i]);
+				node.Attr.LabelMargin = 1;
+				node.Attr.FillColor = node_color;
+				node.Attr.Shape = Microsoft.Msagl.Drawing.Shape.Circle;
+				for (int j = 0; j < n; j++)
+				{
+					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
+					{
+						Microsoft.Msagl.Drawing.Edge edge = graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
+						edge.Label.FontSize = node.Label.FontSize * 0.75;
+					}
+				}
+			}
+			return graph;
+		}
+
+		/// <summary>
+		/// создать картинку графа (битмап)
+		/// </summary>
+		/// <param name="g"></param>
+		/// <param name="drawing_field"></param>
+		/// <returns></returns>
+		public static Bitmap DrawBitmap(Microsoft.Msagl.Drawing.Graph g, PictureBox drawing_field)
+		{
+			Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer = new Microsoft.Msagl.GraphViewerGdi.GraphRenderer(g);
+			renderer.CalculateLayout();
+			Bitmap bitmap = new Bitmap(
+				(int)drawing_field.Width, (int)drawing_field.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+			renderer.Render(bitmap);
+			drawing_field.Image = (Image)bitmap;
+			return bitmap;
+		}
+
+		/// <summary>
+		/// обновить рисунки графов
+		/// </summary>
+		/// <param name="form"></param>
+		/// <param name="M"></param>
+		/// <param name="L"></param>
+		public static void OrgraphsPics_update(IFromGraphsDraw form, List<Matrix> M, List<string> L)
+		{
+			if (form != null && !((Form)form).IsDisposed)
+			{
+				form.Redraw(M.Select(x => x.matrix_base).ToList(), L);
+			}
+		}
+	}
+	/// <summary>
+	/// операции с DataGridView
+	/// </summary>
+	public static class OPS_DataGridView
+	{
+		public static int SetColumn(DataGridView dgv, string header)
+		{
+			int j = dgv.Columns.Count;
+			DataGridViewColumn column = new DataGridViewColumn();
+			column.CellTemplate = new DataGridViewTextBoxCell();
+			column.SortMode = DataGridViewColumnSortMode.NotSortable;
+			column.HeaderCell.Style.BackColor = window_bg_color;
+			column.HeaderText = header;
+			column.MinimumWidth = 15;
+			column.FillWeight = 1;
+			dgv.Columns.Add(column);
+			return j;
+		}
+		public static int SetRow(DataGridView dgv, string header)
+		{
+			int i = dgv.Rows.Count;
+			DataGridViewRow row = new DataGridViewRow();
+			row.HeaderCell.Value = header;
+			row.MinimumHeight = 15;
+			dgv.Rows.Add(row);
+			return i;
+		}
+		public static void SetReadonlyCell(DataGridView dgv, int i, int j, string value, Color clr)
+		{
+			dgv[j, i].ReadOnly = true;
+			dgv[j, i].Style.BackColor = clr;
+			dgv[j, i].Value = value;
+		}
+		public static void SetDoubleCell(DataGridView dgv, int i, int j, double value)
+		{
+			dgv[j, i].ValueType = typeof(double);
+			dgv[j, i].Value = value;
+		}
+		public static void ClearDGV(DataGridView dgv)
+		{
+			dgv?.Rows.Clear();
+			dgv?.Columns.Clear();
+			//Dispose не делать, вредно
 		}
 		/// <summary>
 		/// достаёт матрицу из DataGridView
@@ -557,497 +337,77 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < M.n; i++)
 				for (int j = 0; j < M.m; j++)
 					SetDoubleCell(dgv, i, j, M[i, j]);
+		}		
+		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
+		{
+			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
+			dgv.DefaultCellStyle.ForeColor = font_color;
+			dgv.DefaultCellStyle.BackColor = input_bg_color;
+			dgv.DefaultCellStyle.SelectionForeColor = font_color;
+			dgv.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.Empty;
 		}
 		/// <summary>
-		/// делает матрицу с элементами, нормированными на 1 (принадлежащими от 0 до 1 включительно)
+		/// настрйки для вывода DataGridView
 		/// </summary>
-		/// <returns></returns>
-		public Matrix NormalizeElems(out bool IsNormalized)
+		/// <param name="dgv"></param>
+		public static void SetDataGridViewDefaults(DataGridView dgv)
 		{
-			Matrix R = new Matrix(this);
-			//была ли матрица уже нормализованной
-			IsNormalized = 0 <= this.MinElem() && this.MaxElem() <= 1 ? true : false;
-			double shift = this.MinElem();
-			double squeeze = this.GetElemValues().Select(x => x - shift).Max();
-			if (!IsNormalized)
-			{
-				for (int i = 0; i < n; i++)
-					for (int j = 0; j < m; j++)
-						R[i, j] = (R[i, j] - shift) / squeeze;
-			}
-			return R;
+			dgv.AllowUserToAddRows = false;
+			dgv.AllowUserToDeleteRows = false;
+			dgv.AllowUserToResizeRows = true;
+			dgv.AllowUserToResizeColumns = true;
+			dgv.AllowUserToOrderColumns = false;
+			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+			dgv.ShowEditingIcon = true;
+			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
+			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+			SetDataGridViewDefaults_FontAndColors(dgv);
+			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 		}
-		/// <summary>
-		/// сравнивалась ли альтернатива с какой-либо другой
-		/// </summary>
-		/// <param name="index"></param>
-		/// <returns></returns>
-		public bool IsAlternativeCompared(int i)
+		public static void ColorCell(DataGridView dgv, int row, int col, System.Drawing.Color color)
 		{
-			for (int j = 0; j < m; j++)
+			dgv[col, row].Style.BackColor = color;
+		}
+		public static void ColorSymmetricCell(object sender, DataGridViewCellEventArgs e)
+		{
+			var dd = sender as DataGridView;
+			int i = e.RowIndex;
+			int j = e.ColumnIndex;
+			if (i == j)
+				ColorCell(dd, i, j, input_bg_color_disabled);
+			else
 			{
-				if (i != j)
+				double Mij, Mji;
+				var p1 = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
+				var p2 = double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
+				ColorCell(dd, i, j, input_bg_color);
+				ColorCell(dd, j, i, input_bg_color);
+				if (p1 && p2)
 				{
-					if (this[i, j] != 0 || this[j, i] != 0)
-						return true;
-				}
-			}
-			return false;
-		}
-		/// <summary>
-		/// альтернативы, которые имеют сравнение с какой-либо другой альтернативой
-		/// </summary>
-		/// <returns></returns>
-		public bool[] ComparedAlternatives()
-		{
-			bool[] ans = new bool[n];
-			for (int i = 0; i < n; i++)
-			{
-				ans[i] = IsAlternativeCompared(i);
-			}
-			return ans;
-		}
-		/// <summary>
-		/// количество ребер в графе
-		/// </summary>
-		/// <param name="count_solitary_loop">подсчитывать ли петли (ребро из вершины в неё саму)</param>
-		/// <returns></returns>
-		public int EdgesCount(bool count_solitary_loop)
-		{
-			int ans = 0;
-			for (int i = 0; i < n; i++)
-			{
-				for (int j = 0; j < m; j++)
-				{
-					if (!count_solitary_loop && i == j)
-					{ }
-					else
+					if (Mij == 0 && Mji != 0)
 					{
-						if (this.HasEdge((i, j), new double[] { NO_EDGE, INF }))
-						{
-							ans++;
-						}
+						ColorCell(dd, i, j, input_bg_color_disabled);
+					}
+					else if (Mij != 0 && Mji == 0)
+					{
+						ColorCell(dd, j, i, input_bg_color_disabled);
 					}
 				}
 			}
-			return ans;
 		}
-		#endregion FUNCTIONS
+		public static void ColorSymmetricCells(DataGridView dgv)
+		{
+			for (int i = 0; i < dgv.Rows.Count; i++)
+				for (int j = 0; j < dgv.Columns.Count; j++)
+					ColorSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
+		}
 	}
 
-	/// <summary>
-	/// матрицы нечётких отношений со специфичными для нечёткости операциями
-	/// </summary>
-	public class FuzzyRelation : Matrix
-	{// base - матрица нечёткого бинарного отношения
-	 //матрица принадлежности (= м. предпочтений, функция принадлжености)
-	 //полагаем квадратными
-
-		#region CONSTRAINTS
-		/// <summary>
-		/// ограничение на элементы матрицы принадлежности
-		/// </summary>
-		/// <param name="mu_ij"></param>
-		/// <returns></returns>
-		private static bool is_value_of_membership_func(double mu_ij)
-		{
-			if (0 <= mu_ij && mu_ij <= 1)
-				return true;
-			return false;
-		}
-		/// <summary>
-		/// проверка - является ли это функцией принадлежности нечёткого отношения
-		/// </summary>
-		/// <param name="M"></param>
-		/// <returns></returns>
-		private static bool is_fuzzy_relation_matrix(double[,] M)
-		{
-			var n = M.GetLength(0);
-			var m = M.GetLength(1);
-			if (n != m)
-				return false;
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
-					if (!is_value_of_membership_func(M[i, j]))
-						return false;
-			return true;
-		}
-		#endregion CONSTRAINTS
-
-		#region CONSTRUCTORS
-		public FuzzyRelation(int n) : base(n) { }
-		public FuzzyRelation(double[,] M) : base(M)
-		{
-			if (!is_fuzzy_relation_matrix(M))
-				throw new MyException(EX_bad_fuzzy_relation_matrix);
-		}
-		public FuzzyRelation(Matrix M) : base(M)
-		{
-			if (!is_fuzzy_relation_matrix(M.matrix_base))
-				throw new MyException(EX_bad_fuzzy_relation_matrix);
-		}
-		#endregion CONSTRUCTORS
-
-		#region FIELDS
-		private FuzzyRelation _Asymmetric;
-		private FuzzyRelation _Symmetric;
-		private FuzzyRelation _DestroyedCycles;
-		private FuzzyRelation _TransClosured;
-		#endregion FIELDS
-
-		#region PROPERTIES
-		public new double this[int i, int j]
-		{
-			get { return base[i, j]; }
-			set
-			{
-				if (!is_value_of_membership_func(value))
-					throw new MyException(EX_bad_fuzzy_relation_matrix);
-				base[i, j] = value;
-				ClearDerivativeFields();
-			}
-		}
-		public double this[Tuple<int, int> pair]
-		{
-			get { return base[pair.Item1, pair.Item2]; }
-			set
-			{
-				if (!is_value_of_membership_func(value))
-					throw new MyException(EX_bad_fuzzy_relation_matrix);
-				base[pair.Item1, pair.Item2] = value;
-				ClearDerivativeFields();
-			}
-		}
-		public Matrix ToMatrix
-		{
-			get { return base.Self; }
-		}
-		public FuzzyRelation Asymmetric
-		{
-			get
-			{
-				if (_Asymmetric is null)
-				{
-					_Asymmetric = this.AsymmetricPart.Cast2Fuzzy;
-				}
-				return _Asymmetric;
-			}
-			set { _Asymmetric = value; }
-		}
-		public FuzzyRelation Symmetric
-		{
-			get
-			{
-				if (_Symmetric is null)
-				{
-					_Symmetric = this.SymmetricPart.Cast2Fuzzy;
-				}
-				return _Symmetric;
-			}
-			set { _Symmetric = value; }
-		}
-		public FuzzyRelation DestroyedCycles
-		{
-			get
-			{
-				if (_DestroyedCycles is null)
-				{
-					_DestroyedCycles = this.DestroyCycles();
-				}
-				return _DestroyedCycles;
-			}
-			set { _DestroyedCycles = value; }
-		}
-		public FuzzyRelation TransClosured
-		{
-			get
-			{
-				if (_TransClosured is null)
-				{
-					_TransClosured = this.TransitiveClosure();
-				}
-				return _TransClosured;
-			}
-			set { _TransClosured = value; }
-		}
-		#endregion PROPERTIES
-
-		#region FUNCTIONS
-		public void ClearDerivativeFields()
-		{
-			Asymmetric = null;
-			Symmetric = null;
-			DestroyedCycles = null;
-			TransClosured = null;
-		}
-		/// <summary>
-		/// все элементы (пары), в том числе с принадлежностью 0
-		/// </summary>
-		/// <returns></returns>
-		public Tuple<int, int>[] Elements()
-		{
-			Tuple<int, int>[] ans = new Tuple<int, int>[this.n * this.m];
-			for (int i = 0; i < this.n; i++)
-				for (int j = 0; j < this.m; j++)
-					ans[(this.m * i) + j] = new Tuple<int, int>(i, j);
-			return ans;
-		}
-		/// <summary>
-		/// возвращает альфа-срез нечёткого отношения
-		/// </summary>
-		/// <param name="alpha">уровень, на котором отсекаем принадлежность (mu(x)>=alpha ? mu(x) : 0)</param>
-		/// <returns></returns>
-		public FuzzyRelation AlphaSlice(double alpha)
-		{
-			var R = new FuzzyRelation(this.n);
-			for (int i = 0; i < this.n; i++)
-				for (int j = 0; j < this.n; j++)
-					R[i, j] = this[i, j] >= alpha ? this[i, j] : 0;
-			return R;
-		}
-		/// <summary>
-		/// дополнение
-		/// </summary>
-		/// <returns>not A</returns>
-		public FuzzyRelation Negotate()
-		{
-			var S = new FuzzyRelation(this.n);
-			foreach (var x in Elements())
-				S[x] = 1 - this[x];
-			return S;
-		}
-		/// <summary>
-		/// пересечение
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns>A \intersect B</returns>
-		public FuzzyRelation Intersect1(FuzzyRelation other)
-		{
-			var S = new FuzzyRelation(this.n);
-			foreach (var x in Elements().Union(other.Elements()))
-				S[x] = Math.Min(this[x], other[x]);
-			return S;
-		}
-		/// <summary>
-		/// пересечение
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns>A \intersect B</returns>
-		public FuzzyRelation Intersect2(FuzzyRelation other)
-		{
-			var S = new FuzzyRelation(this.n);
-			foreach (var x in Elements().Union(other.Elements()))
-				S[x] = Math.Max(0, this[x] + other[x] - 1);
-			return S;
-		}
-		/// <summary>
-		/// объединение
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns>A U B</returns>
-		public FuzzyRelation Union(FuzzyRelation other)
-		{
-			var S = new FuzzyRelation(this.n);
-			foreach (var x in Elements().Union(other.Elements()))
-				S[x] = Math.Max(this[x], other[x]);
-			return S;
-		}
-		/// <summary>
-		/// объединение (множественное)
-		/// </summary>
-		/// <param name="list_rels"></param>
-		/// <returns></returns>
-		public static FuzzyRelation Union(List<FuzzyRelation> list_rels)
-		{
-			var R = new FuzzyRelation(list_rels.First().n);//base матрица заполнена нулями
-			foreach (var r in list_rels)
-			{
-				if (r.n != R.n || r.m != R.m)
-					throw new MyException(EX_bad_dimensions);
-				R = R.Union(r);
-			}
-			return R;
-		}
-		/// <summary>
-		/// разность
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns>A \ B</returns>
-		public FuzzyRelation SetMinus1(FuzzyRelation other)
-		{
-			return this.Intersect1(other.Negotate());
-		}
-		/// <summary>
-		/// разность
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns>A \ B</returns>
-		public FuzzyRelation SetMinus2(FuzzyRelation other)
-		{
-			return this.Intersect2(other.Negotate());
-		}
-		/// <summary>
-		/// обратное отношение
-		/// </summary>
-		/// <returns></returns>
-		public FuzzyRelation Inverse()
-		{
-			return this.Transpose().Cast2Fuzzy;
-		}
-		/// <summary>
-		/// композиция нечётких бинарных отношений
-		/// </summary>
-		/// <returns>A \circ B</returns>
-		public FuzzyRelation Compose(FuzzyRelation other)
-		{
-			var R = new FuzzyRelation(this.n);
-			int[] Z = Enumerable.Range(0, this.n).ToArray();
-			for (int i = 0; i < this.n; i++)
-				for (int j = 0; j < this.m; j++)
-				{
-					R[i, j] = Z.Select(z => Math.Min(this[i, z], other[z, j])).Max();
-				}
-			return R;
-		}
-		/// <summary>
-		/// возведение отношения в степень
-		/// </summary>
-		public new FuzzyRelation Pow(int p)
-		{
-			if (p == 0)
-				return Eye(n).Cast2Fuzzy;
-			var R = new FuzzyRelation(this);
-			for (int k = 1; k < p; k++)
-				R = R.Compose(R);
-			return R;
-		}
-		/// <summary>
-		/// является ли левый операнд подмножеством (нестрого) правого операнда
-		/// </summary>
-		/// <returns></returns>
-		public static bool SubsetOrEqual(FuzzyRelation R1, FuzzyRelation R2)
-		{
-			if (R1.n != R2.n)
-				throw new MyException(EX_bad_dimensions);
-			for (int i = 0; i < R1.n; i++)
-			{
-				for (int j = 0; j < R1.n; j++)
-				{
-					if (R1[i, j] > R2[i, j])
-						return false;
-				}
-			}
-			return true;
-		}
-		/// <summary>
-		/// является ли отношение транзитивным
-		/// </summary>
-		public bool IsTransitive()
-		{
-			var r2 = this.Compose(this);
-			if (SubsetOrEqual(r2, this))
-				return true;
-			return false;
-		}
-		/// <summary>
-		/// транзитивное замыкание нечеткого отношения
-		/// </summary>
-		public FuzzyRelation TransitiveClosure()
-		{//алгоритм можно ускорить - можно алг Флойда-Уоршалла?
-			var ans = new List<FuzzyRelation>();
-			ans.Add(new FuzzyRelation(this));
-			for (int i = 1; i < n; i++)
-			{
-				ans.Add(ans.Last().Compose(ans[0]));
-				if (ans[i] == ans[i - 1])
-					break;
-			}
-			return Union(ans);
-		}
-		/// <summary>
-		/// есть ли цикл в матрице принадлежности отношения
-		/// </summary>
-		public bool IsHasCycle()
-		{
-			return Matrix.IsHasCycle(this.AdjacencyList(0.0));
-		}
-		/// <summary>
-		/// разбить циклы
-		/// </summary>
-		/// <returns></returns>
-		public FuzzyRelation DestroyCycles()
-		{
-			var R = new FuzzyRelation(this);
-			var R_AM = R.AdjacencyMatrix.Cast2Fuzzy;
-			Matrix RK = Matrix.Eye(1); //матрица контуров
-			while (true)
-			{//если ещё остались контуры
-				var RKTC = R_AM.TransitiveClosure();
-				RK = R_AM.Intersect1(RKTC).Intersect1(RKTC.Transpose().Cast2Fuzzy);
-				if (RK.ElemSum() == 0)
-					break;
-				for (int i = 0; i < RK.n; i++)
-					for (int j = 0; j < RK.m; j++)
-						if (RK[i, j] != 0)
-							RK[i, j] = R[i, j];
-
-				var min_elem = RK.MinElemButNotZero();
-				for (int i = 0; i < R.n; i++)
-					for (int j = 0; j < R.m; j++)
-						if (RK[i, j] != 0 && R[i, j] == min_elem)
-						{
-							R[i, j] = 0;
-							R_AM[i, j] = 0;
-						}
-			}
-			return R;
-		}
-		/// <summary>
-		/// является ли матрица матрицей нечеткого отношения
-		/// </summary>
-		/// <returns></returns>
-		public static bool IsFuzzyRelationMatrix(Matrix M)
-		{
-			if (is_fuzzy_relation_matrix(M.matrix_base))
-				return true;
-			return false;
-		}
-		/// <summary>
-		/// преобразование списка FuzzyRelation в список Matrix
-		/// </summary>
-		/// <param name="R_list"></param>
-		/// <returns></returns>
-		public static List<Matrix> ToMatrixList(List<FuzzyRelation> R_list)
-		{
-			return R_list.Select(x => x.ToMatrix).ToList();
-		}
-		/// <summary>
-		/// преобразование списка Matrix в список FuzzyRelation
-		/// </summary>
-		/// <param name="R_list"></param>
-		/// <returns></returns>
-		public static List<FuzzyRelation> ToFuzzyList(List<Matrix> R_list)
-		{
-			return R_list.Select(x => x.Cast2Fuzzy).ToList();
-		}
-		/// <summary>
-		/// индексы недоминируемых альтернатив
-		/// </summary>
-		/// <returns></returns>
-		public HashSet<int> UndominatedAlternatives()
-		{
-			var ans = Enumerable.Range(0, n).ToHashSet();
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-					if (i != j && this[j, i] > this[i, j])
-					{
-						ans.Remove(i);
-						break;
-					}
-			return ans;
-		}
-		#endregion FUNCTIONS
-	}
 
 	/// <summary>
 	/// связанные с сущностью control-ы на форме
@@ -1487,7 +847,7 @@ namespace Group_choice_algos_fuzzy
 							parent_method.Rankings
 							.Where(x => x.Count == n)
 							.Select(x => x.Rank2Matrix.Matrix2String(false)).ToArray());
-					FileOperations.WriteToFile(text, OUT_FILE, true);
+					OPS_File.WriteToFile(text, OUT_FILE, true);
 				}
 			}
 			private void SetRankingsToDataGridView()
@@ -1530,9 +890,9 @@ namespace Group_choice_algos_fuzzy
 							cell_text += Characteristic.Value.ToString();
 							if (min < max)
 							{
-								if (DoubleEQUAL(Characteristic.Value, min))
+								if (OPS_Double.EQUALS(Characteristic.Value, min))
 									cell_colour = output_characteristics_min_color;
-								else if (DoubleEQUAL(Characteristic.Value, max))
+								else if (OPS_Double.EQUALS(Characteristic.Value, max))
 									cell_colour = output_characteristics_max_color;
 							}
 						}
@@ -1754,9 +1114,9 @@ namespace Group_choice_algos_fuzzy
 					bool one_lessthan = false;
 					for (int i = 0; i < R1.Count; i++)
 					{
-						if (DoubleMORETHAN(R1[i], R2[i]))//R1[i] > R2[i]
+						if (OPS_Double.MORETHAN(R1[i], R2[i]))//R1[i] > R2[i]
 							one_morethan = true;
-						if (DoubleMORETHAN(R2[i], R1[i]))//R1[i] < R2[i]
+						if (OPS_Double.MORETHAN(R2[i], R1[i]))//R1[i] < R2[i]
 							one_lessthan = true;
 					}
 					if (one_morethan && !one_lessthan)
@@ -1951,323 +1311,4 @@ namespace Group_choice_algos_fuzzy
 		#endregion FUNCTIONS
 	}
 
-	/// <summary>
-	/// операции с файлами
-	/// </summary>
-	public static class FileOperations
-	{
-		/// <summary>
-		/// поиск файлов в директориях
-		/// </summary>
-		/// <param name="directory_with_file"></param>
-		/// <param name="file_name"></param>
-		/// <returns></returns>
-		public static bool FindFile(string file_name, out string absolute_file_name)
-		{
-			absolute_file_name = "";
-			try
-			{
-				string directory_with_file = Path.GetDirectoryName(file_name);
-				bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
-				file_name = Path.GetFileName(file_name);
-				Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
-				directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
-				string[] allFoundFiles;
-				if (!emptydirname)
-				{
-					allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
-						SearchOption.TopDirectoryOnly);
-				}
-				else
-				{
-					allFoundFiles = Directory.GetFiles(directory_with_file, $"{file_name}*",
-						SearchOption.AllDirectories);
-				}
-				if (allFoundFiles.Length > 0)
-				{
-					absolute_file_name = allFoundFiles.First();
-					return true;
-				}
-			}
-			catch (DirectoryNotFoundException ex)
-			{
-				throw new MyException($"{ex.Message}");
-			}
-			catch { }
-			return false;
-		}
-
-		/// <summary>
-		/// создать файл с переданным текстом
-		/// </summary>
-		/// <param name="text"></param>
-		/// <param name="filename"></param>
-		/// <returns></returns>
-		public static string WriteToFile(string text, string filename, bool add)
-		{
-			string directory_with_file = Path.GetDirectoryName(filename);
-			filename = Path.GetFileName(filename);
-			directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
-			bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
-			//достать название папки, если есть указание папки
-			var absolute_file_name = Path.Combine(directory_with_file, filename);
-			if (add)
-			{
-				using (StreamWriter writer = new StreamWriter(absolute_file_name, true))
-				{
-					writer.WriteLine(CR_LF);
-					writer.WriteLine(text);
-				}
-			}
-			else
-			{
-				File.WriteAllText(absolute_file_name, text);
-			}
-			return absolute_file_name;
-		}
-
-		public static List<Matrix> ReadFileWithMatrices(string filename, out string absolute_file_name)
-		{
-			List<Matrix> matrices = new List<Matrix>();
-			FindFile(filename, out absolute_file_name);
-			try
-			{
-				if (absolute_file_name == "")
-					throw new FileNotFoundException();
-				string[] lines = File.ReadAllLines(absolute_file_name)
-					.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
-				filename = absolute_file_name;
-				char[] chars_for_split = new char[] { ' ', '	' };
-				int _n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
-				Matrix cur_matrix = new Matrix(_n, _n);
-				for (int l = 0; l < lines.Length; l++)
-				{
-					if (lines[l].Length != 0)
-					{
-						double res;
-						double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
-							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
-						if (numbers.Any(x => x == INF) || numbers.Length != _n)
-							throw new MyException(EX_bad_file);
-						for (int j = 0; j < numbers.Length; j++)
-							cur_matrix[l % _n, j] = numbers[j];
-					}
-					if (l % _n == _n - 1)
-						matrices.Add(new Matrix(cur_matrix));
-				}
-				if (matrices.Count == 0)
-					throw new MyException(EX_bad_file);
-				//m = matrices.Count;
-				//n = _n;
-			}
-			catch (FileNotFoundException ex)
-			{
-				throw new MyException($"{ex.Message}");
-			}
-			return matrices;
-		}
-	}
-
-	/// <summary>
-	/// операции с рисованием графов на форме
-	/// </summary>
-	public static class GraphDrawingOperations
-	{
-		/// <summary>
-		/// отрисовать граф по матрице в PictureBox
-		/// </summary>
-		/// <param name="matrix"></param>
-		/// <param name="pictureBox"></param>
-		/// <returns></returns>
-		public static Bitmap DrawGraph(double[,] matrix, PictureBox pictureBox)
-		{
-			try
-			{
-				var G = GenerateGraph(matrix);
-				Bitmap bitmap = DrawBitmap(G, pictureBox);
-				//bitmap.Save("graph_visualizing_output.png");
-				pictureBox.SizeChanged += (object sender, EventArgs e) =>
-				{
-					DrawBitmap(G, (PictureBox)sender);
-				};
-				return bitmap;
-			}
-			catch { }
-			return null;
-		}
-
-		/// <summary>
-		/// создадим орграф
-		/// </summary>
-		/// <param name="M">матрица весов орграфа</param>
-		/// <returns></returns>
-		public static Microsoft.Msagl.Drawing.Graph GenerateGraph(double[,] M)
-		{
-			if (M.GetLength(0) != M.GetLength(1))
-				throw new MyException(EX_matrix_not_square);
-			int n = M.GetLength(0);
-			Microsoft.Msagl.Drawing.Graph graph = new Microsoft.Msagl.Drawing.Graph("");
-			for (int i = 0; i < n; i++)
-			{
-				Microsoft.Msagl.Drawing.Node node = graph.AddNode(ind2letter[i]);
-				node.Attr.LabelMargin = 1;
-				node.Attr.FillColor = node_color;
-				node.Attr.Shape = Microsoft.Msagl.Drawing.Shape.Circle;
-				for (int j = 0; j < n; j++)
-				{
-					if (M[i, j] != 0 && Math.Abs(M[i, j]) != INF)
-					{
-						Microsoft.Msagl.Drawing.Edge edge = graph.AddEdge(ind2letter[i], string.Format("{0:0.####}", M[i, j]), ind2letter[j]);
-						edge.Label.FontSize = node.Label.FontSize * 0.75;
-					}
-				}
-			}
-			return graph;
-		}
-
-		/// <summary>
-		/// создать картинку графа (битмап)
-		/// </summary>
-		/// <param name="g"></param>
-		/// <param name="drawing_field"></param>
-		/// <returns></returns>
-		public static Bitmap DrawBitmap(Microsoft.Msagl.Drawing.Graph g, PictureBox drawing_field)
-		{
-			Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer = new Microsoft.Msagl.GraphViewerGdi.GraphRenderer(g);
-			renderer.CalculateLayout();
-			Bitmap bitmap = new Bitmap(
-				(int)drawing_field.Width, (int)drawing_field.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
-			renderer.Render(bitmap);
-			drawing_field.Image = (Image)bitmap;
-			return bitmap;
-		}
-
-		/// <summary>
-		/// обновить рисунки графов
-		/// </summary>
-		/// <param name="form"></param>
-		/// <param name="M"></param>
-		/// <param name="L"></param>
-		public static void OrgraphsPics_update(IFromGraphsDraw form, List<Matrix> M, List<string> L)
-		{
-			if (form != null && !((Form)form).IsDisposed)
-			{
-				form.Redraw(M.Select(x => x.matrix_base).ToList(), L);
-			}
-		}
-	}
-
-	/// <summary>
-	/// операции с DataGridView
-	/// </summary>
-	public static class DataGridViewOperations
-	{
-		public static int SetColumn(DataGridView dgv, string header)
-		{
-			int j = dgv.Columns.Count;
-			DataGridViewColumn column = new DataGridViewColumn();
-			column.CellTemplate = new DataGridViewTextBoxCell();
-			column.SortMode = DataGridViewColumnSortMode.NotSortable;
-			column.HeaderCell.Style.BackColor = window_bg_color;
-			column.HeaderText = header;
-			column.MinimumWidth = 15;
-			column.FillWeight = 1;
-			dgv.Columns.Add(column);
-			return j;
-		}
-		public static int SetRow(DataGridView dgv, string header)
-		{
-			int i = dgv.Rows.Count;
-			DataGridViewRow row = new DataGridViewRow();
-			row.HeaderCell.Value = header;
-			row.MinimumHeight = 15;
-			dgv.Rows.Add(row);
-			return i;
-		}
-		public static void SetReadonlyCell(DataGridView dgv, int i, int j, string value, Color clr)
-		{
-			dgv[j, i].ReadOnly = true;
-			dgv[j, i].Style.BackColor = clr;
-			dgv[j, i].Value = value;
-		}
-		public static void SetDoubleCell(DataGridView dgv, int i, int j, double value)
-		{
-			dgv[j, i].ValueType = typeof(double);
-			dgv[j, i].Value = value;
-		}
-		public static void ClearDGV(DataGridView dgv)
-		{
-			dgv?.Rows.Clear();
-			dgv?.Columns.Clear();
-			//Dispose не делать, вредно
-		}
-		private static void SetDataGridViewDefaults_FontAndColors(DataGridView dgv)
-		{
-			//dgv.DefaultCellStyle.Font = new Font(font, font_size);
-			dgv.DefaultCellStyle.ForeColor = font_color;
-			dgv.DefaultCellStyle.BackColor = input_bg_color;
-			dgv.DefaultCellStyle.SelectionForeColor = font_color;
-			dgv.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.Empty;
-		}
-		/// <summary>
-		/// настрйки для вывода DataGridView
-		/// </summary>
-		/// <param name="dgv"></param>
-		public static void SetDataGridViewDefaults(DataGridView dgv)
-		{
-			dgv.AllowUserToAddRows = false;
-			dgv.AllowUserToDeleteRows = false;
-			dgv.AllowUserToResizeRows = true;
-			dgv.AllowUserToResizeColumns = true;
-			dgv.AllowUserToOrderColumns = false;
-			dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
-			dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-			dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
-			dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-			dgv.ShowEditingIcon = true;
-			dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
-			dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
-			SetDataGridViewDefaults_FontAndColors(dgv);
-			dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
-		}
-		public static void ColorCell(DataGridView dgv, int row, int col, System.Drawing.Color color)
-		{
-			dgv[col, row].Style.BackColor = color;
-		}
-		public static void ColorSymmetricCell(object sender, DataGridViewCellEventArgs e)
-		{
-			var dd = sender as DataGridView;
-			int i = e.RowIndex;
-			int j = e.ColumnIndex;
-			if (i == j)
-				ColorCell(dd, i, j, input_bg_color_disabled);
-			else
-			{
-				double Mij, Mji;
-				var p1 = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
-				var p2 = double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
-				ColorCell(dd, i, j, input_bg_color);
-				ColorCell(dd, j, i, input_bg_color);
-				if (p1 && p2)
-				{
-					if (Mij == 0 && Mji != 0)
-					{
-						ColorCell(dd, i, j, input_bg_color_disabled);
-					}
-					else if (Mij != 0 && Mji == 0)
-					{
-						ColorCell(dd, j, i, input_bg_color_disabled);
-					}
-				}
-			}
-		}
-		public static void ColorSymmetricCells(DataGridView dgv)
-		{
-			for (int i = 0; i < dgv.Rows.Count; i++)
-				for (int j = 0; j < dgv.Columns.Count; j++)
-					ColorSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
-		}
-	}
 }

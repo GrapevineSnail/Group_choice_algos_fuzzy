@@ -8,8 +8,8 @@ using System.Reflection;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
-using static Group_choice_algos_fuzzy.DataGridViewOperations;
-using static Group_choice_algos_fuzzy.GraphDrawingOperations;
+using static Group_choice_algos_fuzzy.OPS_DataGridView;
+using static Group_choice_algos_fuzzy.OPS_GraphDrawing;
 using System.IO;
 using System.Drawing;
 
@@ -139,7 +139,7 @@ namespace Group_choice_algos_fuzzy
 							dd[j, i].Value = 0.0;
 						}
 						ExpertRelations_InputRelChanged?.Invoke(sender,
-							new ExpertRelationsEventArgs(exp_index, Matrix.GetFromDataGridView(dd)));
+							new ExpertRelationsEventArgs(exp_index, OPS_DataGridView.GetFromDataGridView(dd)));
 					}
 					catch (MyException ex) { ex.Info(); }
 				}
@@ -159,7 +159,7 @@ namespace Group_choice_algos_fuzzy
 					{
 						SetRow(dgv, $"{ind2letter[i]}");
 					}
-					Matrix.SetToDataGridView(new_martix, dgv);
+					OPS_DataGridView.SetToDataGridView(new_martix, dgv);
 					return dgv;
 				}
 				public DataGridView UpdateViewTable(int expert_index)
@@ -515,7 +515,7 @@ namespace Group_choice_algos_fuzzy
 			public static List<string> MutualRankings;//ранжирования, которые принадлежат всем выбранным к выполнению (IsExecute) методам
 			public static void UI_ShowMethods()
 			{
-				FileOperations.WriteToFile("", OUT_FILE, false);
+				OPS_File.WriteToFile("", OUT_FILE, false);
 				foreach (Method M in GetMethods())
 				{
 					if (M.IsExecute)
@@ -528,7 +528,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					M.UI_Controls.UI_Clear();
 				}
-				FileOperations.WriteToFile("", OUT_FILE, false);
+				OPS_File.WriteToFile("", OUT_FILE, false);
 			}
 			/// <summary>
 			/// очищает результаты методов и характеристики этих результатов
