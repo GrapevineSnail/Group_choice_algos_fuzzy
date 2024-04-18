@@ -77,9 +77,10 @@ namespace Group_choice_algos_fuzzy
 		public static Color error_color = ColorTranslator.FromHtml("#FFBBBB");
 		public static Color input_bg_color = Color.White;
 		public static Color input_bg_color_disabled = ColorTranslator.FromHtml("#FFCCCCCC");
-		public static Color output_characteristics_bg_color = ColorTranslator.FromHtml("#FFDFBFFA");
+		public static Color output_characteristics_bg_color = ColorTranslator.FromHtml("#FFDFBFFA"); 
 		public static Color output_characteristics_min_color = ColorTranslator.FromHtml("#BBEEFF");
 		public static Color output_characteristics_max_color = ColorTranslator.FromHtml("#FFEEBB");
+		public static Color output_characteristics_Pareto_color = ColorTranslator.FromHtml("#c4a5df");
 		public static Color output_characteristics_mutual_color = ColorTranslator.FromHtml("#D0FFBB");
 		public static Color window_bg_color = Color.AntiqueWhite; //ColorTranslator.FromHtml("#FAEBD7");
 		public static Color button_bg_color = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
@@ -117,12 +118,18 @@ namespace Group_choice_algos_fuzzy
 		#endregion METHODS' IDs
 
 		#region NAMING
+		public const string _CH_WHOLE_SUM = " суммарн.";
+		public const string _CH_ON_EACH_EXPERT = " по каждому эксперту-криетрию";
+		public const string _CH_ON_R = " по агрегированной матрице R";
+
 		public const string CH_COST = "стоимость";
 		public const string CH_STRENGTH = "сила";
-		public const string CH_DIST_SQUARE = "cумм. расст. 'квадрат разности'";
-		public const string CH_DIST_MODULUS = "cумм. расст. 'модуль разности'";
-		public const string CH_COST_EXPERTS = "стоимость по каждому эксперту-характеристике";
-		public const string CH_STRENGTH_EXPERTS = "сила по каждому эксперту-характеристике";
+		public const string CH_DIST_SQUARE = "'квадрат разности'";
+		public const string CH_DIST_MODULUS = "'модуль разности'";
+		public const string CH_COST_EXPERTS = CH_COST + _CH_ON_EACH_EXPERT;// "стоимость по каждому эксперту-критерию";
+		public const string CH_STRENGTH_EXPERTS = CH_STRENGTH + _CH_ON_EACH_EXPERT; //"сила по каждому эксперту-критерию";
+		public const string CH_DIST_EXPERTS= "расстояние до матрицы каждого эксперта: ";
+
 		public const string RE_R = "Агрегированное отношение R";
 		public const string RE_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";
 		public const string RE_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";

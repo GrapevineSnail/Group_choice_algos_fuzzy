@@ -1200,6 +1200,7 @@ namespace Group_choice_algos_fuzzy
 		public Characteristic Strength; //сила пути (пропускная способность)
 		public Characteristic StrengthsExperts; //вектор сил по каждому эксперту-характеристике
 		public RankingSummaryDistanceClass SummaryDistance;//суммарное расстояние до всех остальных входных ранжирований
+		public RankingSummaryDistanceClass SummaryDistanceExperts;//расстояние входного ранжирования каждого эксперта - вектор
 		#endregion FIELDS
 
 		#region PROPERTIES
@@ -1290,6 +1291,7 @@ namespace Group_choice_algos_fuzzy
 			Strength = null;
 			StrengthsExperts = null;
 			SummaryDistance = null;
+			SummaryDistanceExperts = null;
 			if (!(_Path is null))
 			{
 				Cost = new Characteristic(CH_COST, PathCost(Rank2List, weight_matrix));
@@ -1308,6 +1310,17 @@ namespace Group_choice_algos_fuzzy
 						SummaryDistance = new RankingSummaryDistanceClass();
 						SummaryDistance.modulus.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceModulus);
 						SummaryDistance.square.Value = Rank2Matrix.SumDistance(other_matrices, Matrix.DistanceSquare);
+						SummaryDistance.modulus.Label += _CH_WHOLE_SUM;
+						SummaryDistance.square.Label += _CH_WHOLE_SUM;
+
+						SummaryDistanceExperts = new RankingSummaryDistanceClass();
+						SummaryDistanceExperts.modulus.ValuesList = other_matrices
+							.Select(x => Matrix.DistanceModulus(Rank2Matrix, x)).ToList();
+						SummaryDistanceExperts.square.ValuesList = other_matrices
+							.Select(x => Matrix.DistanceSquare(Rank2Matrix, x)).ToList();
+						SummaryDistanceExperts.modulus.Label += _CH_ON_EACH_EXPERT;
+						SummaryDistanceExperts.square.Label += _CH_ON_EACH_EXPERT;
+
 					}
 				}
 			}
@@ -1527,7 +1540,7 @@ namespace Group_choice_algos_fuzzy
 						{
 							cell_text += string.Join(CR_LF, Characteristic.ValuesList);
 							if (highlight_this_best)
-								cell_colour = output_characteristics_max_color;
+								cell_colour = output_characteristics_Pareto_color;
 						}
 						SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
 							i, j, cell_text, cell_colour);
@@ -1547,6 +1560,8 @@ namespace Group_choice_algos_fuzzy
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.SummaryDistance.square.Label);
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.CostsExperts.Label);
 					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.StrengthsExperts.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.SummaryDistanceExperts.modulus.Label);
+					SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.SummaryDistanceExperts.square.Label);
 					for (int j = 0; j < parent_method.Rankings.Count; j++)
 					{
 						Ranking rank = parent_method.Rankings[j];
@@ -1592,6 +1607,17 @@ namespace Group_choice_algos_fuzzy
 							INF,
 							MethodCh.IsInPareto_Strength[j],
 							parent_method.Rankings[j].StrengthsExperts);
+
+						display_characteristic(N + 6, j,
+							INF,
+							INF,
+							MethodCh.IsInPareto_DistModulus[j],
+							parent_method.Rankings[j].SummaryDistanceExperts.modulus);
+						display_characteristic(N + 7, j,
+							INF,
+							INF,
+							MethodCh.IsInPareto_DistSquare[j],
+							parent_method.Rankings[j].SummaryDistanceExperts.square);
 					}
 				}
 			}
@@ -1625,6 +1651,8 @@ namespace Group_choice_algos_fuzzy
 			private RankingSummaryDistanceClass _MinMaxDistance;//мин и макс суммарн. расстояние среди ранжирований метода
 			private bool[] _IsInPareto_Cost;//входит ли ранжирование по индексу i в Парето-множество по векторам-характеристикам экспертов
 			private bool[] _IsInPareto_Strength;
+			private bool[] _IsInPareto_DistModulus;
+			private bool[] _IsInPareto_DistSquare;
 			public Characteristic MinMaxCost
 			{
 				get
@@ -1664,6 +1692,8 @@ namespace Group_choice_algos_fuzzy
 						_MinMaxDistance.modulus.SetMinMax(
 							parent_method.Rankings.Select(x => x.SummaryDistance.modulus.Value).ToList()
 							);
+						_MinMaxDistance.square.Label += _CH_WHOLE_SUM;
+						_MinMaxDistance.modulus.Label += _CH_WHOLE_SUM;
 					}
 					return _MinMaxDistance;
 				}
@@ -1673,7 +1703,8 @@ namespace Group_choice_algos_fuzzy
 				get
 				{
 					if (_IsInPareto_Cost is null)
-						_IsInPareto_Cost = QualeEInParetoSet(parent_method.Rankings.Select(x => x.CostsExperts).ToList());
+						_IsInPareto_Cost = QualeEInParetoSet(parent_method.Rankings
+							.Select(x => x.CostsExperts).ToList(), "max");
 					return _IsInPareto_Cost;
 				}
 			}
@@ -1682,16 +1713,38 @@ namespace Group_choice_algos_fuzzy
 				get
 				{
 					if (_IsInPareto_Strength is null)
-						_IsInPareto_Strength = QualeEInParetoSet(parent_method.Rankings.Select(x => x.StrengthsExperts).ToList());
+						_IsInPareto_Strength = QualeEInParetoSet(parent_method.Rankings
+							.Select(x => x.StrengthsExperts).ToList(), "max");
 					return _IsInPareto_Strength;
+				}
+			}
+			public bool[] IsInPareto_DistModulus
+			{
+				get
+				{
+					if (_IsInPareto_DistModulus is null)
+						_IsInPareto_DistModulus = QualeEInParetoSet(parent_method.Rankings
+							.Select(x => x.SummaryDistanceExperts.modulus).ToList(), "min");
+					return _IsInPareto_DistModulus;
+				}
+			}
+			public bool[] IsInPareto_DistSquare
+			{
+				get
+				{
+					if (_IsInPareto_DistSquare is null)
+						_IsInPareto_DistSquare = QualeEInParetoSet(parent_method.Rankings
+							.Select(x => x.SummaryDistanceExperts.square).ToList(), "min");
+					return _IsInPareto_DistSquare;
 				}
 			}
 			/// <summary>
 			/// задаёт индексы ранжирований, входящих в Парето-множество
 			/// </summary>
 			/// <param name="R"></param>
+			/// <param name="min_or_max">минимизирующий или максимизирющий критери: "min"/"max"</param>
 			/// <returns></returns>
-			private bool[] QualeEInParetoSet(List<Characteristic> R)
+			private bool[] QualeEInParetoSet(List<Characteristic> R, string min_or_max)
 			{
 				bool ParetoMORETHAN(List<double> R1, List<double> R2)
 				{
@@ -1710,6 +1763,10 @@ namespace Group_choice_algos_fuzzy
 						return true;
 					return false;
 				}
+				bool ParetoLESSTHAN(List<double> R1, List<double> R2)
+				{
+					return ParetoMORETHAN(R2, R1);
+				}
 				var r = R.Count;
 				var isInPareto = new bool[r];
 				for (int i = 0; i < r; i++)
@@ -1719,10 +1776,21 @@ namespace Group_choice_algos_fuzzy
 					{
 						var Vj = R[j].ValuesList;
 						var Vi = R[i].ValuesList;
-						if (i != j && ParetoMORETHAN(Vj, Vi))
+						if (min_or_max == "min")
 						{
-							isInPareto[i] = false;
-							break;
+							if (i != j && ParetoLESSTHAN(Vj, Vi))
+							{
+								isInPareto[i] = false;
+								break;
+							}
+						}
+						else
+						{
+							if (i != j && ParetoMORETHAN(Vj, Vi))
+							{
+								isInPareto[i] = false;
+								break;
+							}
 						}
 					}
 				}
