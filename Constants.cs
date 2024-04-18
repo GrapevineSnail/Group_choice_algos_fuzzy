@@ -11,6 +11,7 @@ namespace Group_choice_algos_fuzzy
 		public class MyException : Exception
 		{
 			public MyException(string message) : base(message) { }
+
 			#region EXCEPTIONS and INFO
 			public static string EX_bad_expert_profile = "Введите корректные профили экспертов";
 			public static string EX_matrix_not_square = "Матрица должна быть квадратной";
@@ -29,6 +30,7 @@ namespace Group_choice_algos_fuzzy
 			public static string EX_contains_cycle = "Введённое отношение содержит цикл";
 			public static string INF_ranking_unavailable = "Строгое ранжирование невозможно. ";
 			#endregion EXCEPTIONS and INFO
+
 			/// <summary>
 			/// выводить при catch 
 			/// </summary>
@@ -38,7 +40,6 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-		#region FEILDS
 		#region COMMON
 		public const int max_count_of_alternatives = 9;
 		public const int max_count_of_experts = 50;
@@ -66,6 +67,25 @@ namespace Group_choice_algos_fuzzy
 		/// индекс альтернативы в её буквенное обозначение, если возможно (букв всего 26)
 		/// </summary>
 		public static Dictionary<int, string> ind2letter = new Dictionary<int, string>();
+		/// <summary>
+		/// задание символов, обозначающих альтернативы
+		/// </summary>
+		/// <param name="n">количество альтернатив (размерность квадратной матрицы предпочтений)</param>
+		public static void SetSymbolsForAlternatives(int n)
+		{
+			for (int i = 0; i < n; i++)
+			{
+				sym2ind[$"{MARK}{i}"] = i;
+				ind2sym[i] = $"{MARK}{i}";
+				if (n <= 26)
+				{
+					sym2ind[$"{letters[i]}"] = i;
+					sym2ind[$"{letters[i]}{i:00}"] = i;
+					sym2ind[$"{char.ToLower(letters[i])}"] = i;
+				}
+				ind2letter[i] = n > 26 ? ind2sym[i] : string.Format("{0}{1:00}", letters[i], i);
+			}
+		}
 		#endregion SYMBOLS
 
 		#region VISUAL_INTERFACE
@@ -136,30 +156,6 @@ namespace Group_choice_algos_fuzzy
 		public const string RE_R_Acyc = "Отношение с разбитыми циклами Acyclic(R) агрегированного отношения R";
 		public const string RE_R_Acyc_Tr = "Транзитивное замыкание Tr(Acyclic(R)) отношения с разбитыми циклами Acyclic(R) агрегированного отношения R";
 		#endregion NAMING
-
-		#endregion FEILDS		
-
-		#region FUNCTIONS		
-		/// <summary>
-		/// задание символов, обозначающих альтернативы
-		/// </summary>
-		/// <param name="n">количество альтернатив (размерность квадратной матрицы предпочтений)</param>
-		public static void SetSymbolsForAlternatives(int n)
-		{
-			for (int i = 0; i < n; i++)
-			{
-				sym2ind[$"{MARK}{i}"] = i;
-				ind2sym[i] = $"{MARK}{i}";
-				if (n <= 26)
-				{
-					sym2ind[$"{letters[i]}"] = i;
-					sym2ind[$"{letters[i]}{i:00}"] = i;
-					sym2ind[$"{char.ToLower(letters[i])}"] = i;
-				}
-				ind2letter[i] = n > 26 ? ind2sym[i] : string.Format("{0}{1:00}", letters[i], i);
-			}
-		}
-		#endregion FUNCTIONS
 
 	}
 }
