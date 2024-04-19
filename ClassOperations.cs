@@ -378,11 +378,16 @@ namespace Group_choice_algos_fuzzy
 				dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
 				dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 				dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+				dgv.RowHeadersWidth = row_headers_width;
 				dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 				dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 				dgv.ShowEditingIcon = true;
 				dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
 				dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+				//dgv.ShowCellToolTips = true;
+				//for (int j = 0; j < dgv.Columns.Count; j++)
+				//	for (int i = 0; i < dgv.Rows.Count; i++)
+				//		dgv[j, i].ToolTipText = dgv.Rows[i].HeaderCell.Value.ToString();
 				SetDGVDefaults_FontAndColors(dgv);
 				dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
 			}

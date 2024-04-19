@@ -94,6 +94,10 @@ namespace Group_choice_algos_fuzzy
 		public const string font_mono = "Courier New";
 		public const float font_size = 10;
 		public const float button_borderwidth = 5;
+		public const int row_headers_width = 225;
+		#endregion VISUAL_INTERFACE
+
+		#region COLORS
 		public static Color font_color = Color.Black;
 		public static Color error_color = ColorTranslator.FromHtml("#FFBBBB");
 		public static Color input_bg_color = Color.White;
@@ -108,7 +112,7 @@ namespace Group_choice_algos_fuzzy
 		public static Color button_bg_color_disabled = ColorTranslator.FromHtml("#D9D9D9");
 		public static Color datagridview_bg_color = System.Drawing.Color.Gray;
 		public static Microsoft.Msagl.Drawing.Color node_color = Microsoft.Msagl.Drawing.Color.PaleGreen;
-		#endregion VISUAL_INTERFACE
+		#endregion COLORS
 
 		#region FILE_OPERATIONS
 		public static string PROJECT_DIRECTORY = new DirectoryInfo(
@@ -140,6 +144,7 @@ namespace Group_choice_algos_fuzzy
 
 		#region NAMING
 		public const string _CH_WHOLE_SUM = " суммарн.";
+		public const string _CH_TO_EACH_EXPERT = " до каждого эксперта-криетрия";
 		public const string _CH_ON_EACH_EXPERT = " по каждому эксперту-криетрию";
 		public const string _CH_ON_R = " по агрегированной матрице R";
 		public const string _CH_NON_FUZZY = " (ранжирование чёткое)";

@@ -42,19 +42,15 @@ namespace Group_choice_algos_fuzzy
 			Methods.Smerchinskaya_Yashina_method.UI_Controls =
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
-			foreach (Control c in ExpertRelations.UI_ControlsAndView.GetOutputControls)
-				c.MouseDown += flowLayoutPanel_input_tables_MouseDown;
-			foreach (Control c in ExpertRelations.UI_ControlsAndView.GetOutputLabels)
-				c.MouseDown += flowLayoutPanel_output_info_MouseDown;
-			foreach (Control c in ExpertRelations.UI_ControlsAndView.GetOutputControls)
-			{
-				c.MouseDown += flowLayoutPanel_output_tables_MouseDown;
-				foreach (Control c1 in c.Controls)
-					c1.MouseDown += flowLayoutPanel_output_tables_MouseDown;
-			}
-			set_controls_size();
-			interface_coloring(this);
 			ClearModelDerivatives();
+			set_focus_handlers_enter_mouse(flowLayoutPanel_input_tables,
+				flowLayoutPanel_input_tables_MouseEnter);
+			set_focus_handlers_enter_mouse(flowLayoutPanel_output_info,
+				flowLayoutPanel_output_info_MouseEnter);
+			set_focus_handlers_enter_mouse(flowLayoutPanel_output_tables,
+				flowLayoutPanel_output_tables_MouseEnter);
+			interface_coloring(this);
+			set_controls_size();
 		}
 		public static Form2 form2_result_matrices = null;
 		public static Form3 form3_input_expert_matrices = null;
@@ -89,9 +85,29 @@ namespace Group_choice_algos_fuzzy
 			catch { }
 		}
 		/// <summary>
+		/// чтобы можно было прокручивать колёсиком при наведении мышки
+		/// </summary>
+		/// <param name="f"></param>
+		/// <param name="action"></param>
+		public void set_focus_handlers_enter_mouse(Control f, EventHandler action)
+		{
+			foreach (Control c in f.Controls)
+			{
+				c.MouseEnter += action;
+				if (c.Controls.Count > 0)
+				{
+					foreach (Control c2 in c.Controls)
+					{
+						set_focus_handlers_enter_mouse(c2, action);
+					}
+				}
+			}
+
+		}
+		/// <summary>
 		/// обновление размеров визуальных элементов после их изменения...
 		/// </summary>
-		public void set_controls_size()
+		void set_controls_size()
 		{
 			System.Drawing.Size get_table_size(DataGridView dgv)
 			{
@@ -117,6 +133,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					dgv.AutoResizeColumnHeadersHeight();
 					dgv.AutoResizeRows();
+					dgv.RowHeadersWidth = row_headers_width;
 					GroupBox frame = (GroupBox)dgv?.Parent;
 					if (frame != null)
 					{
@@ -128,7 +145,7 @@ namespace Group_choice_algos_fuzzy
 					dgv.AutoSize = true;
 					dgv.Size = get_table_size(dgv);
 
-					System.Windows.Forms.Label lab = m?.UI_Controls.ConnectedLabel;
+					Label lab = m?.UI_Controls.ConnectedLabel;
 					if (lab != null)
 					{
 						lab.Location = new System.Drawing.Point(0, dgv.Location.Y + dgv.Height);
@@ -157,6 +174,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				ExpertRelations.UI_ControlsAndView.UI_Show();
 				ExpertRelations.UI_ControlsAndView.UI_Activate();
+				set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
@@ -180,6 +198,7 @@ namespace Group_choice_algos_fuzzy
 					ExpertRelations.Model.SetMatrices(matrices);
 					ExpertRelations.UI_ControlsAndView.UI_Show();
 					ExpertRelations.UI_ControlsAndView.UI_Activate();
+					set_controls_size();
 				}
 				catch (FileNotFoundException ex)
 				{
@@ -207,7 +226,7 @@ namespace Group_choice_algos_fuzzy
 				Methods.ExecuteAlgorythms();
 				AggregatedMatrix.UI_Controls.UI_Show();
 				Methods.UI_ShowMethods();
-				form1.set_controls_size();
+				set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
@@ -256,10 +275,6 @@ namespace Group_choice_algos_fuzzy
 			*/
 		}
 
-		private void Form1_SizeChanged(object sender, EventArgs e)
-		{
-			set_controls_size();
-		}
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
 			var rtd = AggregatedMatrix.GetRelations2Draw();
@@ -280,18 +295,21 @@ namespace Group_choice_algos_fuzzy
 				form3_input_expert_matrices.Show();
 			}
 		}
-		private void flowLayoutPanel_output_info_MouseDown(object sender, MouseEventArgs e)
+		private void Form1_SizeChanged(object sender, EventArgs e)
 		{
-			flowLayoutPanel_output_info.Focus();
+			set_controls_size();
 		}
-		private void flowLayoutPanel_output_tables_MouseDown(object sender, MouseEventArgs e)
-		{
-			flowLayoutPanel_output_tables.Focus();
-		}
-		private void flowLayoutPanel_input_tables_MouseDown(object sender, MouseEventArgs e)
+		private void flowLayoutPanel_input_tables_MouseEnter(object sender, EventArgs e)
 		{
 			flowLayoutPanel_input_tables.Focus();
 		}
-
+		private void flowLayoutPanel_output_info_MouseEnter(object sender, EventArgs e)
+		{
+			flowLayoutPanel_output_info.Focus();
+		}
+		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
+		{
+			flowLayoutPanel_output_tables.Focus();
+		}
 	}
 }
