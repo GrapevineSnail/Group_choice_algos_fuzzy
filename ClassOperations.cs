@@ -58,6 +58,10 @@ namespace Group_choice_algos_fuzzy
 			{
 				return Math.Round(A * B, DIGITS_PRECISION);
 			}
+			public static double Divis(double A, double B)
+			{
+				return Math.Round(A / B, DIGITS_PRECISION);
+			}
 			public static double Trunc(double A)
 			{
 				return Math.Round(A, DIGITS_PRECISION);
@@ -317,8 +321,8 @@ namespace Group_choice_algos_fuzzy
 			}
 			public static void ClearDGV(DataGridView dgv)
 			{
-				dgv?.Rows.Clear();
-				dgv?.Columns.Clear();
+				dgv?.Rows?.Clear();
+				dgv?.Columns?.Clear();
 				//Dispose не делать, вредно
 			}
 			/// <summary>

@@ -355,14 +355,15 @@ namespace Group_choice_algos_fuzzy
 		public static Matrix Median(List<Matrix> M_list)
 		{
 			var R = Zeros(M_list.Last().n, M_list.Last().m);
-			int med_index = M_list.Count / 2; // так как нумерация с 0
+			int med_index = M_list.Count / 2; // так как нумерация с 0, деление целочисленное
 			for (int i = 0; i < R.n; i++)
 			{
 				for (int j = 0; j < R.m; j++)
 				{
 					var Rij_list = M_list.Select(x => x[i, j]).OrderBy(y => y).ToArray();
 					R[i, j] = M_list.Count % 2 == 1 ? Rij_list[med_index] :
-						OPS_Double.Mult(1 / 2, OPS_Double.Plus(Rij_list[med_index - 1], Rij_list[med_index]));
+						OPS_Double.Divis(
+							OPS_Double.Plus(Rij_list[med_index - 1], Rij_list[med_index]), 2.0);
 				}
 			}
 			return R;
@@ -387,7 +388,7 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < m; j++)
 					ans += this[i, j];
-			return OPS_Double.Trunc( ans);
+			return OPS_Double.Trunc(ans);
 		}
 		/// <summary>
 		/// возвращает множество всех элементов матрицы (каждый элемент в одном экземпляре)
@@ -409,7 +410,7 @@ namespace Group_choice_algos_fuzzy
 			var elems = this.GetElemValues();
 			double ans = INF;
 			foreach (var e in elems)
-				if ( e < ans && e != no_edge_symbol)
+				if (e < ans && e != no_edge_symbol)
 					ans = e;
 			return ans;
 		}
@@ -562,12 +563,12 @@ namespace Group_choice_algos_fuzzy
 			//была ли матрица уже нормализованной
 			IsNormalized = 0 <= this.MinElem() && this.MaxElem() <= 1 ? true : false;
 			double shift = this.MinElem();
-			double squeeze = this.GetElemValues().Select(x =>OPS_Double.Minus( x, shift)).Max();
+			double squeeze = this.GetElemValues().Select(x => OPS_Double.Minus(x, shift)).Max();
 			if (!IsNormalized)
 			{
 				for (int i = 0; i < n; i++)
 					for (int j = 0; j < m; j++)
-						R[i, j] = OPS_Double.Mult(OPS_Double.Minus(R[i, j], shift),	1 / squeeze);
+						R[i, j] = OPS_Double.Divis(OPS_Double.Minus(R[i, j], shift), squeeze);
 			}
 			return R;
 		}
@@ -624,12 +625,12 @@ namespace Group_choice_algos_fuzzy
 		/// <returns></returns>
 		public int[,] EdgesMask(double[] no_edge_symbols)
 		{
-			int[,] ans = new int[n,m];
+			int[,] ans = new int[n, m];
 			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < m; j++)
 				{
-					ans[i,j ]= this.HasEdge((i, j), no_edge_symbols) ? 1 :0;					
+					ans[i, j] = this.HasEdge((i, j), no_edge_symbols) ? 1 : 0;
 				}
 			}
 			return ans;

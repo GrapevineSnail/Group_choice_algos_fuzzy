@@ -1157,8 +1157,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					if (HasNoConnectedOutputs())
 						return;
-					Matrix new_martix = Model.GetMatrix(expert_index);
-					SetNewMatrixToDGV(GetOutputDataGridViews[expert_index], new_martix);
+					UpdateDGVCells(GetOutputDataGridViews[expert_index], Model.GetMatrix(expert_index));
 					ColorSymmetricCells(GetOutputDataGridViews[expert_index]);
 				}
 				public void NewTables()
@@ -1372,20 +1371,13 @@ namespace Group_choice_algos_fuzzy
 				public static void CheckAndSetMatrixElement(int matrix_index, int i, int j, double value)
 				{
 					SetMatrixElement(matrix_index, i, j, value);
-					var ans = CheckMatrix(_RList[matrix_index], out var _);
-					try
-					{
-						if (ans.has_cycle)
-						{
-							throw new MyException(EX_contains_cycle);
-						}
-					}
-					catch (MyException ex) { ex.Info(); }
+					CheckAndSetMatrix(matrix_index, _RList[matrix_index]);					
 				}
 				public static void CheckAndSetMatrix(int matrix_index, Matrix matrix)
 				{					
 					var ans = CheckMatrix(matrix, out var M);
-					SetMatrix(matrix_index, M);
+					if(matrix != M)
+						SetMatrix(matrix_index, M);
 					try
 					{
 						if (!ans.is_norm)
