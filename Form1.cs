@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using static Group_choice_algos_fuzzy.ClassOperations;
+using static Group_choice_algos_fuzzy.ClassOperations.OPS_File;
+using static Group_choice_algos_fuzzy.ClassOperations.OPS_GraphDrawing;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
-using static Group_choice_algos_fuzzy.OPS_File;
 using static Group_choice_algos_fuzzy.Model;
-using static Group_choice_algos_fuzzy.OPS_GraphDrawing;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -23,10 +22,9 @@ namespace Group_choice_algos_fuzzy
 
 			Model.form1 = this;
 
-			ExpertRelations.UI_Controls = new ExpertRelations.ConnectedControls(
+			ExpertRelations.UI_ControlsAndView = new ExpertRelations.ConnectedControlsAndView(
 				cb_show_input_matrices, cb_do_transitive_closure,
 				numericUpDown_n, numericUpDown_m, flowLayoutPanel_input_tables);
-			ExpertRelations.ExpertRelations_InputRelChanged += ExpertRelations.UpdateExpertMatrix;
 
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(
 				rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
@@ -44,11 +42,11 @@ namespace Group_choice_algos_fuzzy
 			Methods.Smerchinskaya_Yashina_method.UI_Controls =
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
-			foreach (Control c in ExpertRelations.UI_Controls.GetOutputControls)
+			foreach (Control c in ExpertRelations.UI_ControlsAndView.GetOutputControls)
 				c.MouseDown += flowLayoutPanel_input_tables_MouseDown;
-			foreach (Control c in ExpertRelations.UI_Controls.GetOutputLabels)
+			foreach (Control c in ExpertRelations.UI_ControlsAndView.GetOutputLabels)
 				c.MouseDown += flowLayoutPanel_output_info_MouseDown;
-			foreach (Control c in ExpertRelations.UI_Controls.GetOutputControls)
+			foreach (Control c in ExpertRelations.UI_ControlsAndView.GetOutputControls)
 			{
 				c.MouseDown += flowLayoutPanel_output_tables_MouseDown;
 				foreach (Control c1 in c.Controls)
@@ -88,7 +86,7 @@ namespace Group_choice_algos_fuzzy
 						interface_coloring(c);
 				}
 			}
-			catch (MyException ex) { }
+			catch { }
 		}
 		/// <summary>
 		/// обновление размеров визуальных элементов после их изменения...
@@ -105,7 +103,7 @@ namespace Group_choice_algos_fuzzy
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
 
-			foreach (DataGridView dgv in ExpertRelations.UI_Controls.GetOutputDataGridViews)
+			foreach (DataGridView dgv in ExpertRelations.UI_ControlsAndView.GetOutputDataGridViews)
 			{
 				dgv.Dock = DockStyle.None;
 				dgv.Size = get_table_size(dgv);
@@ -148,17 +146,17 @@ namespace Group_choice_algos_fuzzy
 			{
 				if(numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
-					ExpertRelations.UI_Controls.UpdateModel_n_m();
+					ExpertRelations.UI_ControlsAndView.UpdateModel_n_m();
 					ClearModelDerivatives();
 					var matrices = new List<Matrix>(m);
 					for (int k = 0; k < m; k++)
 					{
 						matrices.Add(new Matrix(n));
 					}
-					ExpertRelations.UpdateExpertMatrices(matrices);
+					ExpertRelations.Model.SetMatrices(matrices);
 				}
-				ExpertRelations.UI_Controls.UI_Show();
-				ExpertRelations.UI_Controls.UI_Activate();
+				ExpertRelations.UI_ControlsAndView.UI_Show();
+				ExpertRelations.UI_ControlsAndView.UI_Activate();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
@@ -179,9 +177,9 @@ namespace Group_choice_algos_fuzzy
 					m = matrices.Count;
 					n = matrices.First().n;
 					ClearModelDerivatives();
-					ExpertRelations.UpdateExpertMatrices(matrices);
-					ExpertRelations.UI_Controls.UI_Show();
-					ExpertRelations.UI_Controls.UI_Activate();
+					ExpertRelations.Model.SetMatrices(matrices);
+					ExpertRelations.UI_ControlsAndView.UI_Show();
+					ExpertRelations.UI_ControlsAndView.UI_Activate();
 				}
 				catch (FileNotFoundException ex)
 				{
@@ -202,16 +200,10 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (cb_All_rankings.Checked && n > max_count_of_alternatives)
 					throw new MyException(EX_n_m_too_big);
-				if (cb_do_transitive_closure.Checked)
-				{
-					var matrices = new List<Matrix>();
-					matrices = ExpertRelations.GetModelMatrices().Select(x => x.Cast2Fuzzy.TransClosured.ToMatrix).ToList();
-					ExpertRelations.UpdateExpertMatrices(matrices);
-
-				}
+				ExpertRelations.Model.CheckAndSetMatrices(ExpertRelations.Model.GetMatrices());
 				AggregatedMatrix.UI_Controls.UI_Clear();
 				Methods.UI_ClearMethods();
-				ExpertRelations.UI_Controls.UI_Deactivate();
+				ExpertRelations.UI_ControlsAndView.UI_Deactivate();
 				Methods.ExecuteAlgorythms();
 				AggregatedMatrix.UI_Controls.UI_Show();
 				Methods.UI_ShowMethods();
@@ -280,19 +272,11 @@ namespace Group_choice_algos_fuzzy
 				OrgraphsPics_update(form2_result_matrices, M, L);
 				form2_result_matrices.Show();
 			}
-			//входные матрицы экспертов
-			M = flowLayoutPanel_input_tables.Controls.OfType<DataGridView>()
-					   .Select(x => OPS_DataGridView.GetFromDataGridView(x)).ToList();
-			L = new List<string>();
-			for (int i = 0; i < M.Count; i++)
-			{
-				L.Add($"Expert{i}:");
-			}
-			if (M.Any(x => x != null))
+			if (ExpertRelations.Model.GetMatrices().Any(x => x != null))
 			{
 				form3_input_expert_matrices?.Dispose();
 				form3_input_expert_matrices = new Form3();
-				OrgraphsPics_update(form3_input_expert_matrices, M, L);
+				ExpertRelations.UI_ControlsAndView.UpdateExpertGraphs();
 				form3_input_expert_matrices.Show();
 			}
 		}

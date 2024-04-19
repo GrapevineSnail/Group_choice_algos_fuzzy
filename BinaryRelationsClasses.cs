@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
+using static Group_choice_algos_fuzzy.ClassOperations;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -106,10 +107,6 @@ namespace Group_choice_algos_fuzzy
 		/// превращает матрицу в нечёткое отношение
 		/// </summary>
 		public FuzzyRelation Cast2Fuzzy { get { return new FuzzyRelation(this); } }
-		/// <summary>
-		/// нормализует матрицу и превращает матрицу в нечеткое отношение
-		/// </summary>
-		public FuzzyRelation NormalizeAndCast2Fuzzy { get { return new FuzzyRelation(this.NormalizeElems(out var _)); } }
 		#endregion PROPERTIES
 
 		#region OPERATORS
@@ -185,9 +182,9 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// есть ли ребро на основании символов, обозначающих отсутствие ребра
 		/// </summary>
-		public bool HasEdge((int i, int j) edge, double[] no_edge_symbol)
+		public bool HasEdge((int i, int j) edge, double[] no_edge_symbols)
 		{
-			return !no_edge_symbol.Contains(this[edge.i, edge.j]);
+			return !no_edge_symbols.Contains(this[edge.i, edge.j]);
 		}
 		/// <summary>
 		/// выводит список смежности матрицы на основании того, 
@@ -208,6 +205,17 @@ namespace Group_choice_algos_fuzzy
 						ans[i].Add(j);
 			}
 			return ans;
+		}
+		/// <summary>
+		/// выводит список смежности матрицы на основании того, какое значение элемента матрицы считать отсутствием ребра
+		/// </summary>
+		/// <param name="no_edge_symbol">
+		/// какое значение элемента матрицы считать отсутствием ребра (0, INF, -INF и т.д.)
+		/// </param>
+		/// <returns></returns>
+		public List<List<int>> AdjacencyList(double[] no_edge_symbols)
+		{
+			return AdjacencyList(x => no_edge_symbols.Contains(x));
 		}
 		/// <summary>
 		/// выводит список смежности матрицы на основании того, какое значение элемента матрицы считать отсутствием ребра
@@ -527,6 +535,15 @@ namespace Group_choice_algos_fuzzy
 			return vertices.Any(v => is_cycle(v));
 		}
 		/// <summary>
+		/// есть ли в графе цикл, учитывая символы, обозначающие отсутствие дуги
+		/// </summary>
+		/// <param name="no_edge_symbol"></param>
+		/// <returns></returns>
+		public bool IsHasCycle(double[] no_edge_symbols)
+		{
+			return IsHasCycle(this.AdjacencyList(no_edge_symbols));
+		}
+		/// <summary>
 		/// есть ли в графе цикл, учитывая символ, обозначающий отсутствие дуги
 		/// </summary>
 		/// <param name="no_edge_symbol"></param>
@@ -552,6 +569,22 @@ namespace Group_choice_algos_fuzzy
 					for (int j = 0; j < m; j++)
 						R[i, j] = OPS_Double.Mult(OPS_Double.Minus(R[i, j], shift),	1 / squeeze);
 			}
+			return R;
+		}
+		/// <summary>
+		/// удаляет ребраЮ соответствующие петлям
+		/// </summary>
+		/// <returns></returns>
+		public Matrix DeleteSolitaryLoops(out int SolitaryLoopsCnt, double no_edge_symbol)
+		{
+			Matrix R = new Matrix(this);
+			SolitaryLoopsCnt = 0;
+			for (int i = 0; i < n; i++)
+				if (R[i, i] != no_edge_symbol)
+				{
+					SolitaryLoopsCnt++;
+					R[i, i] = no_edge_symbol;
+				}
 			return R;
 		}
 		/// <summary>
@@ -643,6 +676,20 @@ namespace Group_choice_algos_fuzzy
 		public int EdgesCount(bool count_solitary_loop)
 		{
 			return EdgesCount(count_solitary_loop, new double[] { NO_EDGE, INF });
+		}
+		/// <summary>
+		/// поэлементное умножение матриц
+		/// </summary>
+		/// <param name="M1"></param>
+		/// <param name="M2"></param>
+		/// <returns></returns>
+		public static Matrix MultElementwise(Matrix M1, Matrix M2)
+		{
+			var M = new Matrix(M1);
+			for (int i = 0; i < M.n; i++)
+				for (int j = 0; j < M.m; j++)
+					M[i, j] = OPS_Double.Mult(M[i, j], M2[i, j]);
+			return M;
 		}
 		#endregion FUNCTIONS
 	}
@@ -979,9 +1026,9 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// есть ли цикл в матрице принадлежности отношения
 		/// </summary>
-		public bool IsHasCycle()
+		public new bool IsHasCycle(double no_edge_symbol)
 		{
-			return this.IsHasCycle(NO_EDGE);
+			return base.IsHasCycle(no_edge_symbol);
 		}
 		/// <summary>
 		/// разбить циклы

@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data;
-using System.Reflection;
+using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
+using static Group_choice_algos_fuzzy.ClassOperations;
+using static Group_choice_algos_fuzzy.ClassOperations.OPS_DataGridView;
+using static Group_choice_algos_fuzzy.ClassOperations.OPS_GraphDrawing;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
-using static Group_choice_algos_fuzzy.OPS_DataGridView;
-using static Group_choice_algos_fuzzy.OPS_GraphDrawing;
-using System.IO;
-using System.Drawing;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -41,14 +38,1009 @@ namespace Group_choice_algos_fuzzy
 		#endregion PROPERTIES
 
 		/// <summary>
+		/// название/текстовые пояснения какой-то характеристики
+		/// </summary>
+		abstract public class WithTextDescription
+		{
+			public WithTextDescription(string label) { Label = label; }
+			private string _Label;
+			/// <summary>
+			/// название какой-то характеристики
+			/// </summary>
+			public string Label
+			{
+				get
+				{
+					if (_Label is null)
+						_Label = "";
+					return _Label;
+				}
+				set { _Label = value; }
+			}
+		}
+		/// <summary>
+		/// связанные с сущностью control-ы на форме
+		/// </summary>
+		abstract public class WithConnectedLabel
+		{
+			/// <summary>
+			/// в какой контейнер выводить текстовые пояснения
+			/// </summary>
+			private Label _ConnectedLabel;
+			/// <summary>
+			/// в какой контейнер выводить текстовые пояснения
+			/// </summary>
+			public Label ConnectedLabel
+			{
+				get
+				{
+					if (_ConnectedLabel is null)
+					{
+						_ConnectedLabel = new Label();
+						_ConnectedLabel.Text = "";
+						_ConnectedLabel.AutoSize = true;
+					}
+					return _ConnectedLabel;
+				}
+				set
+				{
+					if (value is null)
+					{
+						if (!(_ConnectedLabel is null))
+							_ConnectedLabel.Text = "";
+						_ConnectedLabel?.Hide();
+						//_ConnectedLabel?.Dispose();//этого делать не надо!
+					}
+					else
+					{
+						_ConnectedLabel = value;
+						_ConnectedLabel?.Show();
+					}
+				}
+			}
+			protected void DisposeLabel()
+			{
+				_ConnectedLabel?.Dispose();
+				_ConnectedLabel = null;
+			}
+			abstract public void UI_Show();
+			abstract public void UI_Clear();
+		}
+		/// <summary>
+		/// каждая характеристика (ранжирования, метода) имеет числовое значение и осмысленное наименование 
+		/// </summary>
+		public class Characteristic : WithTextDescription
+		{
+			public Characteristic(string label) : base(label) { }
+			public Characteristic(string label, double value) : base(label) { Value = value; }
+			private double _Value = INF;
+			private List<double> _ValuesList;
+			private double _ValueMin;
+			private double _ValueMax;
+			/// <summary>
+			/// числовое значение хар.
+			/// </summary>
+			public double Value
+			{
+				get { return _Value; }
+				set { _Value = value; }
+			}
+			/// <summary>
+			/// векторное значение хар.
+			/// </summary>
+			public List<double> ValuesList
+			{
+				get
+				{
+					if (_ValuesList is null)
+						_ValuesList = new List<double>();
+					return _ValuesList;
+				}
+				set { _ValuesList = value; }
+			}
+			/// <summary>
+			/// если есть список характеристик, в который данная хар. входит, то будут вычислены min и max
+			/// </summary>
+			public double ValueMin { get { return _ValueMin; } }
+			/// <summary>
+			/// если есть список характеристик, в который данная хар. входит, то будут вычислены min и max
+			/// </summary>
+			public double ValueMax { get { return _ValueMax; } }
+			/// <summary>
+			/// проверка значения характеристики на существование
+			/// </summary>
+			public bool IsInitializedValue()
+			{
+				return Math.Abs(Value) != INF;
+			}
+			/// <summary>
+			/// проверка значения характеристики на существование
+			/// </summary>
+			public bool IsInitializedValuesList()
+			{
+				return ValuesList != null && ValuesList.Count > 0;
+			}
+			public static (double min, double max) CalcMinMax(List<double> valuelist)
+			{
+				double min = INF;
+				double max = INF;
+				List<double> L = valuelist.Where(x => Math.Abs(x) != INF).ToList();
+				if (L.Count != 0)
+				{
+					min = valuelist.Min();
+					max = valuelist.Max();
+				}
+				return (min, max);
+			}
+			public void SetMinMax(List<double> valuelist)
+			{
+				(_ValueMin, _ValueMax) = CalcMinMax(valuelist);
+			}
+			public void SumValuesListAndPutToValue()
+			{
+				Value = ValuesList.Sum();
+			}
+		}
+		/// <summary>
+		/// суммарное расстояние до всех остальных входных ранжирований
+		/// </summary>
+		public class CharacteristicDistance : WithTextDescription
+		{
+			public CharacteristicDistance(string label) : base(label) { }
+			public Characteristic modulus = new Characteristic(CH_DIST_MODULUS);
+			public Characteristic square = new Characteristic(CH_DIST_SQUARE);
+		}
+		/// <summary>
+		/// характеристики совокупности ранжирований метода
+		/// </summary>
+		public class MethodRankingsCharacteristics
+		{
+			public MethodRankingsCharacteristics(Method m) { parent_method = m; }
+			private readonly Method parent_method;
+			private Characteristic _MinMaxCost;//мин и макс стоимость среди ранжирований метода
+			private Characteristic _MinMaxStrength;//мин и макс сила среди ранжирований метода
+			private CharacteristicDistance _MinMaxDistanceNonFuzzy;//мин и макс суммарн. расстояние среди ранжирований метода
+			private CharacteristicDistance _MinMaxDistanceFuzzy;//мин и макс суммарн. расстояние среди ранжирований метода
+			private bool[] _IsInPareto_Cost;//входит ли ранжирование по индексу i в оптимальное множество по векторам экспертов-критериев
+			private bool[] _IsInPareto_Strength;
+			private bool[] _IsInPareto_DistRankNonFuzzyModulus;
+			private bool[] _IsInPareto_DistRankNonFuzzySquare;
+			private bool[] _IsInPareto_DistRankFuzzyModulus;
+			private bool[] _IsInPareto_DistRankFuzzySquare;
+			public Characteristic MinMaxCost
+			{
+				get
+				{
+					if (_MinMaxCost is null)
+						_MinMaxCost = new Characteristic(CH_COST);
+					if (Method.IsMethodExistWithRanks(parent_method))
+					{
+						_MinMaxCost.SetMinMax(parent_method.Rankings.Select(x => x.Cost.Value).ToList());
+					}
+					return _MinMaxCost;
+				}
+			}
+			public Characteristic MinMaxStrength
+			{
+				get
+				{
+					if (_MinMaxStrength is null)
+						_MinMaxStrength = new Characteristic(CH_STRENGTH);
+					if (Method.IsMethodExistWithRanks(parent_method))
+					{
+						_MinMaxStrength.SetMinMax(parent_method.Rankings.Select(x => x.Strength.Value).ToList());
+					}
+					return _MinMaxStrength;
+				}
+			}
+			public CharacteristicDistance MinMaxDistanceNonFuzzy
+			{
+				get
+				{
+					if (Method.IsMethodExistWithRanks(parent_method))
+					{
+						_MinMaxDistanceNonFuzzy = new CharacteristicDistance(CH_DIST + _CH_WHOLE_SUM + _CH_NON_FUZZY);
+						_MinMaxDistanceNonFuzzy.square.SetMinMax(
+							parent_method.Rankings.Select(x => x.DistancesNonFuzzy.square.Value).ToList()
+							);
+						_MinMaxDistanceNonFuzzy.modulus.SetMinMax(
+							parent_method.Rankings.Select(x => x.DistancesNonFuzzy.modulus.Value).ToList()
+							);
+					}
+					return _MinMaxDistanceNonFuzzy;
+				}
+			}
+			public CharacteristicDistance MinMaxDistanceFuzzy
+			{
+				get
+				{
+					if (Method.IsMethodExistWithRanks(parent_method))
+					{
+						_MinMaxDistanceFuzzy = new CharacteristicDistance(CH_DIST + _CH_WHOLE_SUM + _CH_FUZZY);
+						_MinMaxDistanceFuzzy.square.SetMinMax(
+							parent_method.Rankings.Select(x => x.DistancesFuzzyOnR.square.Value).ToList()
+							);
+						_MinMaxDistanceFuzzy.modulus.SetMinMax(
+							parent_method.Rankings.Select(x => x.DistancesFuzzyOnR.modulus.Value).ToList()
+							);
+					}
+					return _MinMaxDistanceNonFuzzy;
+				}
+			}
+			public bool[] IsInPareto_Cost
+			{
+				get
+				{
+					IfNullThenUpdatePareto(ref
+						_IsInPareto_Cost,
+						parent_method.Rankings.Select(x => x.CostsExperts.ValuesList).ToList(),
+						MAX_SIGN
+						);
+					return _IsInPareto_Cost;
+				}
+			}
+			public bool[] IsInPareto_Strength
+			{
+				get
+				{
+					IfNullThenUpdatePareto(ref
+						_IsInPareto_Strength,
+						parent_method.Rankings.Select(x => x.StrengthsExperts.ValuesList).ToList(),
+						MAX_SIGN
+						);
+					return _IsInPareto_Strength;
+				}
+			}
+			public bool[] IsInPareto_DistRankNonFuzzyModulus
+			{
+				get
+				{
+					IfNullThenUpdatePareto(ref
+						_IsInPareto_DistRankNonFuzzyModulus,
+						parent_method.Rankings.Select(x => x.DistancesNonFuzzy.modulus.ValuesList).ToList(),
+						MIN_SIGN);
+					return _IsInPareto_DistRankNonFuzzyModulus;
+				}
+			}
+			public bool[] IsInPareto_DistRankNonFuzzySquare
+			{
+				get
+				{
+					IfNullThenUpdatePareto(ref
+						_IsInPareto_DistRankNonFuzzySquare,
+						parent_method.Rankings.Select(x => x.DistancesNonFuzzy.square.ValuesList).ToList(),
+						MIN_SIGN);
+					return _IsInPareto_DistRankNonFuzzySquare;
+				}
+			}
+			public bool[] IsInPareto_DistRankFuzzyModulus
+			{
+				get
+				{
+					IfNullThenUpdatePareto(ref
+						_IsInPareto_DistRankFuzzyModulus,
+						parent_method.Rankings.Select(x => x.DistancesFuzzyOnR.modulus.ValuesList).ToList(),
+						MIN_SIGN);
+					return _IsInPareto_DistRankFuzzyModulus;
+				}
+			}
+			public bool[] IsInPareto_DistRankFuzzySquare
+			{
+				get
+				{
+					IfNullThenUpdatePareto(ref
+						_IsInPareto_DistRankFuzzySquare,
+						parent_method.Rankings.Select(x => x.DistancesFuzzyOnR.square.ValuesList).ToList(),
+						MIN_SIGN);
+					return _IsInPareto_DistRankFuzzySquare;
+				}
+			}
+			private bool[] IfNullThenUpdatePareto(ref bool[] rankings_ch_which_canbe_null,
+				List<List<double>> all_rankings_vectors, string min_or_max)
+			{
+				if (rankings_ch_which_canbe_null is null)
+					rankings_ch_which_canbe_null = QualeEInParetoSet(all_rankings_vectors, min_or_max);
+				return rankings_ch_which_canbe_null;
+			}
+			/// <summary>
+			/// задаёт индексы ранжирований, входящих в Парето-множество
+			/// </summary>
+			/// <param name="vectors"></param>
+			/// <param name="min_or_max">минимизирующий или максимизирющий критери: "min"/"max"</param>
+			/// <returns></returns>
+			private bool[] QualeEInParetoSet(List<List<double>> vectors, string min_or_max)
+			{
+				bool ParetoMORETHAN(List<double> R1, List<double> R2)
+				{
+					if (R1.Count != R2.Count)
+						throw new MyException(EX_bad_dimensions);
+					bool one_morethan = false;
+					bool one_lessthan = false;
+					for (int i = 0; i < R1.Count; i++)
+					{
+						if (OPS_Double.MORETHAN(R1[i], R2[i]))//R1[i] > R2[i]
+							one_morethan = true;
+						if (OPS_Double.MORETHAN(R2[i], R1[i]))//R1[i] < R2[i]
+							one_lessthan = true;
+					}
+					if (one_morethan && !one_lessthan)
+						return true;
+					return false;
+				}
+				bool ParetoLESSTHAN(List<double> R1, List<double> R2)
+				{
+					return ParetoMORETHAN(R2, R1);
+				}
+				var r = vectors.Count;
+				var isInPareto = new bool[r];
+				for (int i = 0; i < r; i++)
+				{
+					isInPareto[i] = true;
+					for (int j = 0; j < r; j++)
+					{
+						var Vj = vectors[j];
+						var Vi = vectors[i];
+						if (min_or_max == MIN_SIGN)
+						{
+							if (i != j && ParetoLESSTHAN(Vj, Vi))
+							{
+								isInPareto[i] = false;
+								break;
+							}
+						}
+						else
+						{
+							if (i != j && ParetoMORETHAN(Vj, Vi))
+							{
+								isInPareto[i] = false;
+								break;
+							}
+						}
+					}
+				}
+				return isInPareto;
+			}
+		}
+		/// <summary>
+		/// одно какое-то ранжирование (или путь) со всеми его свойствами
+		/// </summary>
+		public class Ranking
+		{
+			#region CONSTRUCTORS
+			public Ranking(int[] rank)
+			{
+				Rank2Array = rank;
+			}
+			public Ranking(List<int> rank)
+			{
+				Rank2List = rank;
+			}
+			public Ranking(int methodID, object rank)
+			{
+				MethodID = methodID;
+				if (rank as List<int> != null)
+					Rank2List = rank as List<int>;
+				else if (rank as int[] != null)
+					Rank2Array = rank as int[];
+				else if (rank as Ranking != null)
+					Rank2List = (rank as Ranking)._Path;
+			}
+			#endregion CONSTRUCTORS
+
+			#region FIELDS
+			private List<int> _Path;//список вершин в пути-ранжировании
+			public int MethodID;//каким методом получено
+			public Characteristic Cost;//общая стоимость пути
+			public Characteristic CostsExperts; //вектор стоимостей по каждому эксперту-характеристике
+			public Characteristic Strength; //сила пути (пропускная способность)
+			public Characteristic StrengthsExperts; //вектор сил по каждому эксперту-характеристике
+			public CharacteristicDistance DistancesNonFuzzy;//расстояние входного ранжирования каждого эксперта и суммарное
+			public CharacteristicDistance DistancesFuzzyOnR;//расстояние входного ранжирования каждого эксперта и суммарное
+			#endregion FIELDS
+
+			#region PROPERTIES
+			public List<int> Rank2List
+			{
+				get { return _Path; }
+				set
+				{
+					_Path = value;
+					UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.Model.GetMatrices());
+				}
+			}
+			public int[] Rank2Array
+			{
+				get { return _Path.ToArray(); }
+				set
+				{
+					_Path = value.ToList();
+					UpdateRankingParams(AggregatedMatrix.R, ExpertRelations.Model.GetMatrices());
+				}
+			}
+			/// <summary>
+			/// создаёт матрицу смежности (порядок) из профиля эксперта
+			/// ранжирование - как полный строгий порядок (полное, антирефлексивное, асимметричное, транзитивное)
+			/// </summary>
+			public Matrix Rank2AdjacencyMatrixTransitive
+			{
+				get
+				{
+					var node_list = Rank2Array;
+					var l = Rank2Array.Length;
+					if (l != node_list.Distinct().Count() || node_list.Max() >= n)
+						throw new MyException(EX_bad_expert_profile);
+					Matrix AM = Matrix.Zeros(n, n);//матрица смежности инициализирована нулями 
+					for (int i = 0; i < l - 1; i++)
+						for (int j = i + 1; j < l; j++)
+						{
+							var candidate1 = node_list[i];
+							var candidate2 = node_list[j];
+							AM[candidate1, candidate2] = 1;//левый лучше
+						}
+					return AM;
+				}
+			}
+			/// <summary>
+			/// создаёт не транзитивную матрицу смежности из профиля эксперта (просто обозначение дуг единицами)
+			/// </summary>
+			public Matrix Rank2AdjacencyMatrixNonTransitive
+			{
+				get
+				{
+					var node_list = Rank2Array;
+					var l = Rank2Array.Length;
+					if (l != node_list.Distinct().Count() || node_list.Max() >= n)
+						throw new MyException(EX_bad_expert_profile);
+					Matrix AM = Matrix.Zeros(n, n);//матрица смежности инициализирована нулями
+					for (int i = 0; i < l - 1; i++)
+					{
+						var candidate1 = node_list[i];
+						var candidate2 = node_list[i + 1];
+						AM[candidate1, candidate2] = 1;//левый лучше
+					}
+					return AM;
+				}
+			}
+			public string Rank2String
+			{
+				get
+				{
+					return string.Join(",", _Path.Select(x => ind2sym[x]).ToList());
+				}
+			}
+			public int Count
+			{
+				get { return _Path.Count(); }
+			}
+			#endregion PROPERTIES
+
+			#region FUNCTIONS		
+			/// <summary>
+			/// вычисление всех параметров ранжирования
+			/// </summary>
+			private void UpdateRankingParams(Matrix weight_matrix, List<Matrix> experts_matrices)
+			{
+				MethodID = -1;
+				Cost = null;
+				CostsExperts = null;
+				Strength = null;
+				StrengthsExperts = null;
+				DistancesNonFuzzy = null;
+				DistancesFuzzyOnR = null;
+				if (!(_Path is null))
+				{
+					Cost = new Characteristic(CH_COST, PathCost(Rank2List, weight_matrix));
+					Strength = new Characteristic(CH_STRENGTH, PathStrength(Rank2List, weight_matrix));
+					if (experts_matrices != null)
+					{
+						CostsExperts = new Characteristic(CH_COST + _CH_ON_EACH_EXPERT);
+						StrengthsExperts = new Characteristic(CH_STRENGTH + _CH_ON_EACH_EXPERT);
+						foreach (var expert_matrix in experts_matrices)
+						{
+							CostsExperts.ValuesList.Add(PathCost(Rank2List, expert_matrix));
+							StrengthsExperts.ValuesList.Add(PathStrength(Rank2List, expert_matrix));
+						}
+						if (Rank2List.Count == n)
+						{
+							DistancesNonFuzzy = new CharacteristicDistance(CH_DIST + _CH_NON_FUZZY);
+							DistancesFuzzyOnR = new CharacteristicDistance(CH_DIST + _CH_FUZZY);
+							var Rank_AdjTrans = Rank2AdjacencyMatrixTransitive;
+							var Rank_AdjTransFuzzy = Matrix.MultElementwise(Rank_AdjTrans, weight_matrix);
+							foreach (var expert_matrix in experts_matrices)
+							{
+								DistancesNonFuzzy.modulus.ValuesList.Add(
+									Matrix.DistanceModulus(Rank_AdjTrans, expert_matrix));
+								DistancesNonFuzzy.square.ValuesList.Add(
+									Matrix.DistanceSquare(Rank_AdjTrans, expert_matrix));
+								DistancesFuzzyOnR.modulus.ValuesList.Add(
+									Matrix.DistanceModulus(Rank_AdjTransFuzzy, expert_matrix));
+								DistancesFuzzyOnR.square.ValuesList.Add(
+									Matrix.DistanceSquare(Rank_AdjTransFuzzy, expert_matrix));
+							}
+							DistancesNonFuzzy.modulus.SumValuesListAndPutToValue();
+							DistancesNonFuzzy.square.SumValuesListAndPutToValue();
+							DistancesFuzzyOnR.modulus.SumValuesListAndPutToValue();
+							DistancesFuzzyOnR.square.SumValuesListAndPutToValue();
+						}
+					}
+				}
+			}
+			/// <summary>
+			/// веса данного пути
+			/// </summary>
+			public static List<double> WeightsOfPath(List<int> vertices_list, Matrix Weights_matrix)
+			{
+				List<double> weights_list = new List<double>();
+				var l = vertices_list.Count;
+				// при l = 0 нет пути
+				// при l = 1 путь (a) "ничего не делать" - нет пути, так как нет петли
+				if (l > 1)
+				{  // включает и путь-петлю (a,a)
+					for (int i = 0; i < l - 1; i++)
+						weights_list.Add(Weights_matrix[vertices_list[i], vertices_list[i + 1]]);
+				}
+				return weights_list;
+			}
+			/// <summary>
+			/// стоимость пути (суммарный вес)
+			/// </summary>
+			public static double PathCost(List<int> vertices_list, Matrix Weights_matrix)
+			{
+				return WeightsOfPath(vertices_list, Weights_matrix).Sum();
+			}
+			/// <summary>
+			/// сила пути (пропускная способность)
+			/// </summary>
+			public static double PathStrength(List<int> vertices_list, Matrix Weights_matrix)
+			{
+				var wp = WeightsOfPath(vertices_list, Weights_matrix);
+				return wp.Count == 0 ? INF : wp.Min();
+			}
+			/// <summary>
+			/// создаёт ранжирование на основе матрицы
+			/// алг. Демукрона, начиная с конца - со стока
+			/// </summary>
+			public static bool Matrix2RanksDemukron(Matrix M, out List<List<int>> levels, out List<Ranking> rankings)
+			{
+				levels = new List<List<int>>();
+				rankings = new List<Ranking>();
+				//если матрица не асимметричная, то она имеет цикл из двух вершин. Поэтому матрица будет асимметрична
+				if (M.IsHasCycle(new double[] { NO_EDGE, INF }))
+					return false;
+				var AM = M.AdjacencyMatrix;//из нулей и единиц
+				int n = AM.n;
+				var wins = new double[n];//инициализирован нулями
+				int mark = -1;//отметка о том, что этот уровень больше не рассматриваем
+				while (true)
+				{
+					var last_level_vertices = new List<int>();
+					for (int i = 0; i < n; i++)
+					{
+						if (wins[i] != mark)
+						{
+							wins[i] = 0;
+							for (int j = 0; j < AM.m; j++)//сумма элементов строки
+								wins[i] += AM[i, j];
+						}
+					}
+					for (int i = 0; i < n; i++)
+					{
+						if (wins[i] == 0)
+						{
+							last_level_vertices.Add(i);
+							wins[i] = mark;
+							for (int k = 0; k < n; k++)//удалим все рёбра к нему
+								AM[k, i] = 0;
+						}
+					}
+					levels.Add(last_level_vertices);
+					if (wins.Where(x => x == mark).Count() == n)
+						break;
+				}
+				levels.Reverse();
+				var levels_cnt = levels.Count;
+				Queue<List<int>> Q = new Queue<List<int>>();
+				foreach (var v in levels.First())
+					Q.Enqueue(new List<int> { v });
+				while (Q.Count > 0)
+				{
+					List<int> constructed_ranking = Q.Dequeue();
+					int next_lvl_index = constructed_ranking.Count;
+					if (next_lvl_index < levels_cnt)//последний возможный индекс уровня - это (n-1)
+					{
+						foreach (int v in levels[next_lvl_index])
+						{
+							Q.Enqueue(constructed_ranking.Append(v).ToList());
+						}
+					}
+					else
+					{
+						rankings.Add(new Ranking(constructed_ranking));
+					}
+				}
+				if (levels_cnt < n)
+					return false;//если это не ранжирование, а разбиение на уровни
+				else
+					return true;
+			}
+			#endregion FUNCTIONS
+		}
+		/// <summary>
+		/// для каждого метода существуют выдаваемые им ранжирования и др. атрибуты
+		/// </summary>
+		public class Method
+		{
+			public Method(int id) { ID = id; }
+
+			#region FIELDS
+			public int ID = -1;//обозначение метода
+			private List<Ranking> _Rankings;//выдаваемые методом ранжирования
+			private MethodRankingsCharacteristics _RankingsCharacteristics;//характеристики ранжирований
+			private List<int> _UndominatedAlternatives;//победители - недоминируемые альтернативы
+			private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
+			public ConnectedControls UI_Controls;
+			#endregion FIELDS
+
+			#region SUBCLASSES
+			/// <summary>
+			/// связанные с методом элементы управления (control-ы) на форме
+			/// </summary>
+			public class ConnectedControls : WithConnectedLabel
+			{
+				public ConnectedControls(Method m, CheckBox checkBox, DataGridView dgv, Label lbl)
+				{
+					parent_method = m;
+					ConnectedCheckBox = checkBox;
+					ConnectedTableFrame = dgv;
+					ConnectedLabel = lbl;
+				}
+				private readonly Method parent_method;
+				private CheckBox connectedCheckBox;//чекбокс - будем ли запускать метод
+				private DataGridView connectedTableFrame;//в какой контейнер выводить результаты работы метода
+				public CheckBox ConnectedCheckBox
+				{
+					get { return connectedCheckBox; }
+					set
+					{
+						connectedCheckBox = value;
+						connectedCheckBox.Text = MethodName[parent_method.ID];
+					}
+				}
+				public DataGridView ConnectedTableFrame
+				{
+					get { return connectedTableFrame; }
+					set
+					{
+						connectedTableFrame = value;
+						((GroupBox)connectedTableFrame?.Parent).Text = MethodName[parent_method.ID];
+					}
+				}
+				/// <summary>
+				/// запись в файл всех полученных ранжирований метода
+				/// </summary>
+				public void WriteRankingsToFile()
+				{
+					if (parent_method.HasRankings)
+					{
+						var text = string.Join(CR_LF + CR_LF,
+								parent_method.Rankings
+								.Where(x => x.Count == n)
+								.Select(x => x.Rank2AdjacencyMatrixTransitive.Matrix2String(false)).ToArray());
+						OPS_File.WriteToFile(text, OUT_FILE, true);
+					}
+				}
+				private void SetRankingsToDataGridView()
+				{
+					if (!parent_method.IsExecute)
+						return;
+
+					string RowHeaderForRankingAndLevel(int i)
+					{
+						return $"Место {i + 1}";
+					}
+
+					if (!parent_method.HasRankings)
+					{
+						parent_method.UI_Controls.ConnectedLabel.Text = INF_ranking_unavailable;
+						if (parent_method.HasLevels)
+						{//ранжирований нет, но можно задать разбиение на уровни
+							var col_headers = new string[] { $"Разбиение{CR_LF}на уровни" };
+							var row_headers = Enumerable.Range(0, parent_method.Levels.Count)
+								 .Select(x => RowHeaderForRankingAndLevel(x)).ToArray();
+							AddDGVColumnsAndRows(parent_method.UI_Controls.ConnectedTableFrame,
+								col_headers.Count(), row_headers.Count());
+							SetDGVHeaders(parent_method.UI_Controls.ConnectedTableFrame,
+								col_headers, row_headers);
+							for (int i = 0; i < parent_method.Levels.Count; i++)
+							{
+								SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
+									i, 0, parent_method.Levels2Strings[i], Color.Empty);
+							}
+						}
+					}
+					else
+					{
+						//задать значение характеристики ранжирования и раскрасить
+						void display_vector_characteristic(int i, int j, string min_or_max,
+							Characteristic Characteristic)
+						{
+							string cell_text = "";
+							Color cell_colour = output_characteristics_bg_color;
+							if (Characteristic.IsInitializedValuesList())
+							{
+								cell_text += string.Join(CR_LF, Characteristic.ValuesList);
+								if (min_or_max == MIN_SIGN)
+									cell_colour = output_characteristics_min_color;
+								else if (min_or_max == MAX_SIGN)
+									cell_colour = output_characteristics_max_color;
+							}
+							SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
+								i, j, cell_text, cell_colour);
+						}
+						//задать значение характеристики ранжирования и раскрасить
+						void display_scalar_characteristic(int i, int j, double min, double max,
+							Characteristic Characteristic)
+						{
+							string cell_text = "";
+							Color cell_colour = output_characteristics_bg_color;
+							if (Characteristic.IsInitializedValue())
+							{
+								cell_text += Characteristic.Value.ToString();
+								if (min < max)
+								{
+									if (OPS_Double.EQUALS(Characteristic.Value, min))
+										cell_colour = output_characteristics_min_color;
+									else if (OPS_Double.EQUALS(Characteristic.Value, max))
+										cell_colour = output_characteristics_max_color;
+								}
+							}
+							SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
+								i, j, cell_text, cell_colour);
+						}
+
+						var some_rank = parent_method.Rankings.First();
+						var col_headers = Enumerable.Range(0, parent_method.Rankings.Count)
+								 .Select(x => $"Ранжиро-{CR_LF}вание {x + 1}").ToArray();
+						var row_headers = Enumerable.Range(0, some_rank.Count)
+								 .Select(x => RowHeaderForRankingAndLevel(x)).ToArray();
+						AddDGVColumnsAndRows(parent_method.UI_Controls.ConnectedTableFrame,
+								col_headers.Count(), row_headers.Count());
+						SetDGVHeaders(parent_method.UI_Controls.ConnectedTableFrame,
+							col_headers, row_headers);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Cost.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Strength.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.DistancesNonFuzzy.modulus.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.DistancesNonFuzzy.square.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.CostsExperts.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.StrengthsExperts.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.DistancesNonFuzzy.modulus.Label);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.DistancesNonFuzzy.square.Label);
+						for (int j = 0; j < parent_method.Rankings.Count; j++)
+						{
+							Ranking rank = parent_method.Rankings[j];
+							Color cell_colour = Color.Empty;
+							if (Methods.MutualRankings.Contains(rank.Rank2String))
+							{
+								cell_colour = output_characteristics_mutual_color;
+							}
+							for (int i = 0; i < rank.Count; i++)
+							{
+								SetReadonlyCell(parent_method.UI_Controls.ConnectedTableFrame,
+									i, j, ind2letter[rank.Rank2List[i]], cell_colour);
+							}
+							var N = rank.Count;
+							var MethodCh = parent_method.RankingsCharacteristics;
+							display_scalar_characteristic(N, j,
+								MethodCh.MinMaxCost.ValueMin,
+								MethodCh.MinMaxCost.ValueMax,
+								parent_method.Rankings[j].Cost);
+							display_scalar_characteristic(N + 1, j,
+								MethodCh.MinMaxStrength.ValueMin,
+								MethodCh.MinMaxStrength.ValueMax,
+								parent_method.Rankings[j].Strength);
+							display_scalar_characteristic(N + 2, j,
+								MethodCh.MinMaxDistanceNonFuzzy.modulus.ValueMin,
+								MethodCh.MinMaxDistanceNonFuzzy.modulus.ValueMax,
+								parent_method.Rankings[j].DistancesNonFuzzy.modulus);
+							display_scalar_characteristic(N + 3, j,
+								MethodCh.MinMaxDistanceNonFuzzy.square.ValueMin,
+								MethodCh.MinMaxDistanceNonFuzzy.square.ValueMax,
+								parent_method.Rankings[j].DistancesNonFuzzy.square);
+							display_vector_characteristic(N + 4, j,
+								MethodCh.IsInPareto_Cost[j] ? MAX_SIGN : "",
+								parent_method.Rankings[j].CostsExperts);
+							display_vector_characteristic(N + 5, j,
+								MethodCh.IsInPareto_Strength[j] ? MAX_SIGN : "",
+								parent_method.Rankings[j].StrengthsExperts);
+							display_vector_characteristic(N + 6, j,
+								MethodCh.IsInPareto_DistRankNonFuzzyModulus[j] ? MIN_SIGN : "",
+								parent_method.Rankings[j].DistancesNonFuzzy.modulus);
+							display_vector_characteristic(N + 7, j,
+								MethodCh.IsInPareto_DistRankNonFuzzySquare[j] ? MIN_SIGN : "",
+								parent_method.Rankings[j].DistancesNonFuzzy.square);
+						}
+					}
+				}
+				override public void UI_Show()
+				{
+					SetRankingsToDataGridView();
+					ConnectedTableFrame?.Show();
+					ConnectedTableFrame?.Parent.Show();
+					ConnectedLabel.Show();
+					ConnectedLabel.Text = parent_method.Info();
+					ConnectedTableFrame?.Parent.Controls.Add(ConnectedLabel);
+				}
+				override public void UI_Clear()
+				{
+					ConnectedLabel = null;
+					ConnectedTableFrame?.Rows.Clear();
+					ConnectedTableFrame?.Columns.Clear();
+					ConnectedTableFrame?.Hide();
+					ConnectedTableFrame?.Parent?.Hide();
+				}
+			}
+			#endregion SUBCLASSES
+
+			#region PROPERTIES
+			public bool IsExecute
+			{
+				get
+				{
+					return (UI_Controls.ConnectedCheckBox != null) ?
+						UI_Controls.ConnectedCheckBox.Checked : false;
+				}
+			}
+			public bool HasRankings
+			{
+				get
+				{
+					if (Rankings is null || Rankings.Count == 0)
+						return false;
+					return true;
+				}
+			}
+			public bool HasLevels
+			{
+				get
+				{
+					if (Levels is null || Levels.Count == 0)
+						return false;
+					return true;
+				}
+			}
+			public bool HasWinners
+			{
+				get
+				{
+					if (UndominatedAlternatives is null || UndominatedAlternatives.Count == 0)
+						return false;
+					return true;
+				}
+			}
+			public List<List<int>> Ranks2Lists
+			{
+				set { Rankings = value.Select(x => new Ranking(x)).ToList(); }
+				get { return this.Rankings.Select(x => x.Rank2List).ToList(); }
+			}
+			public List<int[]> Ranks2Arrays
+			{
+				set { Rankings = value.Select(x => new Ranking(x)).ToList(); }
+				get { return this.Rankings.Select(x => x.Rank2Array).ToList(); }
+			}
+			public List<string> Ranks2Strings
+			{
+				get { return this.Rankings.Select(x => x.Rank2String).ToList(); }
+			}
+			public List<Ranking> Rankings
+			{
+				get
+				{
+					if (_Rankings is null)
+					{
+						_Rankings = new List<Ranking>();
+					}
+					return _Rankings;
+				}
+				set { _Rankings = value; }
+			}
+			public MethodRankingsCharacteristics RankingsCharacteristics
+			{
+				get
+				{
+					if (_RankingsCharacteristics is null || Rankings is null || Rankings?.Count == 0)
+					{
+						_RankingsCharacteristics = new MethodRankingsCharacteristics(this);
+					}
+					return _RankingsCharacteristics;
+				}
+				set { _RankingsCharacteristics = value; }
+			}
+			public List<int> UndominatedAlternatives
+			{
+				get
+				{
+					if (_UndominatedAlternatives is null && Levels?.Count > 0)
+						_UndominatedAlternatives = Levels?.First();
+					return _UndominatedAlternatives;
+				}
+				set { _UndominatedAlternatives = value; }
+			}
+			public List<List<int>> Levels
+			{
+				get
+				{
+					if (_Levels is null)
+						_Levels = new List<List<int>>();
+					return _Levels;
+				}
+				set { _Levels = value; }
+			}
+			public string UndominatedAlternatives2String
+			{
+				get
+				{
+					if (UndominatedAlternatives is null)
+						return "";
+					return string.Join(",", UndominatedAlternatives?.Select(x => ind2letter[x]));
+				}
+			}
+			public List<string> Levels2Strings
+			{
+				get
+				{
+					List<string> ans = new List<string>();
+					foreach (var level in Levels)
+					{
+						ans.Add(string.Join(",", level.Select(x => ind2letter[x])));
+					}
+					return ans;
+				}
+			}
+			#endregion PROPERTIES
+
+			#region FUNCTIONS
+			public static bool IsMethodExistWithRanks(Method met)
+			{
+				if (!(met is null) && met.HasRankings)
+					return true;
+				return false;
+			}
+			/// <summary>
+			/// удаление ранжирований и их характеристик
+			/// </summary>
+			public void Clear()
+			{
+				Rankings = null;
+				UndominatedAlternatives = null;
+				Levels = null;
+				RankingsCharacteristics = null; //очищено в свойстве
+			}
+			public string Info()
+			{
+				string text = "";
+				string TextTemplateAmong(Characteristic ch)
+				{
+					return $"Мин. и макс. {ch?.Label} среди ранжирований метода: " +
+						$"[{ch?.ValueMin}; {ch?.ValueMax}];{CR_LF}";
+				}
+				text += $"Недоминируемые альтернативы: {UndominatedAlternatives2String}{CR_LF}";
+				text += TextTemplateAmong(RankingsCharacteristics.MinMaxCost);
+				text += TextTemplateAmong(RankingsCharacteristics.MinMaxStrength);
+				text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistanceNonFuzzy?.square);
+				text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistanceNonFuzzy?.modulus);
+				return text;
+			}
+			#endregion FUNCTIONS
+		}
+		/// <summary>
 		/// матрицы нечетких отношений экспертов
 		/// </summary>
 		public static class ExpertRelations
 		{
 			#region SUBCLASSES
-			public class ConnectedControls : ConnectedControlsBase
+			public class ConnectedControlsAndView : WithConnectedLabel
 			{
-				public ConnectedControls(CheckBox cb_show, CheckBox cb_doTransClos,
+				public ConnectedControlsAndView(CheckBox cb_show, CheckBox cb_doTransClos,
 					NumericUpDown n, NumericUpDown m, FlowLayoutPanel flp)
 				{
 					connectedCheckBox_ToShow = cb_show;
@@ -103,11 +1095,11 @@ namespace Group_choice_algos_fuzzy
 				}
 				public void UpdateView_n_m()
 				{
-					if (UI_Controls.numericUpDown_n.Minimum <= n && n <= UI_Controls.numericUpDown_n.Maximum &&
-						UI_Controls.numericUpDown_m.Minimum <= m && m <= UI_Controls.numericUpDown_m.Maximum)
+					if (UI_ControlsAndView.numericUpDown_n.Minimum <= n && n <= UI_ControlsAndView.numericUpDown_n.Maximum &&
+						UI_ControlsAndView.numericUpDown_m.Minimum <= m && m <= UI_ControlsAndView.numericUpDown_m.Maximum)
 					{
-						UI_Controls.numericUpDown_n.Value = n;
-						UI_Controls.numericUpDown_m.Value = m;
+						UI_ControlsAndView.numericUpDown_n.Value = n;
+						UI_ControlsAndView.numericUpDown_m.Value = m;
 					}
 				}
 				public void UpdateModel_n_m()
@@ -134,53 +1126,42 @@ namespace Group_choice_algos_fuzzy
 						double Mij, Mji;
 						var p = double.TryParse(dd[j, i]?.Value?.ToString(), out Mij);
 						double.TryParse(dd[i, j]?.Value?.ToString(), out Mji);
-						if (!p || Mij > 1 || Mij < 0 || i == j)
+						if (!p || Mij < 0 || i == j)
 						{
-							dd[j, i].Value = 0.0;
+							Mij = 0.0;
 						}
-						ExpertRelations_InputRelChanged?.Invoke(sender,
-							new ExpertRelationsEventArgs(exp_index, OPS_DataGridView.GetFromDataGridView(dd)));
+						//Mij = Mij > 1 ? 1.0 : Mij;
+						Mij = Mij > 1 ? double.Parse($"0.{Math.Truncate(Mij)}") : Mij;
+						dd[j, i].Value = Mij;
+						Model.CheckAndSetMatrixElement(exp_index, i, j, Mij);
 					}
 					catch (MyException ex) { ex.Info(); }
 				}
-				public DataGridView NewViewTable(Matrix new_martix)
+				public DataGridView NewTable(Matrix new_martix)
 				{
 					if (new_martix is null)
 						return null;
 					DataGridView dgv = new DataGridView();
-					SetDataGridViewDefaults(dgv);
+					SetDGVDefaults(dgv);
 					dgv.CellEndEdit += CheckCellWhenValueChanged;
 					dgv.CellEndEdit += ColorSymmetricCell;
-					for (int j = 0; j < new_martix.m; j++)
-					{
-						SetColumn(dgv, $"{ind2letter[j]}");
-					}
-					for (int i = 0; i < new_martix.n; i++)
-					{
-						SetRow(dgv, $"{ind2letter[i]}");
-					}
-					OPS_DataGridView.SetToDataGridView(new_martix, dgv);
+					SetNewMatrixToDGV(dgv, new_martix);
+					var col_headers = Enumerable
+						.Range(0, new_martix.m).Select(x => $"{ind2letter[x]}").ToArray();
+					var row_headers = Enumerable
+						.Range(0, new_martix.n).Select(x => $"{ind2letter[x]}").ToArray();
+					SetDGVHeaders(dgv, col_headers, row_headers);
 					return dgv;
 				}
-				public DataGridView UpdateViewTable(int expert_index)
+				public void UpdateTable(int expert_index)
 				{
 					if (HasNoConnectedOutputs())
-						return null;
-					Matrix new_martix = GetModelMatrix(expert_index);
-					//GetOutputDataGridViews[expert_index] = NewViewTable(new_martix);	
-					//ColorSymmetricCells(GetOutputDataGridViews[expert_index]);				
-					GetOutputControls.Clear();
-					for (int ex = 0; ex < m; ex++)
-					{
-						var dgv = NewViewTable(GetModelMatrix(ex));
-						ColorSymmetricCells(dgv);
-						GetOutputControls.Add(dgv);
-					}
-					form1.set_controls_size();
-					UI_Show();
-					return GetOutputDataGridViews[expert_index];
+						return;
+					Matrix new_martix = Model.GetMatrix(expert_index);
+					SetNewMatrixToDGV(GetOutputDataGridViews[expert_index], new_martix);
+					ColorSymmetricCells(GetOutputDataGridViews[expert_index]);
 				}
-				public void UpdateViewTables()
+				public void NewTables()
 				{
 					UI_Clear();
 					UpdateView_n_m();
@@ -188,9 +1169,9 @@ namespace Group_choice_algos_fuzzy
 					{
 						for (int ex = 0; ex < m; ex++)
 						{
-							var dgv = NewViewTable(GetModelMatrix(ex));
-							ColorSymmetricCells(dgv);
+							var dgv = NewTable(Model.GetMatrix(ex));
 							GetOutputControls.Add(dgv);
+							ColorSymmetricCells((DataGridView)GetOutputControls[GetOutputControls.Count - 1]);
 						}
 					}
 					UI_Show();
@@ -256,6 +1237,21 @@ namespace Group_choice_algos_fuzzy
 						dgv.ReadOnly = true;
 					}
 				}
+				/// <summary>
+				/// обновить рисунки графов - матриц экспертов
+				/// </summary>
+				/// <param name="sender"></param>
+				/// <param name="e"></param>
+				public void UpdateExpertGraphs()
+				{
+					var M = Model.GetMatrices();
+					var L = new List<string>();
+					for (int i = 0; i < M.Count; i++)
+					{
+						L.Add($"Expert{i}:");
+					}
+					OrgraphsPics_update(Form1.form3_input_expert_matrices, M, L);
+				}
 			}
 			public class ExpertRelationsEventArgs : EventArgs
 			{
@@ -284,119 +1280,154 @@ namespace Group_choice_algos_fuzzy
 				public List<Matrix> expert_matrices { get; set; }
 				//public DataGridViewCellEventArgs cell_args { get; set; }
 			}
-			#endregion SUBCLASSES
-
-			public static event EventHandler<ExpertRelationsEventArgs> ExpertRelations_InputRelChanged;
-			private static List<Matrix> _RList;
-			public static ConnectedControls UI_Controls;
-			private static Matrix NewModelMatrix(Matrix new_matrix)
+			public static class Model
 			{
-				new_matrix = new_matrix.NormalizeAndCast2Fuzzy;
-				try
+				private static List<Matrix> _RList;
+				private static FuzzyRelation CheckComparedAlternativesAndDoTransClosure(FuzzyRelation M)
 				{
-					if (!new_matrix.Cast2Fuzzy.IsHasCycle() && 
-						UI_Controls.connectedCheckBox_DoTransClosure.Checked)
+					var comparsions_cnt = new List<int>();//количество сравнений
+					comparsions_cnt.Add(n - 1);
+					for (int i = n - 2; i > 0; i--)
 					{
-						var comparsions_cnt = new List<int>();//количество сравнений
-						comparsions_cnt.Add(n - 1);
-						for (int i = n - 2; i > 0; i--)
-						{
-							comparsions_cnt.Add(comparsions_cnt.Last() + i);
-						}
-
-						if (new_matrix.ComparedAlternatives().All(x => x == true) ||
-							comparsions_cnt.Contains(new_matrix.EdgesCount(false)))
-						{
-							if (!new_matrix.Cast2Fuzzy.IsTransitive())
-							{
-								new_matrix = new_matrix.Cast2Fuzzy.TransitiveClosure();
-							}
-						}
-
+						comparsions_cnt.Add(comparsions_cnt.Last() + i);
 					}
+					if (M.ComparedAlternatives().All(x => x == true) ||
+						comparsions_cnt.Contains(M.EdgesCount(false, NO_EDGE)))
+					{
+						M = M.TransitiveClosure();
+					}
+					return M;
 				}
-				catch (MyException ex) { ex.Info(); }
-				return new_matrix;
-			}
-			private static void UpdateModelMatrix(int index, Matrix new_matrix)
-			{
-				if (GetModelMatrix(index) is null)
-					return;
-				_RList[index] = NewModelMatrix(new_matrix);
-
-				//UI_Controls.UpdateViewTable(index);
-
-				//ExpertRelations_ModelRelChanged?.Invoke(null,
-				//	new ExpertRelationsEventArgs(index, GetModelMatrix(index), null));
-			}
-			private static void UpdateModelMatrices(List<Matrix> new_matrices)
-			{
-				try
+				public static (bool is_norm, bool has_cycle) CheckMatrix(
+					Matrix matrix, out FuzzyRelation new_matrix)
+				{
+					new_matrix = matrix.DeleteSolitaryLoops(out var solloops_cnt, NO_EDGE)
+						.NormalizeElems(out bool is_norm).Cast2Fuzzy;
+					bool has_cycle = new_matrix.IsHasCycle(NO_EDGE);
+					if (!(new_matrix).IsTransitive() && UI_ControlsAndView.connectedCheckBox_DoTransClosure.Checked)
+					{
+						new_matrix = CheckComparedAlternativesAndDoTransClosure(new_matrix);
+					}
+					return (is_norm, has_cycle);
+				}
+				public static (bool some_not_norm, bool some_has_cycle) CheckMatrices(
+					List<Matrix> matrices, out List<Matrix> new_matrices)
+				{
+					List<(bool is_norm, bool has_cycle)> answers = new List<(bool, bool)>();
+					new_matrices = new List<Matrix>(matrices.Count);
+					for (int k = 0; k < matrices.Count; k++)
+					{
+						answers.Add(CheckMatrix(matrices[k], out var M));
+						new_matrices.Add(M);
+					}
+					return (answers.Any(x => !x.is_norm), answers.Any(x => x.has_cycle));
+				}
+				/// <summary>
+				/// без обновления DataGridView
+				/// </summary>
+				/// <param name="matrix_index"></param>
+				/// <param name="i"></param>
+				/// <param name="j"></param>
+				/// <param name="value"></param>
+				private static void SetMatrixElement(int matrix_index, int i, int j, double value)
+				{
+					if (GetMatrix(matrix_index) is null)
+						return;
+					_RList[matrix_index][i, j] = value;
+				}
+				private static void SetMatrix(int matrix_index, Matrix new_matrix)
+				{
+					if (GetMatrix(matrix_index) is null)
+						return;
+					_RList[matrix_index] = new_matrix;
+					UI_ControlsAndView.UpdateTable(matrix_index);
+					UI_ControlsAndView.UpdateExpertGraphs();
+				}
+				public static void SetMatrices(List<Matrix> new_matrices)
 				{
 					_RList = new_matrices;
-					if (_RList is null)
-						return;
-					_RList = _RList.Select(x => NewModelMatrix(x)).ToList();
-					if (_RList.Any(x => x.Cast2Fuzzy.IsHasCycle()))
-					{
-						throw new MyException(EX_contains_cycle);
-					}
+					UI_ControlsAndView.NewTables();
+					UI_ControlsAndView.UpdateExpertGraphs();
 				}
-				catch (MyException ex) { ex.Info(); }
-
-				//UI_Controls.UpdateViewTables();
-				//ExpertRelations_ModelRelsChanged?.Invoke(null,
-				//	new ExpertRelationsEventArgs(-1, null, GetModelMatrices()));
-			}
-			public static Matrix GetModelMatrix(int index)
-			{
-				if (GetModelMatrices().Count == 0)
-					return null;
-				return GetModelMatrices()[index];
-			}
-			public static List<Matrix> GetModelMatrices()
-			{
-				if (_RList is null)
-					_RList = new List<Matrix>();
-				return new List<Matrix>(_RList);
-			}
-			public static void UpdateExpertMatrix(object sender, ExpertRelationsEventArgs e)
-			{
-				//try
-				//{
-				UpdateModelMatrix(e.expert_index, e.fill_values);
-				UI_Controls.UpdateViewTable(e.expert_index);
-				UpdateExpertGraph();//sender, e);
-				//}
-				//catch (MyException ex) { ex.Info(); }
-			}
-			public static void UpdateExpertMatrices(List<Matrix> matrices)//object sender, ExpertRelationsEventArgs e)
-			{
-				//try
-				//{
-				//UpdateModelMatrices(e.expert_matrices);
-				UpdateModelMatrices(matrices);
-				UI_Controls.UpdateViewTables();
-				//UpdateExpertGraph(sender, e);
-				UpdateExpertGraph();//null, null);
-				//}
-				//catch (MyException ex) { ex.Info(); }
-			}
-			/// <summary>
-			/// обновить рисунки графов - матриц экспертов
-			/// </summary>
-			/// <param name="sender"></param>
-			/// <param name="e"></param>
-			public static void UpdateExpertGraph()//object sender, ExpertRelationsEventArgs e)
-			{
-				var M = GetModelMatrices();
-				var L = new List<string>();
-				for (int i = 0; i < M.Count; i++)
+				public static Matrix GetMatrix(int index)
 				{
-					L.Add($"Expert{i}:");
+					if (GetMatrices().Count == 0)
+						return null;
+					return GetMatrices()[index];
 				}
-				OrgraphsPics_update(Form1.form3_input_expert_matrices, M, L);
+				public static List<Matrix> GetMatrices()
+				{
+					if (_RList is null)
+						_RList = new List<Matrix>();
+					return new List<Matrix>(_RList);
+				}
+				/// <summary>
+				/// только при вводе с таблицы руками - DataGridView не обновляются
+				/// </summary>
+				/// <param name="matrix_index"></param>
+				/// <param name="i"></param>
+				/// <param name="j"></param>
+				/// <param name="value"></param>
+				/// <param name="form3"></param>
+				public static void CheckAndSetMatrixElement(int matrix_index, int i, int j, double value)
+				{
+					SetMatrixElement(matrix_index, i, j, value);
+					var ans = CheckMatrix(_RList[matrix_index], out var _);
+					try
+					{
+						if (ans.has_cycle)
+						{
+							throw new MyException(EX_contains_cycle);
+						}
+					}
+					catch (MyException ex) { ex.Info(); }
+				}
+				public static void CheckAndSetMatrix(int matrix_index, Matrix matrix)
+				{					
+					var ans = CheckMatrix(matrix, out var M);
+					SetMatrix(matrix_index, M);
+					try
+					{
+						if (!ans.is_norm)
+						{
+							throw new MyException(INF_matrix_was_normalized);
+						}
+					}
+					catch (MyException ex) { ex.Info(); }
+					try
+					{
+						if (ans.has_cycle)
+						{
+							throw new MyException(EX_contains_cycle);
+						}
+					}
+					catch (MyException ex) { ex.Info(); }
+				}
+				public static void CheckAndSetMatrices(List<Matrix> matrices)
+				{
+					var ans = CheckMatrices(matrices, out var M);
+					SetMatrices(M);
+					try
+					{
+						if (ans.some_not_norm)
+						{
+							throw new MyException(INF_matrix_was_normalized);
+						}
+					}
+					catch (MyException ex) { ex.Info(); }
+					try
+					{
+						if (ans.some_has_cycle)
+						{
+							throw new MyException(EX_contains_cycle);
+						}
+					}
+					catch (MyException ex) { ex.Info(); }
+				}
 			}
+			#endregion SUBCLASSES
+
+			public static ConnectedControlsAndView UI_ControlsAndView;
 		}
 
 		/// <summary>
@@ -404,7 +1435,7 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		public static class AggregatedMatrix
 		{
-			public class ConnectedControls : ConnectedControlsBase
+			public class ConnectedControls : WithConnectedLabel
 			{
 				public ConnectedControls(RadioButton rb_square, RadioButton rb_modulus, Label lbl)
 				{
@@ -795,7 +1826,7 @@ namespace Group_choice_algos_fuzzy
 						}
 				}
 				//победители - это, буквально, недоминируемые альтернативы
-				Schulze_method.Winners = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей																								   
+				Schulze_method.UndominatedAlternatives = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей																								   
 				var pair_dominant_matrix = new Matrix(PD);
 				var is_ = Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out var levels, out var ranks);
 				Schulze_method.Levels = levels;
@@ -811,7 +1842,7 @@ namespace Group_choice_algos_fuzzy
 			public static void Set_Smerchinskaya_Yashina_method()
 			{
 				Smerchinskaya_Yashina_method.Clear();
-				Smerchinskaya_Yashina_method.Winners = AggregatedMatrix.R.DestroyedCycles.TransClosured.UndominatedAlternatives().ToList();
+				Smerchinskaya_Yashina_method.UndominatedAlternatives = AggregatedMatrix.R.DestroyedCycles.TransClosured.UndominatedAlternatives().ToList();
 				var is_ = Ranking.Matrix2RanksDemukron(AggregatedMatrix.R.DestroyedCycles.TransClosured, out var levels, out var ranks);
 				Smerchinskaya_Yashina_method.Levels = levels;
 				if (is_)
@@ -829,9 +1860,9 @@ namespace Group_choice_algos_fuzzy
 				List<string> Intersect = new List<string>();//общие ранжирования для использованных методов
 				try
 				{
-					if (ExpertRelations.GetModelMatrices().Count == 0)
+					if (ExpertRelations.Model.GetMatrices().Count == 0)
 						throw new MyException(EX_bad_expert_profile);
-					AggregatedMatrix.Set(ExpertRelations.GetModelMatrices());
+					AggregatedMatrix.Set(ExpertRelations.Model.GetMatrices());
 					var checkbuttons = GetMethods().Select(x => x.IsExecute);
 					if (checkbuttons.All(x => x == false))
 						throw new MyException(EX_choose_method);

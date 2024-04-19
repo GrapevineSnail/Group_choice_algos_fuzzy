@@ -17,8 +17,7 @@ namespace Group_choice_algos_fuzzy
 			public static string EX_matrix_not_square = "Матрица должна быть квадратной";
 			public static string EX_bad_dimensions = "Размерности двух объектов не совпадают";
 			public static string EX_bad_matrix = "Некорректная матрица";
-			public static string EX_bad_fuzzy_relation_matrix = "Некорректная матрица принадлежности нечёткого отношения";
-			public static string EX_matrix_was_normalized = "Элементы матрицы были нормализованы (значения приведены в интервал [0;1])";
+			public static string EX_bad_fuzzy_relation_matrix = "Некорректная матрица принадлежности нечёткого отношения";			
 			public static string EX_bad_file = "Некорректный файл";
 			public static string EX_n_m_too_big =
 				$"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть{CR_LF}" +
@@ -29,6 +28,8 @@ namespace Group_choice_algos_fuzzy
 			public static string EX_bad_symbol = "Неверный символ";
 			public static string EX_contains_cycle = "Введённое отношение содержит цикл";
 			public static string INF_ranking_unavailable = "Строгое ранжирование невозможно. ";
+			public static string INF_matrix_was_normalized = "Элементы матрицы были нормализованы (значения приведены в интервал [0;1])";
+			public static string INF_matrix_solitary_loops_deleted = "Петли удалены (диагональные элементы матрицы)";
 			#endregion EXCEPTIONS and INFO
 
 			/// <summary>
@@ -40,10 +41,8 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-		#region COMMON
 		public const int max_count_of_alternatives = 9;
 		public const int max_count_of_experts = 50;
-		#endregion COMMON
 
 		#region SYMBOLS
 		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
@@ -54,6 +53,8 @@ namespace Group_choice_algos_fuzzy
 		public const string ONE = "1";
 		public const char PLS = '+';
 		public const char MARK = 'a';
+		public const string MIN_SIGN = "min";
+		public const string MAX_SIGN = "max";
 		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		/// <summary>
 		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
@@ -97,10 +98,10 @@ namespace Group_choice_algos_fuzzy
 		public static Color error_color = ColorTranslator.FromHtml("#FFBBBB");
 		public static Color input_bg_color = Color.White;
 		public static Color input_bg_color_disabled = ColorTranslator.FromHtml("#FFCCCCCC");
-		public static Color output_characteristics_bg_color = ColorTranslator.FromHtml("#FFDFBFFA"); 
+		public static Color output_characteristics_bg_color = ColorTranslator.FromHtml("#FFDFBFFA");
 		public static Color output_characteristics_min_color = ColorTranslator.FromHtml("#BBEEFF");
 		public static Color output_characteristics_max_color = ColorTranslator.FromHtml("#FFEEBB");
-		public static Color output_characteristics_Pareto_color = ColorTranslator.FromHtml("#c4a5df");
+		//public static Color output_characteristics_Pareto_color = ColorTranslator.FromHtml("#c4a5df");
 		public static Color output_characteristics_mutual_color = ColorTranslator.FromHtml("#D0FFBB");
 		public static Color window_bg_color = Color.AntiqueWhite; //ColorTranslator.FromHtml("#FAEBD7");
 		public static Color button_bg_color = Color.Bisque; //ColorTranslator.FromHtml("#FFE4C4");
@@ -141,14 +142,14 @@ namespace Group_choice_algos_fuzzy
 		public const string _CH_WHOLE_SUM = " суммарн.";
 		public const string _CH_ON_EACH_EXPERT = " по каждому эксперту-криетрию";
 		public const string _CH_ON_R = " по агрегированной матрице R";
+		public const string _CH_NON_FUZZY = " (ранжирование чёткое)";
+		public const string _CH_FUZZY = " (ранжирование нечёткое, веса по матрице весов)";
 
 		public const string CH_COST = "стоимость";
 		public const string CH_STRENGTH = "сила";
+		public const string CH_DIST = "расстояние";
 		public const string CH_DIST_SQUARE = "'квадрат разности'";
 		public const string CH_DIST_MODULUS = "'модуль разности'";
-		public const string CH_COST_EXPERTS = CH_COST + _CH_ON_EACH_EXPERT;// "стоимость по каждому эксперту-критерию";
-		public const string CH_STRENGTH_EXPERTS = CH_STRENGTH + _CH_ON_EACH_EXPERT; //"сила по каждому эксперту-критерию";
-		public const string CH_DIST_EXPERTS= "расстояние до матрицы каждого эксперта: ";
 
 		public const string RE_R = "Агрегированное отношение R";
 		public const string RE_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";
