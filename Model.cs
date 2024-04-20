@@ -1089,10 +1089,8 @@ namespace Group_choice_algos_fuzzy
 				}
 				public void UpdateModel_n_m()
 				{
-					if (form1.cb_All_rankings.Checked && (
-					(int)numericUpDown_n.Value > max_count_of_alternatives ||
-					(int)numericUpDown_m.Value > max_count_of_experts
-					))
+					if ((int)numericUpDown_n.Value > max_count_of_alternatives || 
+						(int)numericUpDown_m.Value > max_count_of_experts)
 						throw new MyException(EX_n_m_too_big);
 					n = (int)numericUpDown_n.Value;
 					m = (int)numericUpDown_m.Value;
@@ -1632,7 +1630,8 @@ namespace Group_choice_algos_fuzzy
 				/// <summary>
 				/// нахождение Гамильтоновых путей
 				/// </summary>
-				List<List<int>>[,] Hamiltonian_paths_through_matrix_degree(Matrix Weights_matrix, double no_edge_symbol)
+				List<List<int>>[,] Hamiltonian_paths_through_matrix_degree(
+					Matrix Weights_matrix, double no_edge_symbol)
 				{
 					int n = Weights_matrix.GetLength(0);
 
@@ -1644,6 +1643,7 @@ namespace Group_choice_algos_fuzzy
 						var sep = new char[] { MARK };
 						string[,] ans = new string[n1, n2];
 						for (int i = 0; i < n1; i++)
+						{
 							for (int j = 0; j < n2; j++)
 							{
 								if (i == j)
@@ -1686,6 +1686,7 @@ namespace Group_choice_algos_fuzzy
 									ans[i, j] = a_ij.TrimStart(PLS);
 								}
 							}
+						}
 						return ans;
 					}
 
@@ -1693,6 +1694,7 @@ namespace Group_choice_algos_fuzzy
 					string[,] Q = new string[n, n];
 					string[,] H = new string[n, n];
 					for (int i = 0; i < n; i++)
+					{
 						for (int j = 0; j < n; j++)
 						{
 							if (!Weights_matrix.HasEdge((i, j), new double[] { no_edge_symbol, INF, -INF })
@@ -1709,6 +1711,7 @@ namespace Group_choice_algos_fuzzy
 								H[i, j] = ind2sym[j];
 							}
 						}
+					}
 					Matrix Q_paths_cnt = Q_int.Pow(n - 1); //Paths count between vertices			
 					int paths_cnt = 0; //Total paths count
 					for (int i = 0; i < n; i++)
@@ -1726,6 +1729,7 @@ namespace Group_choice_algos_fuzzy
 						return Paths_matrix;
 					}
 					for (int i = 0; i < n; i++)
+					{
 						for (int j = 0; j < n; j++)
 						{
 							Paths_matrix[i, j] = new List<List<int>>();
@@ -1742,9 +1746,12 @@ namespace Group_choice_algos_fuzzy
 									}
 								}
 								else if (n == 2)
+								{
 									Paths_matrix[i, j].Add(new List<int> { i, j });
+								}
 							}
 						}
+					}
 					return Paths_matrix;
 				}
 			}

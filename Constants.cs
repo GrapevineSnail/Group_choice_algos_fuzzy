@@ -23,6 +23,9 @@ namespace Group_choice_algos_fuzzy
 				$"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть{CR_LF}" +
 				$"n максимальное = {max_count_of_alternatives}{CR_LF}" +
 				$"m максимальное = {max_count_of_experts}{CR_LF}";
+			public static string EX_n_too_big =
+				$"Число альтернатив n слишком большое. Программа может зависнуть{CR_LF}" +
+				$"Уменьшите n до {max_count_of_alternatives_2ALL_RANKS}";
 			public static string EX_choose_method = "Выберите метод агрегирования";
 			public static string EX_choose_distance_func = "Выберите способ подсчёта расстояния между отношениями";
 			public static string EX_bad_symbol = "Неверный символ";
@@ -41,14 +44,15 @@ namespace Group_choice_algos_fuzzy
 			}
 		}
 
-		public const int max_count_of_alternatives = 9;
+		public const int max_count_of_alternatives_2ALL_RANKS = 7;
+		public const int max_count_of_alternatives = 50;
 		public const int max_count_of_experts = 50;
+		public const int DIGITS_PRECISION = 12;//насколько точными будут вычисления на double
+		public const double INF = double.PositiveInfinity;
+		public const double NO_EDGE = 0;//если стоит в ячейке матрицы, то в соотв. графе нет этого ребра
 
 		#region SYMBOLS
 		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
-		public const double INF = double.PositiveInfinity;
-		public const double NO_EDGE = 0;//если стоит в ячейке матрицы, то в соотв. графе нет этого ребра
-		public const int DIGITS_PRECISION = 12;//насколько точными будут вычисления на double
 		public const string ZER = "0";
 		public const string ONE = "1";
 		public const char PLS = '+';
