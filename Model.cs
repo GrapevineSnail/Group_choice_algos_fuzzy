@@ -200,7 +200,7 @@ namespace Group_choice_algos_fuzzy
 			private Characteristic _MinMaxCost;//мин и макс стоимость среди ранжирований метода
 			private Characteristic _MinMaxStrength;//мин и макс сила среди ранжирований метода
 			private CharacteristicDistance _MinMaxDistanceNonFuzzyRankings;//мин и макс суммарн. расстояние среди ранжирований метода
-			//private CharacteristicDistance _MinMaxDistanceFuzzyRankings;//мин и макс суммарн. расстояние среди ранжирований метода
+																		   //private CharacteristicDistance _MinMaxDistanceFuzzyRankings;//мин и макс суммарн. расстояние среди ранжирований метода
 			private bool[] _IsInPareto_Cost;//входит ли ранжирование по индексу i в оптимальное множество по векторам экспертов-критериев
 			private bool[] _IsInPareto_Strength;
 			private bool[] _IsInPareto_DistRankNonFuzzyModulus;
@@ -729,6 +729,8 @@ namespace Group_choice_algos_fuzzy
 						return $"Место {i + 1}";
 					}
 
+					SetDGVDefaults_methods(parent_method.UI_Controls.ConnectedTableFrame);
+
 					if (!parent_method.HasRankings)
 					{
 						parent_method.UI_Controls.ConnectedLabel.Text = INF_ranking_unavailable;
@@ -1089,7 +1091,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				public void UpdateModel_n_m()
 				{
-					if ((int)numericUpDown_n.Value > max_count_of_alternatives || 
+					if ((int)numericUpDown_n.Value > max_count_of_alternatives ||
 						(int)numericUpDown_m.Value > max_count_of_experts)
 						throw new MyException(EX_n_m_too_big);
 					n = (int)numericUpDown_n.Value;
@@ -1114,7 +1116,10 @@ namespace Group_choice_algos_fuzzy
 							Mij = 0.0;
 						}
 						//Mij = Mij > 1 ? 1.0 : Mij;
-						Mij = Mij > 1 ? double.Parse($"0.{Math.Truncate(Mij)}") : Mij;
+						if (Mij > 1)
+						{
+							double.TryParse($"0.{Math.Truncate(Mij)}", out Mij);
+						}
 						dd[j, i].Value = Mij;
 						Model.CheckAndSetMatrixElement(exp_index, i, j, Mij);
 					}
@@ -1125,7 +1130,7 @@ namespace Group_choice_algos_fuzzy
 					if (new_martix is null)
 						return null;
 					DataGridView dgv = new DataGridView();
-					SetDGVDefaults(dgv);
+					SetDGVDefaults_experts(dgv);
 					dgv.CellEndEdit += CheckCellWhenValueChanged;
 					dgv.CellEndEdit += ColorSymmetricCell;
 					SetNewMatrixToDGV(dgv, new_martix);
@@ -1353,12 +1358,12 @@ namespace Group_choice_algos_fuzzy
 				public static void CheckAndSetMatrixElement(int matrix_index, int i, int j, double value)
 				{
 					SetMatrixElement(matrix_index, i, j, value);
-					CheckAndSetMatrix(matrix_index, _RList[matrix_index]);					
+					CheckAndSetMatrix(matrix_index, _RList[matrix_index]);
 				}
 				public static void CheckAndSetMatrix(int matrix_index, Matrix matrix)
-				{					
+				{
 					var ans = CheckMatrix(matrix, out var M);
-					if(matrix != M)
+					if (matrix != M)
 						SetMatrix(matrix_index, M);
 					try
 					{
@@ -1441,18 +1446,13 @@ namespace Group_choice_algos_fuzzy
 				override public void UI_Show()
 				{
 					var tex = "";
-					void for_print_matrices(string name, Matrix M)
-					{
-						tex += $"{CR_LF}{name}:{CR_LF}";
-						tex += M?.Matrix2String(true);
-					}
 					if (R != null)
 					{
-						for_print_matrices(RE_R, R);
-						for_print_matrices(RE_R_Asym, R.Asymmetric);
-						for_print_matrices(RE_R_Tr, R.TransClosured);
-						for_print_matrices(RE_R_Acyc, R.DestroyedCycles);
-						for_print_matrices(RE_R_Acyc_Tr, R.DestroyedCycles.TransClosured);
+						foreach (var r in GetRelations2Show())
+						{
+							tex += $"{CR_LF}{r.Key}:{CR_LF}";
+							tex += r.Value?.Matrix2String(true);
+						}
 					}
 					ConnectedLabel.Text = tex;
 					ConnectedLabel.Show();
@@ -1494,13 +1494,15 @@ namespace Group_choice_algos_fuzzy
 				Med = new FuzzyRelation(n);
 				R = new FuzzyRelation(n);
 			}
-			public static (List<Matrix> Matrices, List<string> Labels) GetRelations2Draw()
+			public static Dictionary<string, Matrix> GetRelations2Show()
 			{
-				var M = new List<Matrix>{R, R.TransClosured, R.DestroyedCycles, R.DestroyedCycles.TransClosured,
-					R.Asymmetric};
-				var L = new List<string>{RE_R, RE_R_Tr, RE_R_Acyc, RE_R_Acyc_Tr,
-					RE_R_Asym};
-				var ans = (M, L);
+				Dictionary<string, Matrix> ans = new Dictionary<string, Matrix>
+				{
+					[RE_R] = R,
+					[RE_R_Asym] = R.Asymmetric,
+					[RE_R_Acyc] = R.DestroyedCycles,
+					[RE_R_Acyc_Tr] = R.DestroyedCycles.TransClosured
+				};
 				return ans;
 			}
 		}

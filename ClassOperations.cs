@@ -283,7 +283,7 @@ namespace Group_choice_algos_fuzzy
 				column.CellTemplate = new DataGridViewTextBoxCell();
 				column.SortMode = DataGridViewColumnSortMode.NotSortable;
 				column.HeaderCell.Style.BackColor = window_bg_color;
-				column.MinimumWidth = 15;
+				column.MinimumWidth = row_min_height;
 				column.FillWeight = 1;
 				dgv.Columns.Add(column);
 				return j;
@@ -298,7 +298,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				int i = dgv.Rows.Count;
 				DataGridViewRow row = new DataGridViewRow();
-				row.MinimumHeight = 15;
+				row.MinimumHeight = row_min_height;
 				dgv.Rows.Add(row);
 				return i;
 			}
@@ -343,8 +343,8 @@ namespace Group_choice_algos_fuzzy
 			public static void SetNewMatrixToDGV(DataGridView dgv, Matrix M)
 			{
 				ClearDGV(dgv);
-				AddDGVColumnsAndRows(dgv,M.m,M.n);
-				UpdateDGVCells(dgv,M);
+				AddDGVColumnsAndRows(dgv, M.m, M.n);
+				UpdateDGVCells(dgv, M);
 			}
 			/// <summary>
 			/// кладёт матрицу в DataGridView
@@ -367,20 +367,42 @@ namespace Group_choice_algos_fuzzy
 			/// настрйки для вывода DataGridView
 			/// </summary>
 			/// <param name="dgv"></param>
-			public static void SetDGVDefaults(DataGridView dgv)
+			public static void SetDGVDefaults_experts(DataGridView dgv)
+			{
+				dgv.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
+				dgv.AllowUserToAddRows = false;
+				dgv.AllowUserToDeleteRows = false;
+				dgv.AllowUserToResizeRows = true;
+				dgv.AllowUserToResizeColumns = true;
+				dgv.AllowUserToOrderColumns = false;
+				dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+				dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+				dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+				dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+				dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+				dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+				dgv.ShowEditingIcon = true;
+				dgv.DefaultCellStyle.Format = $"0.{'0' + new string('#', DIGITS_PRECISION - 1)}";
+				dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+				//dgv.ShowCellToolTips = true;
+				//for (int j = 0; j < dgv.Columns.Count; j++)
+				//	for (int i = 0; i < dgv.Rows.Count; i++)
+				//		dgv[j, i].ToolTipText = dgv.Rows[i].HeaderCell.Value.ToString();
+				SetDGVDefaults_FontAndColors(dgv);
+				dgv.DataError += (object ss, DataGridViewDataErrorEventArgs anError) => { dgv.CancelEdit(); };
+			}
+			/// <summary>
+			/// настрйки для вывода DataGridView
+			/// </summary>
+			/// <param name="dgv"></param>
+			public static void SetDGVDefaults_methods(DataGridView dgv)
 			{
 				dgv.AllowUserToAddRows = false;
 				dgv.AllowUserToDeleteRows = false;
 				dgv.AllowUserToResizeRows = true;
 				dgv.AllowUserToResizeColumns = true;
 				dgv.AllowUserToOrderColumns = false;
-				dgv.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
-				dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-				dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-				dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
 				dgv.RowHeadersWidth = row_headers_width;
-				dgv.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-				dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 				dgv.ShowEditingIcon = true;
 				dgv.DefaultCellStyle.Format = $"0.{new string('#', DIGITS_PRECISION)}";
 				dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
@@ -402,7 +424,7 @@ namespace Group_choice_algos_fuzzy
 					SetRow(dgv);
 				}
 			}
-			public static void SetDGVHeaders(DataGridView dgv,	string[] col_headers, string[] row_headers)
+			public static void SetDGVHeaders(DataGridView dgv, string[] col_headers, string[] row_headers)
 			{
 				for (int j = 0; j < dgv.Columns.Count; j++)
 				{

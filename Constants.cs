@@ -99,6 +99,7 @@ namespace Group_choice_algos_fuzzy
 		public const float font_size = 10;
 		public const float button_borderwidth = 5;
 		public const int row_headers_width = 225;
+		public const int row_min_height = 15;
 		#endregion VISUAL_INTERFACE
 
 		#region COLORS

@@ -24,7 +24,7 @@ namespace Group_choice_algos_fuzzy
 			CurLabels = labels;
 			var pb_list = new List<PictureBox> { pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5 };
 			var lb_list = new List<System.Windows.Forms.Label> { label1, label2, label3, label4, label5 };
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < CurMatrices.Count; i++)
 			{
 				DrawGraph(CurMatrices[i], pb_list[i]);
 				lb_list[i].Text = CurLabels[i];

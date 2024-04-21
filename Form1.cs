@@ -18,8 +18,8 @@ namespace Group_choice_algos_fuzzy
 		public Form1()
 		{
 			InitializeComponent();
-			//связывание модели с control-ами на форме
 
+			//связывание модели с control-ами на форме
 			Model.form1 = this;
 
 			ExpertRelations.UI_ControlsAndView = new ExpertRelations.ConnectedControlsAndView(
@@ -28,9 +28,10 @@ namespace Group_choice_algos_fuzzy
 
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(
 				rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
-			AggregatedMatrix.R_Changed += () => {
-				var rtd = AggregatedMatrix.GetRelations2Draw();
-				OrgraphsPics_update(form2_result_matrices, rtd.Matrices, rtd.Labels);
+			AggregatedMatrix.R_Changed += () =>
+			{
+				var rtd = AggregatedMatrix.GetRelations2Show();
+				OrgraphsPics_update(form2_result_matrices, rtd.Values.ToList(), rtd.Keys.ToList());
 			};
 
 			Methods.All_Hamiltonian_paths.UI_Controls =
@@ -43,12 +44,27 @@ namespace Group_choice_algos_fuzzy
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
 			ClearModelDerivatives();
-			set_focus_handlers_enter_mouse(flowLayoutPanel_input_tables,
-				flowLayoutPanel_input_tables_MouseEnter);
-			set_focus_handlers_enter_mouse(flowLayoutPanel_output_info,
-				flowLayoutPanel_output_info_MouseEnter);
-			set_focus_handlers_enter_mouse(flowLayoutPanel_output_tables,
-				flowLayoutPanel_output_tables_MouseEnter);
+
+			this.Activated += (object sender, EventArgs args) =>
+			{
+				set_focus_handlers_enter_mouse(flowLayoutPanel_input_tables,
+					flowLayoutPanel_input_tables_MouseEnter, true);
+				set_focus_handlers_enter_mouse(flowLayoutPanel_output_info,
+					flowLayoutPanel_output_info_MouseEnter, true);
+				set_focus_handlers_enter_mouse(flowLayoutPanel_output_tables,
+					flowLayoutPanel_output_tables_MouseEnter, true);
+
+			};
+			this.Deactivate += (object sender, EventArgs args) =>
+			{
+				set_focus_handlers_enter_mouse(flowLayoutPanel_input_tables,
+					flowLayoutPanel_input_tables_MouseEnter, false);
+				set_focus_handlers_enter_mouse(flowLayoutPanel_output_info,
+					flowLayoutPanel_output_info_MouseEnter, false);
+				set_focus_handlers_enter_mouse(flowLayoutPanel_output_tables,
+					flowLayoutPanel_output_tables_MouseEnter, false);
+			};
+
 			interface_coloring(this);
 			set_controls_size();
 		}
@@ -57,7 +73,7 @@ namespace Group_choice_algos_fuzzy
 
 		void ClearModelDerivatives()
 		{
-			Methods.Clear(); 
+			Methods.Clear();
 			Methods.UI_ClearMethods();
 			AggregatedMatrix.Clear();
 			AggregatedMatrix.UI_Controls.UI_Clear();
@@ -89,18 +105,15 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="f"></param>
 		/// <param name="action"></param>
-		public void set_focus_handlers_enter_mouse(Control f, EventHandler action)
+		public void set_focus_handlers_enter_mouse(Control f, EventHandler action, bool set_action)
 		{
+			if (set_action)
+				f.MouseEnter += action;
+			else
+				f.MouseEnter -= action;
 			foreach (Control c in f.Controls)
 			{
-				c.MouseEnter += action;
-				if (c.Controls.Count > 0)
-				{
-					foreach (Control c2 in c.Controls)
-					{
-						set_focus_handlers_enter_mouse(c2, action);
-					}
-				}
+				set_focus_handlers_enter_mouse(c, action, set_action);
 			}
 
 		}
@@ -111,8 +124,10 @@ namespace Group_choice_algos_fuzzy
 		{
 			System.Drawing.Size get_table_size(DataGridView dgv)
 			{
-				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 2 * dgv.RowHeadersWidth;
-				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 2 * dgv.ColumnHeadersHeight;
+				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible)
+					+ dgv.RowHeadersWidth + row_min_height;
+				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible)
+					+ dgv.ColumnHeadersHeight + row_min_height;
 				return new System.Drawing.Size(Width, Height);
 			}
 
@@ -161,7 +176,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if(numericUpDown_n.Value != n || numericUpDown_m.Value != m)
+				if (numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
 					ExpertRelations.UI_ControlsAndView.UpdateModel_n_m();
 					ClearModelDerivatives();
@@ -277,9 +292,9 @@ namespace Group_choice_algos_fuzzy
 
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
-			var rtd = AggregatedMatrix.GetRelations2Draw();
-			var M = rtd.Matrices;
-			var L = rtd.Labels;
+			var rtd = AggregatedMatrix.GetRelations2Show();
+			var M = rtd.Values.ToList();
+			var L = rtd.Keys.ToList();
 			if (M.Any(x => x != null))
 			{
 				form2_result_matrices?.Dispose();
@@ -299,14 +314,23 @@ namespace Group_choice_algos_fuzzy
 		{
 			set_controls_size();
 		}
+		/// <summary>
+		/// убрано из Form1.Designer
+		/// </summary>
 		private void flowLayoutPanel_input_tables_MouseEnter(object sender, EventArgs e)
 		{
 			flowLayoutPanel_input_tables.Focus();
 		}
+		/// <summary>
+		/// убрано из Form1.Designer
+		/// </summary>
 		private void flowLayoutPanel_output_info_MouseEnter(object sender, EventArgs e)
 		{
 			flowLayoutPanel_output_info.Focus();
 		}
+		/// <summary>
+		/// убрано из Form1.Designer
+		/// </summary>
 		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
 		{
 			flowLayoutPanel_output_tables.Focus();

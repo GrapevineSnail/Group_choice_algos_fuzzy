@@ -137,7 +137,7 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_tables.Size = new System.Drawing.Size(631, 335);
 			this.flowLayoutPanel_output_tables.TabIndex = 24;
 			this.flowLayoutPanel_output_tables.WrapContents = false;
-			this.flowLayoutPanel_output_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_tables_MouseEnter);
+			//this.flowLayoutPanel_output_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_tables_MouseEnter);
 			// 
 			// groupBox_HP_max_length
 			// 
@@ -546,7 +546,7 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_info, 2);
 			this.flowLayoutPanel_output_info.Size = new System.Drawing.Size(631, 144);
 			this.flowLayoutPanel_output_info.TabIndex = 3;
-			this.flowLayoutPanel_output_info.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_info_MouseEnter);
+			//this.flowLayoutPanel_output_info.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_info_MouseEnter);
 			// 
 			// button_run_program
 			// 
@@ -617,7 +617,7 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_input_tables.Size = new System.Drawing.Size(325, 172);
 			this.flowLayoutPanel_input_tables.TabIndex = 25;
 			this.flowLayoutPanel_input_tables.WrapContents = false;
-			this.flowLayoutPanel_input_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_tables_MouseEnter);
+			//this.flowLayoutPanel_input_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_tables_MouseEnter);
 			// 
 			// cb_do_transitive_closure
 			// 
