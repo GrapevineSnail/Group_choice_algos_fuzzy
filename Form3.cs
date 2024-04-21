@@ -34,6 +34,23 @@ namespace Group_choice_algos_fuzzy
 				this.flowLayoutPanel1.Controls.Add(lb_list[k]);
 				this.flowLayoutPanel1.Controls.Add(pb_list[k]);
 				pb_list[k].Size = new Size(300,300);
+				pb_list[k].SizeMode = PictureBoxSizeMode.Zoom;
+				/*
+				this.flowLayoutPanel1.Resize += (sender, e) => {
+					foreach (var pb in this.flowLayoutPanel1.Controls.OfType<PictureBox>())
+					{
+						var s_outer = this.ClientSize.Height;
+						var s_inner = pb.ClientSize.Height;
+						if (s_outer != s_inner)
+						{
+							//float scale = s_outer / s_inner;
+							//pb.Scale(new SizeF(scale,scale));
+							pb.Size = this.flowLayoutPanel1.ClientSize;
+						}
+					}
+				};
+				*/
+
 				lb_list[k].Text = CurLabels[k];
 				lb_list[k].AutoSize = true;
 				DrawGraph(CurMatrices[k], pb_list[k]);

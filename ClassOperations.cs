@@ -251,7 +251,8 @@ namespace Group_choice_algos_fuzzy
 				Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer = new Microsoft.Msagl.GraphViewerGdi.GraphRenderer(g);
 				renderer.CalculateLayout();
 				Bitmap bitmap = new Bitmap(
-					(int)drawing_field.Width, (int)drawing_field.Height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+					(int)drawing_field.Width, (int)drawing_field.Height, 
+					System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
 				renderer.Render(bitmap);
 				drawing_field.Image = (Image)bitmap;
 				return bitmap;
