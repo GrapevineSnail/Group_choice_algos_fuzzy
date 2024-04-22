@@ -31,7 +31,7 @@ namespace Group_choice_algos_fuzzy
 			AggregatedMatrix.R_Changed += () =>
 			{
 				var rtd = AggregatedMatrix.GetRelations2Show();
-				OrgraphsPics_update(form2_result_matrices, rtd.Values.ToList(), rtd.Keys.ToList());
+				UpdateOrgraphPics(form2_result_matrices, rtd);
 			};
 
 			Methods.All_Hamiltonian_paths.UI_Controls =
@@ -293,13 +293,11 @@ namespace Group_choice_algos_fuzzy
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
 			var rtd = AggregatedMatrix.GetRelations2Show();
-			var M = rtd.Values.ToList();
-			var L = rtd.Keys.ToList();
-			if (M.Any(x => x != null))
+			if (rtd.Values.Any(x => x != null))
 			{
 				form2_result_matrices?.Dispose();
 				form2_result_matrices = new Form2();
-				OrgraphsPics_update(form2_result_matrices, M, L);
+				UpdateOrgraphPics(form2_result_matrices, rtd);
 				form2_result_matrices.Show();
 			}
 			if (ExpertRelations.Model.GetMatrices().Any(x => x != null))

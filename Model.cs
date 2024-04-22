@@ -1231,12 +1231,12 @@ namespace Group_choice_algos_fuzzy
 				public void UpdateExpertGraphs()
 				{
 					var M = Model.GetMatrices();
-					var L = new List<string>();
-					for (int i = 0; i < M.Count; i++)
+					var pairs = new Dictionary<string, Matrix>(M.Count);
+					for (int i = 0; i< M.Count; i++)
 					{
-						L.Add($"Expert{i}:");
-					}
-					OrgraphsPics_update(Form1.form3_input_expert_matrices, M, L);
+						pairs.Add($"Expert{i}:", M[i]);
+					}					
+					UpdateOrgraphPics(Form1.form3_input_expert_matrices, pairs);
 				}
 			}
 			public class ExpertRelationsEventArgs : EventArgs

@@ -9,7 +9,6 @@ namespace Group_choice_algos_fuzzy
 {
 	public interface IFromGraphsDraw 
 	{
-		void Redraw(List<double[,]> matrices, List<string> labels);
-
+		void Redraw(Dictionary<string, double[,]> labeled_matrices);
 	}
 }

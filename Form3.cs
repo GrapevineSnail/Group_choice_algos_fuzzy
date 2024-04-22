@@ -12,29 +12,30 @@ namespace Group_choice_algos_fuzzy
 		{
 			InitializeComponent();
 		}
-		public Form3(List<double[,]> matrices, List<string> labels)
+		public Form3(Dictionary<string, double[,]> labeled_matrices)
 		{
 			InitializeComponent();
-			Redraw(matrices, labels);
+			Redraw(labeled_matrices);
 		}
 		public List<double[,]> CurMatrices;
 		public List<string> CurLabels;
-		public void Redraw(List<double[,]> matrices, List<string> labels)
+		public void Redraw(Dictionary<string, double[,]> labeled_matrices)
 		{
 			flowLayoutPanel1.Controls.Clear();
-			CurMatrices = matrices;
-			CurLabels = labels;
-			int m = matrices.Count();
-			var pb_list = new List<PictureBox>();
-			var lb_list = new List<System.Windows.Forms.Label>();
-			for (int k =0; k <m; k++)
+			int m = labeled_matrices.Count();
+			var pb_list = new PictureBox[m];
+			var lb_list = new System.Windows.Forms.Label[m];
+			for (int k = 0; k < m; k++)
 			{
-				lb_list.Add(new Label());
-				pb_list.Add(new PictureBox());
+				lb_list[k] = new Label();
+				pb_list[k] = new PictureBox();
+				lb_list[k].Text = labeled_matrices.ElementAt(k).Key;
+				lb_list[k].AutoSize = true;
+				pb_list[k].Size = new Size(300, 300);
+				pb_list[k].SizeMode = PictureBoxSizeMode.Zoom;
+				DrawGraph(labeled_matrices.ElementAt(k).Value, pb_list[k]);
 				this.flowLayoutPanel1.Controls.Add(lb_list[k]);
 				this.flowLayoutPanel1.Controls.Add(pb_list[k]);
-				pb_list[k].Size = new Size(300,300);
-				pb_list[k].SizeMode = PictureBoxSizeMode.Zoom;
 				/*
 				this.flowLayoutPanel1.Resize += (sender, e) => {
 					foreach (var pb in this.flowLayoutPanel1.Controls.OfType<PictureBox>())
@@ -50,11 +51,6 @@ namespace Group_choice_algos_fuzzy
 					}
 				};
 				*/
-
-				lb_list[k].Text = CurLabels[k];
-				lb_list[k].AutoSize = true;
-				DrawGraph(CurMatrices[k], pb_list[k]);
-
 			}
 		}
 	}

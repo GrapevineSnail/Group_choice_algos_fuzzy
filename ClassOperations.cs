@@ -251,7 +251,7 @@ namespace Group_choice_algos_fuzzy
 				Microsoft.Msagl.GraphViewerGdi.GraphRenderer renderer = new Microsoft.Msagl.GraphViewerGdi.GraphRenderer(g);
 				renderer.CalculateLayout();
 				Bitmap bitmap = new Bitmap(
-					(int)drawing_field.Width, (int)drawing_field.Height, 
+					(int)drawing_field.Width, (int)drawing_field.Height,
 					System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
 				renderer.Render(bitmap);
 				drawing_field.Image = (Image)bitmap;
@@ -264,11 +264,11 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="form"></param>
 			/// <param name="M"></param>
 			/// <param name="L"></param>
-			public static void OrgraphsPics_update(IFromGraphsDraw form, List<Matrix> M, List<string> L)
+			public static void UpdateOrgraphPics(IFromGraphsDraw form, Dictionary<string, Matrix> Lab_Mat)
 			{
 				if (form != null && !((Form)form).IsDisposed)
 				{
-					form.Redraw(M.Select(x => x.matrix_base).ToList(), L);
+					form.Redraw(Lab_Mat.ToDictionary(x => x.Key, x => x.Value.matrix_base));
 				}
 			}
 		}
