@@ -148,24 +148,29 @@ namespace Group_choice_algos_fuzzy
 		#endregion METHODS' IDs
 
 		#region NAMING
-		public const string _CH_WHOLE_SUM = " суммарн.";
-		public const string _CH_TO_EACH_EXPERT = " до каждого эксперта-криетрия";
-		public const string _CH_ON_EACH_EXPERT = " по каждому эксперту-криетрию";
-		public const string _CH_ON_R = " по агрегированной матрице R";
-		public const string _CH_NON_FUZZY = " (ранжирование чёткое)";
-		public const string _CH_FUZZY = " (ранжирование нечёткое, веса по матрице весов)";
+		public const string _CH_NON_FUZZY = " (ранжир-е чёткое) ";
+		public const string _CH_FUZZY_BY_RAcycTr = " (ранжир-е нечёткое, по матрице Tr(Acyc(R))) ";
+		public const string _CH_WHOLE_SUM = " суммарн. ";
+		public const string _CH_TO_EACH_EXPERT = " до каждого эксперта-криетрия ";
+		public const string _CH_ON_EACH_EXPERT = " по каждому эксперту-криетрию ";
+		public const string _CH_ON_R = " по агрегированной матрице R ";
 
 		public const string CH_COST = "стоимость";
 		public const string CH_STRENGTH = "сила";
-		public const string CH_DIST = "расстояние";
-		public const string CH_DIST_SQUARE = "'квадрат разности'";
-		public const string CH_DIST_MODULUS = "'модуль разности'";
+		public const string CH_DIST_SQUARE = "расстояние 'квадрат разности'";
+		public const string CH_DIST_MODULUS = "расстояние 'модуль разности'";
 
-		public const string RE_R = "Агрегированное отношение R";
-		public const string RE_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";
-		public const string RE_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";
-		public const string RE_R_Acyc = "Отношение с разбитыми циклами Acyclic(R) агрегированного отношения R";
-		public const string RE_R_Acyc_Tr = "Транзитивное замыкание Tr(Acyclic(R)) отношения с разбитыми циклами Acyclic(R) агрегированного отношения R";
+		public const string _RE_ShortName_R = "R";
+		public const string _RE_ShortName_R_Asym = "Asymetric(R)";
+		public const string _RE_ShortName_R_Tr = "Tr(R)";
+		public const string _RE_ShortName_R_Acyc = "Acyclic(R)";
+		public const string _RE_ShortName_R_Acyc_Tr = "Tr(Acyclic(R))";
+
+		public const string RE_FullName_R = "Агрегированное отношение R";
+		public const string RE_FullName_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";
+		public const string RE_FullName_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";
+		public const string RE_FullName_R_Acyc = "Отношение с разбитыми циклами Acyclic(R) агрегированного отношения R";
+		public const string RE_FullName_R_Acyc_Tr = "Транзитивное замыкание Tr(Acyclic(R)) отношения с разбитыми циклами Acyclic(R) агрегированного отношения R";
 		#endregion NAMING
 
 	}
