@@ -17,7 +17,7 @@ namespace Group_choice_algos_fuzzy
 			public static string EX_matrix_not_square = "Матрица должна быть квадратной";
 			public static string EX_bad_dimensions = "Размерности двух объектов не совпадают";
 			public static string EX_bad_matrix = "Некорректная матрица";
-			public static string EX_bad_fuzzy_relation_matrix = "Некорректная матрица принадлежности нечёткого отношения";			
+			public static string EX_bad_fuzzy_relation_matrix = "Некорректная матрица принадлежности нечёткого отношения";
 			public static string EX_bad_file = "Некорректный файл";
 			public static string EX_n_m_too_big =
 				$"Число альтернатив n и/или число экспертов m слишком большое. Программа может зависнуть{CR_LF}" +
@@ -142,35 +142,36 @@ namespace Group_choice_algos_fuzzy
 			{ MET_ALL_HP, "Гамильтоновы пути" },
 			{ MET_HP_MAX_LENGTH, "Гамильтоновы пути максимальной стоимости" },
 			{ MET_HP_MAX_STRENGTH, "Гамильтоновы пути максимальной силы" },
-			{ MET_SCHULZE_METHOD, "Ранжирование и победители по Алгоритму Шульце" },
-			{ MET_SMERCHINSKAYA_YASHINA_METHOD, "Ранжирования, агрегированные по расстоянию, с разбиением контуров" }
+			{ MET_SCHULZE_METHOD, "Ранжирование и победители по методу Шульце" },
+			{ MET_SMERCHINSKAYA_YASHINA_METHOD, $"Упорядочение по транзитивно замкнутой ациклической {CH_AGGREG} матрице" }
 		};
 		#endregion METHODS' IDs
 
 		#region NAMING
-		public const string _CH_NON_FUZZY = " (ранжир-е чёткое) ";
-		public const string _CH_FUZZY_BY_RAcycTr = " (ранжир-е нечёткое, по матрице Tr(Acyc(R))) ";
-		public const string _CH_WHOLE_SUM = " суммарн. ";
-		public const string _CH_TO_EACH_EXPERT = " до каждого эксперта-криетрия ";
-		public const string _CH_ON_EACH_EXPERT = " по каждому эксперту-криетрию ";
-		public const string _CH_ON_R = " по агрегированной матрице R ";
+		public static string RE_R = "R";
+		public static string RE_FullName_R = $"{CH_AGGREG} отношение {RE_R}";
+		public static string RE_FullName_R_Asym = $"асимметричная часть {Asym(RE_R)} {CH_AGGREG} отношения {RE_R}";
+		public static string RE_FullName_R_Tr = $"транзитивное замыкание {Tr(RE_R)} {CH_AGGREG} отношения {RE_R}";
+		public static string RE_FullName_R_Acyc = $"отношение с разбитыми циклами {Acyc(RE_R)} {CH_AGGREG} отношения {RE_R}";
+		public static string RE_FullName_R_Acyc_Tr = $"транзитивное замыкание {Tr(Acyc(RE_R))} отношения с разбитыми циклами {Acyc(RE_R)} {CH_AGGREG} отношения {RE_R}";
 
 		public const string CH_COST = "стоимость";
 		public const string CH_STRENGTH = "сила";
 		public const string CH_DIST_SQUARE = "расстояние 'квадрат разности'";
 		public const string CH_DIST_MODULUS = "расстояние 'модуль разности'";
+		public const string CH_NON_FUZZYRank = "чёткое ранжир-е";
+		public const string CH_FUZZYRank = "нечёткое ранжир-е";
+		public const string CH_WHOLE_SUM = "суммарн.";
+		public const string CH_AGGREG = "агрегированн.";
+		public const string CH_TO_EACH_EXPERT = "до каждого эксперта-криетрия";
+		public const string CH_ON_EACH_EXPERT = "по каждому эксперту-криетрию";
 
-		public const string _RE_ShortName_R = "R";
-		public const string _RE_ShortName_R_Asym = "Asymetric(R)";
-		public const string _RE_ShortName_R_Tr = "Tr(R)";
-		public const string _RE_ShortName_R_Acyc = "Acyclic(R)";
-		public const string _RE_ShortName_R_Acyc_Tr = "Tr(Acyclic(R))";
+		public static string CH_BY_R = $"по {CH_AGGREG} матрице {RE_R}";
+		public static string CH_BY_R_Acyc_Tr = $"по матрице {Tr(Acyc(RE_R))}";
 
-		public const string RE_FullName_R = "Агрегированное отношение R";
-		public const string RE_FullName_R_Asym = "Асимметричная часть Asymetric(R) агрегированного отношения R";
-		public const string RE_FullName_R_Tr = "Транзитивное замыкание Tr(R) агрегированного отношения R";
-		public const string RE_FullName_R_Acyc = "Отношение с разбитыми циклами Acyclic(R) агрегированного отношения R";
-		public const string RE_FullName_R_Acyc_Tr = "Транзитивное замыкание Tr(Acyclic(R)) отношения с разбитыми циклами Acyclic(R) агрегированного отношения R";
+		public static string Asym(string s) { return $"Asymmetric({s})"; }
+		public static string Acyc(string s) { return $"Acyclic({s})"; }
+		public static string Tr(string s) { return $"Tr({s})"; }
 		#endregion NAMING
 
 	}

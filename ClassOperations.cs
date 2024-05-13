@@ -112,12 +112,12 @@ namespace Group_choice_algos_fuzzy
 				catch { }
 				return false;
 			}
-
 			/// <summary>
 			/// создать файл с переданным текстом
 			/// </summary>
 			/// <param name="text"></param>
 			/// <param name="filename"></param>
+			/// <param name="add">добавить ли в конец (иначе - перезаписать)</param>
 			/// <returns></returns>
 			public static string WriteToFile(string text, string filename, bool add)
 			{

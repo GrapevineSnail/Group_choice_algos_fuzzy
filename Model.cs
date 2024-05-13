@@ -188,8 +188,8 @@ namespace Group_choice_algos_fuzzy
 		{
 			public CharacteristicDistance(string description) : base(description)
 			{
-				modulus = new Characteristic(CH_DIST_MODULUS + description);
-				square = new Characteristic(CH_DIST_SQUARE + description);
+				modulus = new Characteristic($"{CH_DIST_MODULUS} ({description})");
+				square = new Characteristic($"{CH_DIST_SQUARE} ({description})");
 			}
 			public Characteristic modulus;
 			public Characteristic square;
@@ -199,13 +199,13 @@ namespace Group_choice_algos_fuzzy
 			public CharacteristicRankingDistances(Method method)
 			{
 				parent_method = method;
-				NonFuzzyRanking = new CharacteristicDistance(_CH_NON_FUZZY);
-				FuzzyRankingBy_RAcycTr = new CharacteristicDistance(_CH_FUZZY_BY_RAcycTr);
+				NonFuzzyRanking = new CharacteristicDistance($"{CH_NON_FUZZYRank}");
+				FuzzyRankingBy_RAcycTr = new CharacteristicDistance($"{CH_FUZZYRank} {CH_BY_R_Acyc_Tr}");
 			}
 			private Method parent_method;
 			public CharacteristicDistance NonFuzzyRanking;
 			public CharacteristicDistance FuzzyRankingBy_RAcycTr;
-			public CharacteristicDistance MethodDist
+			public CharacteristicDistance ByMethod
 			{
 				get
 				{
@@ -230,8 +230,8 @@ namespace Group_choice_algos_fuzzy
 			private CharacteristicRankingDistances _MinMaxDistance;//мин и макс суммарн. расстояние среди ранжирований метода
 			private bool[] _IsInPareto_Cost;//входит ли ранжирование по индексу i в оптимальное множество по векторам экспертов-критериев
 			private bool[] _IsInPareto_Strength;
-			private bool[] _IsInPareto_DistRankModulus;
-			private bool[] _IsInPareto_DistRankSquare;
+			private bool[] _IsInPareto_DistModulus;
+			private bool[] _IsInPareto_DistSquare;
 			public Characteristic MinMaxCost
 			{
 				get
@@ -308,26 +308,26 @@ namespace Group_choice_algos_fuzzy
 					return _IsInPareto_Strength;
 				}
 			}
-			public bool[] IsInPareto_DistRankModulus
+			public bool[] IsInPareto_DistModulus
 			{
 				get
 				{
 					IfNullThenUpdatePareto(ref
-						_IsInPareto_DistRankModulus,
-						parent_method.Rankings.Select(x => x.Distance.MethodDist.modulus.ValuesList).ToList(),
+						_IsInPareto_DistModulus,
+						parent_method.Rankings.Select(x => x.Distance.ByMethod.modulus.ValuesList).ToList(),
 						MIN_SIGN);
-					return _IsInPareto_DistRankModulus;
+					return _IsInPareto_DistModulus;
 				}
 			}
-			public bool[] IsInPareto_DistRankSquare
+			public bool[] IsInPareto_DistSquare
 			{
 				get
 				{
 					IfNullThenUpdatePareto(ref
-						_IsInPareto_DistRankSquare,
-						parent_method.Rankings.Select(x => x.Distance.MethodDist.square.ValuesList).ToList(),
+						_IsInPareto_DistSquare,
+						parent_method.Rankings.Select(x => x.Distance.ByMethod.square.ValuesList).ToList(),
 						MIN_SIGN);
-					return _IsInPareto_DistRankSquare;
+					return _IsInPareto_DistSquare;
 				}
 			}
 			private bool[] IfNullThenUpdatePareto(ref bool[] rankings_ch_which_canbe_null,
@@ -502,12 +502,12 @@ namespace Group_choice_algos_fuzzy
 				Distance = null;
 				if (!(_Path is null))
 				{
-					Cost = new Characteristic(CH_COST + _CH_ON_R, PathCost(Rank2List, weight_matrix));
-					Strength = new Characteristic(CH_STRENGTH + _CH_ON_R, PathStrength(Rank2List, weight_matrix));
+					Cost = new Characteristic($"{CH_COST} {CH_BY_R}", PathCost(Rank2List, weight_matrix));
+					Strength = new Characteristic($"{CH_STRENGTH} {CH_BY_R}", PathStrength(Rank2List, weight_matrix));
 					if (experts_matrices != null)
 					{
-						CostsExperts = new Characteristic(CH_COST + _CH_ON_EACH_EXPERT);
-						StrengthsExperts = new Characteristic(CH_STRENGTH + _CH_ON_EACH_EXPERT);
+						CostsExperts = new Characteristic($"{CH_COST} {CH_ON_EACH_EXPERT}");
+						StrengthsExperts = new Characteristic($"{CH_STRENGTH} {CH_ON_EACH_EXPERT}");
 						foreach (var expert_matrix in experts_matrices)
 						{
 							CostsExperts.ValuesList.Add(PathCost(Rank2List, expert_matrix));
@@ -690,15 +690,15 @@ namespace Group_choice_algos_fuzzy
 				/// <summary>
 				/// запись в файл всех полученных ранжирований метода
 				/// </summary>
-				public void WriteRankingsToFile()
+				public void WriteRankingsToFile(string filename)
 				{
 					if (parent_method.HasRankings)
 					{
-						var text = string.Join(CR_LF + CR_LF,
+						var text = string.Join(CR_LF,
 								parent_method.Rankings
 								.Where(x => x.Count == n)
 								.Select(x => x.Rank2AdjacencyMatrixTransitive.Matrix2String(false)).ToArray());
-						OPS_File.WriteToFile(text, OUT_FILE, true);
+						OPS_File.WriteToFile(text, filename, true);
 					}
 				}
 				private void SetRankingsToDataGridView()
@@ -783,16 +783,16 @@ namespace Group_choice_algos_fuzzy
 							col_headers, row_headers);
 						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Cost.Description);
 						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.Strength.Description);
-						SetRow(parent_method.UI_Controls.ConnectedTableFrame, _CH_WHOLE_SUM +
-							some_rank.Distance.MethodDist.square.Description);
-						SetRow(parent_method.UI_Controls.ConnectedTableFrame, _CH_WHOLE_SUM +
-							some_rank.Distance.MethodDist.modulus.Description);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame,
+							$"{CH_WHOLE_SUM} {some_rank.Distance.ByMethod.square.Description}");
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame,
+							$"{CH_WHOLE_SUM} {some_rank.Distance.ByMethod.modulus.Description}");
 						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.CostsExperts.Description);
 						SetRow(parent_method.UI_Controls.ConnectedTableFrame, some_rank.StrengthsExperts.Description);
-						SetRow(parent_method.UI_Controls.ConnectedTableFrame, _CH_TO_EACH_EXPERT +
-							some_rank.Distance.MethodDist.square.Description);
-						SetRow(parent_method.UI_Controls.ConnectedTableFrame, _CH_TO_EACH_EXPERT +
-							some_rank.Distance.MethodDist.modulus.Description);
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame,
+							$"{CH_TO_EACH_EXPERT} {some_rank.Distance.ByMethod.square.Description}");
+						SetRow(parent_method.UI_Controls.ConnectedTableFrame,
+							$"{CH_TO_EACH_EXPERT} {some_rank.Distance.ByMethod.modulus.Description}");
 						for (int j = 0; j < parent_method.Rankings.Count; j++)
 						{
 							Ranking rank = parent_method.Rankings[j];
@@ -817,13 +817,13 @@ namespace Group_choice_algos_fuzzy
 								MethodCh.MinMaxStrength.ValueMax,
 								parent_method.Rankings[j].Strength);
 							display_scalar_characteristic(N + 2, j,
-								MethodCh.MinMaxDistance.MethodDist.square.ValueMin,
-								MethodCh.MinMaxDistance.MethodDist.square.ValueMax,
-								parent_method.Rankings[j].Distance.MethodDist.square);
+								MethodCh.MinMaxDistance.ByMethod.square.ValueMin,
+								MethodCh.MinMaxDistance.ByMethod.square.ValueMax,
+								parent_method.Rankings[j].Distance.ByMethod.square);
 							display_scalar_characteristic(N + 3, j,
-								MethodCh.MinMaxDistance.MethodDist.modulus.ValueMin,
-								MethodCh.MinMaxDistance.MethodDist.modulus.ValueMax,
-								parent_method.Rankings[j].Distance.MethodDist.modulus);
+								MethodCh.MinMaxDistance.ByMethod.modulus.ValueMin,
+								MethodCh.MinMaxDistance.ByMethod.modulus.ValueMax,
+								parent_method.Rankings[j].Distance.ByMethod.modulus);
 							display_vector_characteristic(N + 4, j,
 								MethodCh.IsInPareto_Cost[j] ? MAX_SIGN : "",
 								parent_method.Rankings[j].CostsExperts);
@@ -831,11 +831,11 @@ namespace Group_choice_algos_fuzzy
 								MethodCh.IsInPareto_Strength[j] ? MAX_SIGN : "",
 								parent_method.Rankings[j].StrengthsExperts);
 							display_vector_characteristic(N + 6, j,
-								MethodCh.IsInPareto_DistRankSquare[j] ? MIN_SIGN : "",
-								parent_method.Rankings[j].Distance.MethodDist.square);
+								MethodCh.IsInPareto_DistSquare[j] ? MIN_SIGN : "",
+								parent_method.Rankings[j].Distance.ByMethod.square);
 							display_vector_characteristic(N + 7, j,
-								MethodCh.IsInPareto_DistRankModulus[j] ? MIN_SIGN : "",
-								parent_method.Rankings[j].Distance.MethodDist.modulus);
+								MethodCh.IsInPareto_DistModulus[j] ? MIN_SIGN : "",
+								parent_method.Rankings[j].Distance.ByMethod.modulus);
 						}
 					}
 				}
@@ -988,14 +988,14 @@ namespace Group_choice_algos_fuzzy
 				string text = "";
 				string TextTemplateAmong(Characteristic ch)
 				{
-					return $"мин. и макс. {ch?.Description}: [{ch?.ValueMin}; {ch?.ValueMax}];{CR_LF}";
+					return $" мин. и макс. {ch?.Description}: [{ch?.ValueMin}; {ch?.ValueMax}];{CR_LF}";
 				}
-				text += $"Недоминируемые альтернативы: {UndominatedAlternatives2String}{CR_LF}";
+				text += $"Недоминируемые альтернативы: {UndominatedAlternatives2String}.{CR_LF}";
 				text += $"Среди ранжирований метода: {CR_LF}";
 				text += TextTemplateAmong(RankingsCharacteristics.MinMaxCost);
 				text += TextTemplateAmong(RankingsCharacteristics.MinMaxStrength);
-				text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistance?.MethodDist.square);
-				text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistance?.MethodDist.modulus);
+				text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistance?.ByMethod.square);
+				text += TextTemplateAmong(RankingsCharacteristics.MinMaxDistance?.ByMethod.modulus);
 				return text;
 			}
 			#endregion FUNCTIONS
@@ -1426,16 +1426,7 @@ namespace Group_choice_algos_fuzzy
 				}
 				override public void UI_Show()
 				{
-					var tex = "";
-					if (R != null)
-					{
-						foreach (var r in GetRelations2Show())
-						{
-							tex += $"{CR_LF}{r.Key}:{CR_LF}";
-							tex += r.Value?.Matrix2String(true);
-						}
-					}
-					ConnectedLabel.Text = tex;
+					ConnectedLabel.Text = Info();
 					ConnectedLabel.Show();
 				}
 				override public void UI_Clear()
@@ -1486,6 +1477,19 @@ namespace Group_choice_algos_fuzzy
 				};
 				return ans;
 			}
+			public static string Info()
+			{
+				var tex = "";
+				if (R != null)
+				{
+					foreach (var r in GetRelations2Show())
+					{
+						tex += $"{CR_LF}{r.Key}:{CR_LF}";
+						tex += r.Value?.Matrix2String(true);
+					}
+				}
+				return tex;
+			}
 		}
 		/// <summary>
 		/// все методы
@@ -1499,13 +1503,33 @@ namespace Group_choice_algos_fuzzy
 			public static Method Schulze_method = new Method(MET_SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 			public static Method Smerchinskaya_Yashina_method = new Method(MET_SMERCHINSKAYA_YASHINA_METHOD);
 			public static List<string> MutualRankings;//ранжирования, которые принадлежат всем выбранным к выполнению (IsExecute) методам
-			public static void UI_ShowMethods()
+			public static void UI_ShowMethods(bool write_to_file)
 			{
-				OPS_File.WriteToFile("", OUT_FILE, false);
 				foreach (Method M in GetMethods())
 				{
 					if (M.IsExecute)
+					{
 						M.UI_Controls.UI_Show();
+					}
+				}
+				if (write_to_file)
+				{
+					OPS_File.WriteToFile("", OUT_FILE, false);
+					OPS_File.WriteToFile($"<info>{AggregatedMatrix.Info()}</info>{CR_LF}", OUT_FILE, true);
+					foreach (Method M in GetMethods())
+					{
+						if (M.IsExecute)
+						{
+							OPS_File.WriteToFile($"<method>", OUT_FILE, true);
+								OPS_File.WriteToFile(
+									$"<name>{MethodName[M.ID]}</name>" +
+									$"<info>{M.Info()}</info>", OUT_FILE, true);
+								OPS_File.WriteToFile($"<relations>{CR_LF}", OUT_FILE, true);
+								M.UI_Controls.WriteRankingsToFile(OUT_FILE);
+								OPS_File.WriteToFile($"{CR_LF}</relations>", OUT_FILE, true);
+							OPS_File.WriteToFile($"</method>", OUT_FILE, true);
+						}
+					}
 				}
 			}
 			public static void UI_ClearMethods()
@@ -1514,7 +1538,6 @@ namespace Group_choice_algos_fuzzy
 				{
 					M.UI_Controls.UI_Clear();
 				}
-				OPS_File.WriteToFile("", OUT_FILE, false);
 			}
 			/// <summary>
 			/// очищает результаты методов и характеристики этих результатов

@@ -240,7 +240,7 @@ namespace Group_choice_algos_fuzzy
 				ExpertRelations.UI_ControlsAndView.UI_Deactivate();
 				Methods.ExecuteAlgorythms();
 				AggregatedMatrix.UI_Controls.UI_Show();
-				Methods.UI_ShowMethods();
+				Methods.UI_ShowMethods(true);
 				set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }

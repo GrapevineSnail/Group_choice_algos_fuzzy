@@ -137,7 +137,6 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_output_tables.Size = new System.Drawing.Size(631, 335);
 			this.flowLayoutPanel_output_tables.TabIndex = 24;
 			this.flowLayoutPanel_output_tables.WrapContents = false;
-			//this.flowLayoutPanel_output_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_tables_MouseEnter);
 			// 
 			// groupBox_HP_max_length
 			// 
@@ -517,7 +516,7 @@ namespace Group_choice_algos_fuzzy
 			this.rb_dist_square.Location = new System.Drawing.Point(0, 45);
 			this.rb_dist_square.Name = "rb_dist_square";
 			this.rb_dist_square.Size = new System.Drawing.Size(156, 32);
-			this.rb_dist_square.TabIndex = 1;
+			this.rb_dist_square.TabIndex = 0;
 			this.rb_dist_square.TabStop = true;
 			this.rb_dist_square.Text = "Квадрат разности";
 			this.rb_dist_square.UseVisualStyleBackColor = true;
@@ -528,7 +527,7 @@ namespace Group_choice_algos_fuzzy
 			this.rb_dist_modulus.Location = new System.Drawing.Point(0, 13);
 			this.rb_dist_modulus.Name = "rb_dist_modulus";
 			this.rb_dist_modulus.Size = new System.Drawing.Size(156, 32);
-			this.rb_dist_modulus.TabIndex = 0;
+			this.rb_dist_modulus.TabIndex = 1;
 			this.rb_dist_modulus.TabStop = true;
 			this.rb_dist_modulus.Text = "Модуль разности";
 			this.rb_dist_modulus.UseVisualStyleBackColor = true;
@@ -546,7 +545,6 @@ namespace Group_choice_algos_fuzzy
 			this.tableLayoutPanel1.SetRowSpan(this.flowLayoutPanel_output_info, 2);
 			this.flowLayoutPanel_output_info.Size = new System.Drawing.Size(631, 144);
 			this.flowLayoutPanel_output_info.TabIndex = 3;
-			//this.flowLayoutPanel_output_info.MouseEnter += new System.EventHandler(this.flowLayoutPanel_output_info_MouseEnter);
 			// 
 			// button_run_program
 			// 
@@ -617,7 +615,6 @@ namespace Group_choice_algos_fuzzy
 			this.flowLayoutPanel_input_tables.Size = new System.Drawing.Size(325, 172);
 			this.flowLayoutPanel_input_tables.TabIndex = 25;
 			this.flowLayoutPanel_input_tables.WrapContents = false;
-			//this.flowLayoutPanel_input_tables.MouseEnter += new System.EventHandler(this.flowLayoutPanel_input_tables_MouseEnter);
 			// 
 			// cb_do_transitive_closure
 			// 
