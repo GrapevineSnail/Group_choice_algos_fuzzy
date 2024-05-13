@@ -1101,6 +1101,7 @@ namespace Group_choice_algos_fuzzy
 						{
 							double.TryParse($"0.{Math.Truncate(Mij)}", out Mij);
 						}
+						SetDoubleCell(dd, i, j, Mij);//нужна, не удалять
 						Model.CheckAndSetMatrixElement(exp_index, i, j, Mij);
 					}
 					catch (MyException ex) { ex.Info(); }
