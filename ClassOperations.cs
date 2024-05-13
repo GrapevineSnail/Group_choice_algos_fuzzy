@@ -341,16 +341,10 @@ namespace Group_choice_algos_fuzzy
 					}
 				return input_matrix;
 			}
-			public static void SetNewMatrixToDGV(DataGridView dgv, Matrix M)
-			{
-				ClearDGV(dgv);
-				AddDGVColumnsAndRows(dgv, M.m, M.n);
-				UpdateDGVCells(dgv, M);
-			}
 			/// <summary>
 			/// кладёт матрицу в DataGridView
 			/// </summary>
-			public static void UpdateDGVCells(DataGridView dgv, Matrix M)
+			public static void PutValues2DGVCells(DataGridView dgv, Matrix M)
 			{
 				for (int i = 0; i < M.n; i++)
 					for (int j = 0; j < M.m; j++)
@@ -467,8 +461,9 @@ namespace Group_choice_algos_fuzzy
 					}
 				}
 			}
-			public static void ColorSymmetricCells(DataGridView dgv)
+			public static void ColorSymmetricCells(object sender, DataGridViewCellEventArgs e)
 			{
+				var dgv = sender as DataGridView;
 				for (int i = 0; i < dgv.Rows.Count; i++)
 					for (int j = 0; j < dgv.Columns.Count; j++)
 						ColorSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));

@@ -221,9 +221,9 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// характеристики совокупности ранжирований метода
 		/// </summary>
-		public class MethodRankingsCharacteristics
+		public class CharacteristicsOfMethodRankings
 		{
-			public MethodRankingsCharacteristics(Method m) { parent_method = m; }
+			public CharacteristicsOfMethodRankings(Method m) { parent_method = m; }
 			private readonly Method parent_method;
 			private Characteristic _MinMaxCost;//мин и макс стоимость среди ранжирований метода
 			private Characteristic _MinMaxStrength;//мин и макс сила среди ранжирований метода
@@ -647,7 +647,7 @@ namespace Group_choice_algos_fuzzy
 			#region FIELDS
 			public int ID = -1;//обозначение метода
 			private List<Ranking> _Rankings;//выдаваемые методом ранжирования
-			private MethodRankingsCharacteristics _RankingsCharacteristics;//характеристики ранжирований
+			private CharacteristicsOfMethodRankings _RankingsCharacteristics;//характеристики ранжирований
 			private List<int> _UndominatedAlternatives;//победители - недоминируемые альтернативы
 			private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
 			public ConnectedControls UI_Controls;
@@ -911,13 +911,13 @@ namespace Group_choice_algos_fuzzy
 				}
 				set { _Rankings = value; }
 			}
-			public MethodRankingsCharacteristics RankingsCharacteristics
+			public CharacteristicsOfMethodRankings RankingsCharacteristics
 			{
 				get
 				{
 					if (_RankingsCharacteristics is null || Rankings is null || Rankings?.Count == 0)
 					{
-						_RankingsCharacteristics = new MethodRankingsCharacteristics(this);
+						_RankingsCharacteristics = new CharacteristicsOfMethodRankings(this);
 					}
 					return _RankingsCharacteristics;
 				}
@@ -1101,33 +1101,30 @@ namespace Group_choice_algos_fuzzy
 						{
 							double.TryParse($"0.{Math.Truncate(Mij)}", out Mij);
 						}
-						dd[j, i].Value = Mij;
 						Model.CheckAndSetMatrixElement(exp_index, i, j, Mij);
 					}
 					catch (MyException ex) { ex.Info(); }
 				}
-				public DataGridView NewTable(Matrix new_martix)
+				public DataGridView NewTable(int row_cnt, int col_cnt)
 				{
-					if (new_martix is null)
-						return null;
 					DataGridView dgv = new DataGridView();
 					SetDGVDefaults_experts(dgv);
-					dgv.CellEndEdit += CheckCellWhenValueChanged;
-					dgv.CellEndEdit += ColorSymmetricCell;
-					SetNewMatrixToDGV(dgv, new_martix);
+					AddDGVColumnsAndRows(dgv, col_cnt, row_cnt);
 					var col_headers = Enumerable
-						.Range(0, new_martix.m).Select(x => $"{ind2letter[x]}").ToArray();
+						.Range(0, col_cnt).Select(x => $"{ind2letter[x]}").ToArray();
 					var row_headers = Enumerable
-						.Range(0, new_martix.n).Select(x => $"{ind2letter[x]}").ToArray();
+						.Range(0, row_cnt).Select(x => $"{ind2letter[x]}").ToArray();
 					SetDGVHeaders(dgv, col_headers, row_headers);
+					dgv.CellEndEdit += CheckCellWhenValueChanged;
+					dgv.CellEndEdit += ColorSymmetricCells;
 					return dgv;
 				}
 				public void UpdateTable(int expert_index)
 				{
 					if (HasNoConnectedOutputs())
 						return;
-					UpdateDGVCells(GetOutputDataGridViews[expert_index], Model.GetMatrix(expert_index));
-					ColorSymmetricCells(GetOutputDataGridViews[expert_index]);
+					PutValues2DGVCells(GetOutputDataGridViews[expert_index], Model.GetMatrix(expert_index));
+					ColorSymmetricCells(GetOutputDataGridViews[expert_index], null);
 				}
 				public void NewTables()
 				{
@@ -1137,9 +1134,10 @@ namespace Group_choice_algos_fuzzy
 					{
 						for (int ex = 0; ex < m; ex++)
 						{
-							var dgv = NewTable(Model.GetMatrix(ex));
+							var matr = Model.GetMatrix(ex);
+							var dgv = NewTable(matr.n, matr.m);
 							GetOutputControls.Add(dgv);
-							ColorSymmetricCells((DataGridView)GetOutputControls[GetOutputControls.Count - 1]);
+							UpdateTable(ex);
 						}
 					}
 					UI_Show();
