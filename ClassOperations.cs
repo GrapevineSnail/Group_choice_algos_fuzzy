@@ -468,6 +468,14 @@ namespace Group_choice_algos_fuzzy
 					for (int j = 0; j < dgv.Columns.Count; j++)
 						ColorSymmetricCell(dgv, new DataGridViewCellEventArgs(j, i));
 			}
+			public static System.Drawing.Size GetTableSize(DataGridView dgv)
+			{
+				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible)
+					+ dgv.RowHeadersWidth + row_min_height;
+				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible)
+					+ dgv.ColumnHeadersHeight + row_min_height;
+				return new System.Drawing.Size(Width, Height);
+			}
 		}
 	}
 }

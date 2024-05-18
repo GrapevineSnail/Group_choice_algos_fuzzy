@@ -122,44 +122,25 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		void set_controls_size()
 		{
-			System.Drawing.Size get_table_size(DataGridView dgv)
-			{
-				var Width = dgv.Columns.GetColumnsWidth(DataGridViewElementStates.Visible)
-					+ dgv.RowHeadersWidth + row_min_height;
-				var Height = dgv.Rows.GetRowsHeight(DataGridViewElementStates.Visible)
-					+ dgv.ColumnHeadersHeight + row_min_height;
-				return new System.Drawing.Size(Width, Height);
-			}
-
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
-
 			foreach (DataGridView dgv in ExpertRelations.UI_ControlsAndView.GetOutputDataGridViews)
 			{
 				dgv.Dock = DockStyle.None;
-				dgv.Size = get_table_size(dgv);
+				dgv.Size = OPS_DataGridView.GetTableSize(dgv);
 			}
-
 			foreach (Method m in Methods.GetMethods())
 			{
 				DataGridView dgv = m?.UI_Controls.ConnectedTableFrame;
-
 				if (dgv != null)
 				{
 					dgv.AutoResizeColumnHeadersHeight();
 					dgv.AutoResizeRows();
-					dgv.RowHeadersWidth = row_headers_width;
-					GroupBox frame = (GroupBox)dgv?.Parent;
-					if (frame != null)
-					{
-						frame.Dock = DockStyle.Top;
-						frame.AutoSize = true;
-					}
-					dgv.Dock = DockStyle.None;
-					dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-					dgv.AutoSize = true;
-					dgv.Size = get_table_size(dgv);
-
+					dgv.RowHeadersWidth = row_headers_width;					
+					//dgv.Dock = DockStyle.None;
+					//dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+					//dgv.AutoSize = true;
+					dgv.Size = OPS_DataGridView.GetTableSize(dgv);
 					Label lab = m?.UI_Controls.ConnectedLabel;
 					if (lab != null)
 					{
@@ -332,6 +313,16 @@ namespace Group_choice_algos_fuzzy
 		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
 		{
 			flowLayoutPanel_output_tables.Focus();
+		}
+		private void dg_RowHeightChanged(object sender, DataGridViewRowEventArgs e)
+		{
+			var dgv = sender as DataGridView;
+			(dgv).Size = OPS_DataGridView.GetTableSize(dgv);
+		}
+		private void dg_All_rankings_RowHeadersWidthChanged(object sender, EventArgs e)
+		{
+			var dgv = sender as DataGridView;
+			(dgv).Size = OPS_DataGridView.GetTableSize(dgv);
 		}
 	}
 }

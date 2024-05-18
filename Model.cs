@@ -845,7 +845,7 @@ namespace Group_choice_algos_fuzzy
 					ConnectedTableFrame?.Show();
 					ConnectedTableFrame?.Parent.Show();
 					ConnectedLabel.Show();
-					ConnectedLabel.Text = parent_method.Info();
+					ConnectedLabel.Text = parent_method.Info();					
 					ConnectedTableFrame?.Parent.Controls.Add(ConnectedLabel);
 				}
 				override public void UI_Clear()
