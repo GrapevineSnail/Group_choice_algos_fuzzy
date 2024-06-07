@@ -33,14 +33,19 @@ namespace Group_choice_algos_fuzzy
 			public static string INF_ranking_unavailable = "Строгое ранжирование невозможно. ";
 			public static string INF_matrix_was_normalized = "Элементы матрицы были нормализованы (значения приведены в интервал [0;1])";
 			public static string INF_matrix_solitary_loops_deleted = "Петли удалены (диагональные элементы матрицы)";
+			public static string INF_output_written_in_file = $"Результаты см. в выходном файле ";
 			#endregion EXCEPTIONS and INFO
 
 			/// <summary>
 			/// выводить при catch 
 			/// </summary>
-			public void Info()
+			public void Info(bool show_in_UI = true)
 			{
-				MessageBox.Show(this.Message.ToString());
+				if(show_in_UI) MessageBox.Show(this.Message.ToString());
+			}
+			static public void Info(Exception ex, bool show_in_UI = true)
+			{
+				if (show_in_UI)	MessageBox.Show(ex.Message.ToString());
 			}
 		}
 
@@ -60,6 +65,7 @@ namespace Group_choice_algos_fuzzy
 		public const string MIN_SIGN = "min";
 		public const string MAX_SIGN = "max";
 		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		public static char[] CHARS_FOR_LINE_SPLIT = new char[] { ' ', '	' };
 		/// <summary>
 		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
 		/// </summary>

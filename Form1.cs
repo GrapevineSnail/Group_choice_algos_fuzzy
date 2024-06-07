@@ -43,7 +43,7 @@ namespace Group_choice_algos_fuzzy
 			Methods.Smerchinskaya_Yashina_method.UI_Controls =
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
-			ClearModelDerivatives();
+			ClearModelDerivatives(true);
 
 			this.Activated += (object sender, EventArgs args) =>
 			{
@@ -71,12 +71,16 @@ namespace Group_choice_algos_fuzzy
 		public static Form2 form2_result_matrices = null;
 		public static Form3 form3_input_expert_matrices = null;
 
-		void ClearModelDerivatives()
+
+		void ClearModelDerivatives(bool clear_UI)
 		{
 			Methods.Clear();
-			Methods.UI_ClearMethods();
 			AggregatedMatrix.Clear();
-			AggregatedMatrix.UI_Controls.UI_Clear();
+			if (clear_UI)
+			{
+				Methods.UI_ClearMethods();
+				AggregatedMatrix.UI_Controls.UI_Clear();
+			}
 		}
 		/// <summary>
 		/// начальное расцвечивание формы
@@ -136,7 +140,7 @@ namespace Group_choice_algos_fuzzy
 				{
 					dgv.AutoResizeColumnHeadersHeight();
 					dgv.AutoResizeRows();
-					dgv.RowHeadersWidth = row_headers_width;					
+					dgv.RowHeadersWidth = row_headers_width;
 					//dgv.Dock = DockStyle.None;
 					//dgv.Anchor = AnchorStyles.Top | AnchorStyles.Left;
 					//dgv.AutoSize = true;
@@ -149,6 +153,30 @@ namespace Group_choice_algos_fuzzy
 				}
 			}
 		}
+
+		/// <summary>
+		/// чтение входных профилей и запуск работы программы на выбранных алгоритмах
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void button_run_program_Click(object sender, EventArgs e)
+		{
+			try
+			{
+				if (cb_All_rankings.Checked && n > max_count_of_alternatives_2ALL_RANKS)
+					throw new MyException(EX_n_too_big);
+				ExpertRelations.Model.CheckAndSetMatrices(ExpertRelations.Model.GetMatrices(), true);
+				AggregatedMatrix.UI_Controls.UI_Clear();
+				Methods.UI_ClearMethods();
+				ExpertRelations.UI_ControlsAndView.UI_Deactivate();
+				Methods.ExecuteAlgorythms();
+				AggregatedMatrix.UI_Controls.UI_Show();
+				Methods.UI_ShowMethods(true, true, true);
+				set_controls_size();
+			}
+			catch (MyException ex) { ex.Info(); }
+		}
+
 		/// <summary>
 		/// Считывает с формы переменные n и m (количество альтернатив и экспертов)
 		/// </summary>
@@ -160,13 +188,13 @@ namespace Group_choice_algos_fuzzy
 				if (numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
 					ExpertRelations.UI_ControlsAndView.UpdateModel_n_m();
-					ClearModelDerivatives();
+					ClearModelDerivatives(true);
 					var matrices = new List<Matrix>(m);
 					for (int k = 0; k < m; k++)
 					{
 						matrices.Add(new Matrix(n));
 					}
-					ExpertRelations.Model.SetMatrices(matrices);
+					ExpertRelations.Model.SetMatrices(matrices, true);
 				}
 				ExpertRelations.UI_ControlsAndView.UI_Show();
 				ExpertRelations.UI_ControlsAndView.UI_Activate();
@@ -184,93 +212,81 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				try
-				{
-					List<Matrix> matrices = ReadFileWithMatrices(textBox_file.Text, out var absolute_filename);
-					textBox_file.Text = absolute_filename;
-					m = matrices.Count;
-					n = matrices.First().n;
-					ClearModelDerivatives();
-					ExpertRelations.Model.SetMatrices(matrices);
-					ExpertRelations.UI_ControlsAndView.UI_Show();
-					ExpertRelations.UI_ControlsAndView.UI_Activate();
-					set_controls_size();
-				}
-				catch (FileNotFoundException ex)
-				{
-					throw new MyException($"{ex.Message}");
-				}
+				if (!ReadFile(textBox_file.Text,
+					out var absolute_filename, out List<Matrix> matrices, out var _))
+					throw new FileNotFoundException();
+				textBox_file.Text = absolute_filename;
+				if (matrices is null || matrices.Count == 0)
+					throw new MyException(EX_bad_file);
+				m = matrices.Count;
+				n = matrices.First().n;
+				ClearModelDerivatives(true);
+				ExpertRelations.Model.SetMatrices(matrices, true);
+				ExpertRelations.UI_ControlsAndView.UI_Show();
+				ExpertRelations.UI_ControlsAndView.UI_Activate();
+				set_controls_size();
 			}
+			catch (FileNotFoundException ex) { MyException.Info(ex); }
 			catch (MyException ex) { ex.Info(); }
 		}
 
 		/// <summary>
-		/// чтение входных профилей и запуск работы программы на выбранных алгоритмах
+		/// прогнать несколько тестов
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
-		private void button_run_program_Click(object sender, EventArgs e)
+		private void button_read_file_several_tests_Click(object sender, EventArgs e)
 		{
 			try
 			{
-				if (cb_All_rankings.Checked && n > max_count_of_alternatives_2ALL_RANKS)
-					throw new MyException(EX_n_too_big);
-				ExpertRelations.Model.CheckAndSetMatrices(ExpertRelations.Model.GetMatrices());
-				AggregatedMatrix.UI_Controls.UI_Clear();
-				Methods.UI_ClearMethods();
-				ExpertRelations.UI_ControlsAndView.UI_Deactivate();
-				Methods.ExecuteAlgorythms();
-				AggregatedMatrix.UI_Controls.UI_Show();
-				Methods.UI_ShowMethods(true);
-				set_controls_size();
+				if (!ReadFile(textBox_file.Text, 
+					out var absolute_filename, out var _, out List<List<Matrix>> tests))
+					throw new FileNotFoundException();
+				textBox_file.Text = absolute_filename;
+				if (tests is null || tests.Count == 0)
+					throw new MyException(EX_bad_file);
+				string out_filename = WriteToFile($"<root>{CR_LF}", OUT_FILE, false);
+				for (int t = 0; t < tests.Count; t++)
+				{
+					List<Matrix> matrices = tests[t];
+					try
+					{
+						if (matrices.Count > 0)
+						{
+							m = matrices.Count;
+							n = matrices.First().n;
+							ClearModelDerivatives(false);
+							if (cb_All_rankings.Checked && n > max_count_of_alternatives_2ALL_RANKS)
+								throw new MyException(EX_n_too_big);
+							ExpertRelations.Model.CheckAndSetMatrices(matrices, false);
+							Methods.ExecuteAlgorythms();
+							Methods.UI_ShowMethods(false, true, false);
+						}
+						else
+						{
+							throw new MyException(EX_bad_file);
+						}
+					}
+					catch (MyException ex)
+					{
+						WriteToFile($"<exception>{ex.Message}</exception>{CR_LF}", OUT_FILE, true);
+					}
+					catch (Exception ex)
+					{
+						WriteToFile($"<exception>{ex.Message}</exception>{CR_LF}",OUT_FILE, true);
+					}
+				}
+				WriteToFile($"{CR_LF}</root>", OUT_FILE, true);
+				throw new MyException($"{INF_output_written_in_file} {out_filename}");
 			}
+			catch (FileNotFoundException ex) { MyException.Info(ex); }
 			catch (MyException ex) { ex.Info(); }
 		}
 		/// <summary>
-		/// тестовая кнопочка, для разработчика
+		/// вывести рисунки графов на формах
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
-		private void button_for_tests_Click(object sender, EventArgs e)
-		{
-			/*
-			RefreshModel();//?
-			var matrices = new List<FuzzyRelation>();
-
-			label_aggreg_matrix.Text = Directory.GetCurrentDirectory().ToString();
-			//список всех файлов директории !!!
-			List<string> files = new List<string>() { textBox_file.Text };//
-
-			foreach (string filename in files)
-			{
-				string[] lines = File.ReadAllLines(filename)
-					.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-				var chars_for_split = new char[] { ' ' };
-				var n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
-				var cur_matrix = new FuzzyRelation(n);
-				for (int l = 0; l < lines.Length; l++)
-				{
-					if (lines[l].Length != 0)
-					{
-						double res;
-						double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
-							.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
-						for (int j = 0; j < numbers.Length; j++)
-							cur_matrix[l % n, j] = numbers[j];
-					}
-					if (l % n == n - 1)
-						matrices.Add(cur_matrix.Cast2Fuzzy);
-				}
-				m = matrices.Count;
-				//R_list = Enumerable.Select(R_list, x => Matrix.GetAsymmetricPart(x)).ToList();
-				var Intersect = Methods.ExecuteAlgorythms();
-				set_output_results(Intersect);//вывод в файл или начисление статистики
-
-				//вывод статистики в файл
-			}
-			*/
-		}
-
 		private void button_visualize_orgraph_Click(object sender, EventArgs e)
 		{
 			var rtd = AggregatedMatrix.GetRelations2Show();

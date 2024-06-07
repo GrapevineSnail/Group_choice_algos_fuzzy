@@ -688,16 +688,26 @@ namespace Group_choice_algos_fuzzy
 					}
 				}
 				/// <summary>
-				/// запись в файл всех полученных ранжирований метода
+				/// запись в файл всех полученных ранжирований метода в виде матриц
 				/// </summary>
-				public void WriteRankingsToFile(string filename)
+				public void WriteOutRelationsToFile(string filename)
 				{
 					if (parent_method.HasRankings)
 					{
-						var text = string.Join(CR_LF,
-								parent_method.Rankings
+						var text = string.Join(CR_LF, parent_method.Rankings
 								.Where(x => x.Count == n)
 								.Select(x => x.Rank2AdjacencyMatrixTransitive.Matrix2String(false)).ToArray());
+						OPS_File.WriteToFile(text, filename, true);
+					}
+				}
+				/// <summary>
+				/// запись в файл всех полученных ранжирований метода
+				/// </summary>
+				public void WriteOutRankingsToFile(string filename)
+				{
+					if (parent_method.HasRankings)
+					{
+						var text = string.Join(CR_LF, parent_method.Ranks2Strings);
 						OPS_File.WriteToFile(text, filename, true);
 					}
 				}
@@ -845,7 +855,7 @@ namespace Group_choice_algos_fuzzy
 					ConnectedTableFrame?.Show();
 					ConnectedTableFrame?.Parent.Show();
 					ConnectedLabel.Show();
-					ConnectedLabel.Text = parent_method.Info();					
+					ConnectedLabel.Text = parent_method.Info();
 					ConnectedTableFrame?.Parent.Controls.Add(ConnectedLabel);
 				}
 				override public void UI_Clear()
@@ -1126,6 +1136,7 @@ namespace Group_choice_algos_fuzzy
 						return;
 					PutValues2DGVCells(GetOutputDataGridViews[expert_index], Model.GetMatrix(expert_index));
 					ColorSymmetricCells(GetOutputDataGridViews[expert_index], null);
+
 				}
 				public void NewTables()
 				{
@@ -1309,11 +1320,14 @@ namespace Group_choice_algos_fuzzy
 					UI_ControlsAndView.UpdateTable(matrix_index);
 					UI_ControlsAndView.UpdateExpertGraphs();
 				}
-				public static void SetMatrices(List<Matrix> new_matrices)
+				public static void SetMatrices(List<Matrix> new_matrices, bool show_in_UI)
 				{
 					_RList = new_matrices;
-					UI_ControlsAndView.NewTables();
-					UI_ControlsAndView.UpdateExpertGraphs();
+					if (show_in_UI)
+					{
+						UI_ControlsAndView.NewTables();
+						UI_ControlsAndView.UpdateExpertGraphs();
+					}
 				}
 				public static Matrix GetMatrix(int index)
 				{
@@ -1362,10 +1376,10 @@ namespace Group_choice_algos_fuzzy
 					}
 					catch (MyException ex) { ex.Info(); }
 				}
-				public static void CheckAndSetMatrices(List<Matrix> matrices)
+				public static void CheckAndSetMatrices(List<Matrix> matrices, bool show_in_UI)
 				{
 					var ans = CheckMatrices(matrices, out var M);
-					SetMatrices(M);
+					SetMatrices(M, show_in_UI);
 					try
 					{
 						if (ans.some_not_norm)
@@ -1373,7 +1387,7 @@ namespace Group_choice_algos_fuzzy
 							throw new MyException(INF_matrix_was_normalized);
 						}
 					}
-					catch (MyException ex) { ex.Info(); }
+					catch (MyException ex) { ex.Info(show_in_UI); }
 					try
 					{
 						if (ans.some_has_cycle)
@@ -1381,7 +1395,7 @@ namespace Group_choice_algos_fuzzy
 							throw new MyException(EX_contains_cycle);
 						}
 					}
-					catch (MyException ex) { ex.Info(); }
+					catch (MyException ex) { ex.Info(show_in_UI); }
 				}
 			}
 			#endregion SUBCLASSES
@@ -1502,7 +1516,7 @@ namespace Group_choice_algos_fuzzy
 			public static Method Schulze_method = new Method(MET_SCHULZE_METHOD);//имеет результирующее ранжирование по методу Шульце (единственно)
 			public static Method Smerchinskaya_Yashina_method = new Method(MET_SMERCHINSKAYA_YASHINA_METHOD);
 			public static List<string> MutualRankings;//ранжирования, которые принадлежат всем выбранным к выполнению (IsExecute) методам
-			public static void UI_ShowMethods(bool write_to_file)
+			private static void PutMethodsResults2UI()
 			{
 				foreach (Method M in GetMethods())
 				{
@@ -1511,24 +1525,39 @@ namespace Group_choice_algos_fuzzy
 						M.UI_Controls.UI_Show();
 					}
 				}
+			}
+			private static void PutMethodsResults2File(bool rewrite_file)
+			{
+				OPS_File.WriteToFile($"<arbitrament>", OUT_FILE, rewrite_file ? false : true);
+				OPS_File.WriteToFile($"<info>{AggregatedMatrix.Info()}</info>{CR_LF}", OUT_FILE, true);
+				foreach (Method M in GetMethods())
+				{
+					if (M.IsExecute)
+					{
+						OPS_File.WriteToFile($"<method>", OUT_FILE, true);
+						OPS_File.WriteToFile(
+							$"<name>{MethodName[M.ID]}</name>" +
+							$"<info>{M.Info()}</info>", OUT_FILE, true);
+						OPS_File.WriteToFile($"<relations>", OUT_FILE, true);
+						M.UI_Controls.WriteOutRelationsToFile(OUT_FILE);
+						OPS_File.WriteToFile($"</relations>", OUT_FILE, true);
+						OPS_File.WriteToFile($"<relations_as_rankings>", OUT_FILE, true);
+						M.UI_Controls.WriteOutRankingsToFile(OUT_FILE);
+						OPS_File.WriteToFile($"</relations_as_rankings>", OUT_FILE, true);
+						OPS_File.WriteToFile($"</method>", OUT_FILE, true);
+					}
+				}
+				OPS_File.WriteToFile($"</arbitrament>", OUT_FILE, true);
+			}
+			public static void UI_ShowMethods(bool show_in_UI, bool write_to_file, bool rewrite_file)
+			{
+				if (show_in_UI)
+				{
+					PutMethodsResults2UI();
+				}
 				if (write_to_file)
 				{
-					OPS_File.WriteToFile("", OUT_FILE, false);
-					OPS_File.WriteToFile($"<info>{AggregatedMatrix.Info()}</info>{CR_LF}", OUT_FILE, true);
-					foreach (Method M in GetMethods())
-					{
-						if (M.IsExecute)
-						{
-							OPS_File.WriteToFile($"<method>", OUT_FILE, true);
-								OPS_File.WriteToFile(
-									$"<name>{MethodName[M.ID]}</name>" +
-									$"<info>{M.Info()}</info>", OUT_FILE, true);
-								OPS_File.WriteToFile($"<relations>{CR_LF}", OUT_FILE, true);
-								M.UI_Controls.WriteRankingsToFile(OUT_FILE);
-								OPS_File.WriteToFile($"{CR_LF}</relations>", OUT_FILE, true);
-							OPS_File.WriteToFile($"</method>", OUT_FILE, true);
-						}
-					}
+					PutMethodsResults2File(rewrite_file);
 				}
 			}
 			public static void UI_ClearMethods()

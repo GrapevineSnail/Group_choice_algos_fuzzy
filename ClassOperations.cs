@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
+using System.Xml;
 //using System.Text.RegularExpressions;
 
 
@@ -131,7 +132,6 @@ namespace Group_choice_algos_fuzzy
 				{
 					using (StreamWriter writer = new StreamWriter(absolute_file_name, true))
 					{
-						writer.WriteLine(CR_LF);
 						writer.WriteLine(text);
 					}
 				}
@@ -141,46 +141,84 @@ namespace Group_choice_algos_fuzzy
 				}
 				return absolute_file_name;
 			}
-
-			public static List<Matrix> ReadFileWithMatrices(string filename, out string absolute_file_name)
+			/// <summary>
+			/// читает файл и выдает матрицы или несколько групп матриц
+			/// </summary>
+			/// <param name="filename"></param>
+			/// <param name="absolute_file_name">если файл найден, возвращает полный путь к файлу</param>
+			/// <param name="one_test_matrices">одна матрица - одно экспертное совещание</param>
+			/// <param name="several_tests">несколько групп матриц - несколько экспертных совещаний</param>
+			/// <returns></returns>
+			public static bool ReadFile(string filename, out string absolute_file_name,
+				out List<Matrix> one_test_matrices, out List<List<Matrix>> several_tests)
 			{
-				List<Matrix> matrices = new List<Matrix>();
-				FindFile(filename, out absolute_file_name);
+				one_test_matrices = null;
+				several_tests = null;
+				if (!FindFile(filename, out absolute_file_name))
+					return false;
+				ReadMatrices(File.ReadAllLines(absolute_file_name), out one_test_matrices);//ReadAllLines вызывает FileNotFoundException
+				ReadFileWithSeveralTests(absolute_file_name, out several_tests);
+				return true;
+			}
+			/// <summary>
+			/// считывает группы матриц из файла
+			/// </summary>
+			/// <param name="absolute_file_name"></param>
+			/// <param name="several_tests"></param>
+			/// <returns>если удалось распарсить файл по заданным правилам</returns>
+			public static bool ReadFileWithSeveralTests(string absolute_file_name, out List<List<Matrix>> several_tests)
+			{
+				several_tests = new List<List<Matrix>>();
+				XmlDocument xDoc = new XmlDocument();
 				try
+				{ xDoc.Load(absolute_file_name); }
+				catch { }
+				XmlElement xRoot = xDoc.DocumentElement;
+				if (xRoot is null)
+					return false;
+				List<bool> is_test_correct = new List<bool>();
+				foreach (XmlNode childnode in xRoot.ChildNodes)
 				{
-					if (absolute_file_name == "")
-						throw new FileNotFoundException();
-					string[] lines = File.ReadAllLines(absolute_file_name)
-						.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();//ReadAllLines вызывает FileNotFoundException
-					filename = absolute_file_name;
-					char[] chars_for_split = new char[] { ' ', '	' };
-					int _n = lines.First().Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries).Count();
-					Matrix cur_matrix = new Matrix(_n, _n);
-					for (int l = 0; l < lines.Length; l++)
+					string[] lines = childnode.InnerText.Split('\n').ToArray();
+					bool is_OK = ReadMatrices(lines, out List<Matrix> single_test_matrices);
+					is_test_correct.Add(is_OK);
+					several_tests.Add(single_test_matrices);
+				}
+				return is_test_correct.Any();
+			}
+			/// <summary>
+			/// считывает матрицы из файла
+			/// </summary>
+			/// <param name="absolute_file_name"></param>
+			/// <param name="matrices"></param>
+			/// <returns>возвращает - удалось ли считать набор матриц (1 тест)</returns>
+			public static bool ReadMatrices(string[] lines, out List<Matrix> matrices)
+			{
+				matrices = new List<Matrix>();
+				lines = lines.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				if (lines.Count() == 0)
+					return false;
+				char[] delimiters = CHARS_FOR_LINE_SPLIT;
+				int read_n = lines.First().Split(delimiters, StringSplitOptions.RemoveEmptyEntries).Count();
+
+				Matrix cur_matrix = new Matrix(read_n);
+				for (int l = 0; l < lines.Length; l++)
+				{
+					if (lines[l].Length > 0)
 					{
-						if (lines[l].Length != 0)
-						{
-							double res;
-							double[] numbers = lines[l].Split(chars_for_split, StringSplitOptions.RemoveEmptyEntries)
-								.Select(x => double.TryParse(x, out res) ? res : INF).ToArray();
-							if (numbers.Any(x => x == INF) || numbers.Length != _n)
-								throw new MyException(EX_bad_file);
-							for (int j = 0; j < numbers.Length; j++)
-								cur_matrix[l % _n, j] = numbers[j];
-						}
-						if (l % _n == _n - 1)
-							matrices.Add(new Matrix(cur_matrix));
+						double[] numbers = lines[l].Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+							.Select(x => double.TryParse(x, out double res) ? res : INF).ToArray();
+						if (numbers.Length != read_n || numbers.Any(x => x == INF))
+							return false;
+						for (int j = 0; j < numbers.Length; j++)
+							cur_matrix[l % read_n, j] = numbers[j];
 					}
-					if (matrices.Count == 0)
-						throw new MyException(EX_bad_file);
-					//m = matrices.Count;
-					//n = _n;
+					if (l % read_n == read_n - 1)
+						matrices.Add(new Matrix(cur_matrix));
 				}
-				catch (FileNotFoundException ex)
-				{
-					throw new MyException($"{ex.Message}");
-				}
-				return matrices;
+				if (matrices.Count == 0)
+					return false;
+				return true;
 			}
 		}
 		/// <summary>
