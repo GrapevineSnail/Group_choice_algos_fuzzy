@@ -103,6 +103,15 @@ namespace Group_choice_algos_fuzzy
 			{
 				return lines.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 			}
+			public static string Clean_Commas2Dots(string str)
+			{
+				return Regex.Replace(str, ",", ".");
+			}
+			public static string Clean_ShortenAlternativeNumber(string str)
+			{
+				var num = Regex.Match(str, @"\d+").Value;
+				return MARK + int.Parse(num).ToString();
+			}
 			public static string[] SplitWithowtEmptyEntries(string str, char[] delimiters)
 			{
 				return str.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
@@ -113,15 +122,17 @@ namespace Group_choice_algos_fuzzy
 				SetSymbolsForAlternatives(signs.Count);
 				for (int i = 0; i < signs.Count; i++)
 				{
-					var a = Clean_StringBeginAndEnd(signs[i]);
-					if (!sym2ind.ContainsKey(a))
+					var alt = Clean_StringBeginAndEnd(signs[i]);
+					alt = Clean_ShortenAlternativeNumber(alt);
+					if (!sym2ind.ContainsKey(alt))
 						return false;
-					alters.Add(sym2ind[a]);
+					alters.Add(sym2ind[alt]);
 				}
 				return true;
 			}
-			public static bool TryParseDoubles(string[] str, out double[] numbers)
+			public static bool TryParseDoubles(string[] input, out double[] numbers)
 			{
+				var str = input.Select(x => Clean_Commas2Dots(x));
 				numbers = str.Select(x => double.TryParse(x, out double res) ? res : INF).ToArray();
 				if (numbers.Any(x => x == INF))
 					return false;

@@ -133,6 +133,7 @@ namespace Group_choice_algos_fuzzy
 				dgv.Dock = DockStyle.None;
 				dgv.Size = OPS_DataGridView.GetTableSize(dgv);
 			}
+			groupBox3.Dock = DockStyle.Fill;
 			foreach (Method m in Methods.GetMethods())
 			{
 				DataGridView dgv = m?.UI_Controls.ConnectedTableFrame;
@@ -216,7 +217,7 @@ namespace Group_choice_algos_fuzzy
 					out List<Matrix> matrices, out string bad_string))
 					throw new FileNotFoundException();
 				textBox_file.Text = absolute_filename;
-				if (matrices is null || matrices.Count == 0)
+				if (matrices is null || matrices.Count == 0 || bad_string?.Length > 0)
 					throw new MyException(EX_bad_file + CR_LF + bad_string);
 				ClearModelDerivatives(true);
 				ExpertRelations.Model.SetMatrices(matrices, true);
