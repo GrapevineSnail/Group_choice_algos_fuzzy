@@ -220,7 +220,8 @@ namespace Group_choice_algos_fuzzy
 				List<bool> is_test_correct = new List<bool>();
 				foreach (XmlNode childnode in xRoot.ChildNodes)
 				{
-					string[] lines = childnode.InnerText.Split('\n').ToArray();
+					string[] lines = childnode.InnerText.Split(CHARS_FOR_TEXT_SPLIT, 
+						StringSplitOptions.RemoveEmptyEntries).ToArray();
 					raw_several_tests.Add(lines);
 					bool is_OK = ReadMatrices(lines, out List<Matrix> single_test_matrices);
 					is_test_correct.Add(is_OK);

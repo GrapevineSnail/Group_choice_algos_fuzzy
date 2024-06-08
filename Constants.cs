@@ -74,7 +74,8 @@ namespace Group_choice_algos_fuzzy
 		public const string MIN_SIGN = "min";
 		public const string MAX_SIGN = "max";
 		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		public static char[] CHARS_FOR_LINE_SPLIT = new char[] { ' ', '	' };
+		public static char[] CHARS_FOR_LINE_SPLIT = new char[] { ' ', '\t' };
+		public static char[] CHARS_FOR_TEXT_SPLIT = new char[] { '\r','\n' };
 		public static string SEP_FOR_RANK = ",";
 		/// <summary>
 		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
