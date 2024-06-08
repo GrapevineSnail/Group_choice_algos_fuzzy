@@ -5,6 +5,7 @@ using System.Linq;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
 using static Group_choice_algos_fuzzy.ClassOperations;
+using System.Text.RegularExpressions;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -229,20 +230,13 @@ namespace Group_choice_algos_fuzzy
 			return AdjacencyList(x => x == no_edge_symbol);
 		}
 		/// <summary>
-		///  для удобства печати матриц
+		/// для удобства печати матриц
 		/// </summary>
-		/// <param name="use_separator"></param>
+		/// <param name="separator_type">0 - пробел, 1 - "[" и "]", 2 - TAB, default - ""</param>
+		/// <param name="to_level">выравнивать ли</param>
 		/// <returns></returns>
-		public string Matrix2String(bool use_separator)
+		public string Matrix2String(uint separator_type, bool to_level)
 		{
-			/// удаляет последние cnt символов из строки
-			string trim_end(string s, int cnt)
-			{
-				var start = s.Length - cnt;
-				if (start < 0)
-					return "";
-				return s.Remove(s.Length - cnt, cnt);
-			}
 			int[] max_widths = new int[m];
 			for (int j = 0; j < m; j++)
 				max_widths[j] = 5;
@@ -251,21 +245,47 @@ namespace Group_choice_algos_fuzzy
 					if (this[i, j].ToString().Length > max_widths[j])
 						max_widths[j] = this[i, j].ToString().Length;
 			var str = "";
-			var lef_bnd = use_separator ? "[" : "";
-			var rig_bnd = use_separator ? "]" : "";
+			var lef_bnd = "";
+			var rig_bnd = "";
+			switch (separator_type)
+			{
+				case 0:
+					rig_bnd = " ";
+					break;
+				case 1:
+					lef_bnd = "[";
+					rig_bnd = "]";
+					break;
+				case 2:
+					rig_bnd = TAB;
+					break;
+				default:
+					lef_bnd =  "";
+					rig_bnd =  "";
+					break;
+			}
 			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < m; j++)
 				{
-					//var fill = "_";
-					//var align = "^";
-					int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
-					//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
-					str += string.Format($"{lef_bnd}{{0,{width}}}{rig_bnd}", this[i, j]);
+					if (to_level)
+					{
+						//var fill = "_";
+						//var align = "^";
+						int width = m > 5 ? max_widths[j] + 2 : max_widths.Max() + 2;
+						//str += string.Format("[{0:{fill}{align}{width}}]", Matrix[i, j], fill, align, width);
+						str += string.Format($"{lef_bnd}{{0,{width}}}{rig_bnd}", this[i, j]);
+					}
+					else
+					{
+						str += string.Format($"{lef_bnd}{this[i, j]}{rig_bnd}");
+					}
 				}
 				str += CR_LF;
 			}
-			return trim_end(str, 1);
+			str = OPS_String.RemoveRepeatingTabsAndCRLF(str);
+			str = OPS_String.CleanStringBeginAndEnd(str);
+			return str;
 		}
 		public int GetLength(int dimension)
 		{
@@ -490,6 +510,14 @@ namespace Group_choice_algos_fuzzy
 				sum_dist += distance_function(this, other_R);
 			return sum_dist;
 		}
+		public bool IsAdjacency()
+		{
+			for (int i = 0; i < n; i++)
+				for (int j = i; j < n; j++)
+					if (!(this[i, j] == 0 || this[i, j] == 1))
+						return false;
+			return true;
+		}
 		/// <summary>
 		/// является ли асимметричной (предполагает антирефлексивность)
 		/// </summary>
@@ -690,6 +718,33 @@ namespace Group_choice_algos_fuzzy
 			for (int i = 0; i < M.n; i++)
 				for (int j = 0; j < M.m; j++)
 					M[i, j] = OPS_Double.Mult(M[i, j], M2[i, j]);
+			return M;
+		}
+		/// <summary>
+		/// индексы недоминируемых альтернатив
+		/// </summary>
+		/// <returns></returns>
+		public HashSet<int> UndominatedAlternatives()
+		{
+			var ans = Enumerable.Range(0, n).ToHashSet();
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < n; j++)
+					if (i != j && this[j, i] > this[i, j])
+					{
+						ans.Remove(i);
+						break;
+					}
+			return ans;
+		}
+		public Matrix SelectByMask01(Matrix Mask)
+		{
+			if(!Mask.IsAdjacency())
+				throw new MyException(EX_bad_matrix);
+			var M = new Matrix(this);
+			for (int i = 0; i < M.n; i++)
+				for (int j = 0; j < M.m; j++)
+					if (Mask[i, j] == 0)
+						M[i, j] = 0;
 			return M;
 		}
 		#endregion FUNCTIONS
@@ -1089,23 +1144,7 @@ namespace Group_choice_algos_fuzzy
 		public static List<FuzzyRelation> ToFuzzyList(List<Matrix> R_list)
 		{
 			return R_list.Select(x => x.Cast2Fuzzy).ToList();
-		}
-		/// <summary>
-		/// индексы недоминируемых альтернатив
-		/// </summary>
-		/// <returns></returns>
-		public HashSet<int> UndominatedAlternatives()
-		{
-			var ans = Enumerable.Range(0, n).ToHashSet();
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++)
-					if (i != j && this[j, i] > this[i, j])
-					{
-						ans.Remove(i);
-						break;
-					}
-			return ans;
-		}
+		}		
 		#endregion FUNCTIONS
 	}
 }

@@ -43,9 +43,17 @@ namespace Group_choice_algos_fuzzy
 			{
 				if(show_in_UI) MessageBox.Show(this.Message.ToString());
 			}
-			static public void Info(Exception ex, bool show_in_UI = true)
+			public string InfoTextXML()
+			{
+				return "<exception>" + this.Message.ToString() + "</exception>";
+			}
+			public static void Info(Exception ex, bool show_in_UI = true)
 			{
 				if (show_in_UI)	MessageBox.Show(ex.Message.ToString());
+			}
+			public static string InfoTextXML(Exception ex)
+			{
+				return "<exception>" + ex.Message.ToString() + "</exception>";
 			}
 		}
 
@@ -58,6 +66,7 @@ namespace Group_choice_algos_fuzzy
 
 		#region SYMBOLS
 		public const string CR_LF = "\r\n";//вариант перевода строки - carriage return, line feed
+		public const string TAB = "\t";
 		public const string ZER = "0";
 		public const string ONE = "1";
 		public const char PLS = '+';
@@ -66,12 +75,13 @@ namespace Group_choice_algos_fuzzy
 		public const string MAX_SIGN = "max";
 		private const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		public static char[] CHARS_FOR_LINE_SPLIT = new char[] { ' ', '	' };
+		public static string SEP_FOR_RANK = ",";
 		/// <summary>
 		/// символ альтернативы (a1,a2,A,B,a,b...) в индекс 
 		/// </summary>
 		public static Dictionary<string, int> sym2ind = new Dictionary<string, int>();
 		/// <summary>
-		/// индекс альтернативы в её символ a1, a2 и т.д.
+		/// индекс альтернативы в её символ a0, a1, a2 и т.д.
 		/// </summary>
 		public static Dictionary<int, string> ind2sym = new Dictionary<int, string>();
 		/// <summary>
@@ -128,8 +138,9 @@ namespace Group_choice_algos_fuzzy
 		#region FILE_OPERATIONS
 		public static string PROJECT_DIRECTORY = new DirectoryInfo(
 			AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
-		public static string DIRECTORY_WITH_TESTS = "Manual_tests";
-		public static string OUT_FILE = "result.txt";
+		public const string DIRECTORY_WITH_TESTS = "Manual_tests";
+		public const string OUT_FILE = "result.txt";
+		public const string OUT_FILE_TEMPORARY = "temp.txt";
 		public const string MAINTAINED_EXTENSION = ".txt";
 		#endregion FILE_OPERATIONS
 

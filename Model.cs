@@ -9,6 +9,7 @@ using static Group_choice_algos_fuzzy.ClassOperations.OPS_DataGridView;
 using static Group_choice_algos_fuzzy.ClassOperations.OPS_GraphDrawing;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
+using System.Xml;
 
 namespace Group_choice_algos_fuzzy
 {
@@ -476,11 +477,21 @@ namespace Group_choice_algos_fuzzy
 					return AM;
 				}
 			}
+			public Matrix Rank2WeightedMatrixTransitive
+			{
+				get
+				{
+					var mask = Rank2AdjacencyMatrixTransitive;
+					if (parent_method.RelatedMatrix is null)
+						return mask;
+					return parent_method.RelatedMatrix.SelectByMask01(mask);
+				}
+			}
 			public string Rank2String
 			{
 				get
 				{
-					return string.Join(",", _Path.Select(x => ind2sym[x]).ToList());
+					return string.Join(SEP_FOR_RANK, _Path.Select(x => ind2letter[x]).ToList());
 				}
 			}
 			public int Count
@@ -648,6 +659,7 @@ namespace Group_choice_algos_fuzzy
 			public int ID = -1;//обозначение метода
 			private List<Ranking> _Rankings;//выдаваемые методом ранжирования
 			private CharacteristicsOfMethodRankings _RankingsCharacteristics;//характеристики ранжирований
+			private Matrix _RelatedMatrix;//связанная с методом матрица, может быть пуста
 			private List<int> _UndominatedAlternatives;//победители - недоминируемые альтернативы
 			private List<List<int>> _Levels;//разбиение графа отношения на уровни (алг. Демукрона, начиная с конца - со стока)
 			public ConnectedControls UI_Controls;
@@ -690,26 +702,42 @@ namespace Group_choice_algos_fuzzy
 				/// <summary>
 				/// запись в файл всех полученных ранжирований метода в виде матриц
 				/// </summary>
-				public void WriteOutRelationsToFile(string filename)
+				public string Relations2String(bool as_sequences_of_alternatives = false)
 				{
-					if (parent_method.HasRankings)
+					string text = "NODATA";
+					if (as_sequences_of_alternatives)
 					{
-						var text = string.Join(CR_LF, parent_method.Rankings
+						if (parent_method.HasRankings)
+						{
+							text = string.Join(CR_LF, parent_method.Ranks2Strings)
+								.Replace(SEP_FOR_RANK, TAB);
+						}
+						else if (parent_method.HasLevels)
+						{
+							text = string.Join(CR_LF, parent_method.Levels2Strings)
+								.Replace(SEP_FOR_RANK, TAB);
+						}
+						else
+						{
+							text = "<undominated_alternatives>" + TAB +
+								parent_method.UndominatedAlternatives2String +
+								TAB + "</undominated_alternatives>";
+						}
+					}
+					else
+					{
+						if (parent_method.HasRankings)
+						{
+							text = string.Join(CR_LF, parent_method.Rankings
 								.Where(x => x.Count == n)
-								.Select(x => x.Rank2AdjacencyMatrixTransitive.Matrix2String(false)).ToArray());
-						OPS_File.WriteToFile(text, filename, true);
+								.Select(x => x.Rank2WeightedMatrixTransitive.Matrix2String(2, false)).ToArray());
+						}
+						else
+						{
+							text = parent_method.RelatedMatrix?.Matrix2String(2, false);
+						}
 					}
-				}
-				/// <summary>
-				/// запись в файл всех полученных ранжирований метода
-				/// </summary>
-				public void WriteOutRankingsToFile(string filename)
-				{
-					if (parent_method.HasRankings)
-					{
-						var text = string.Join(CR_LF, parent_method.Ranks2Strings);
-						OPS_File.WriteToFile(text, filename, true);
-					}
+					return text;
 				}
 				private void SetRankingsToDataGridView()
 				{
@@ -933,6 +961,14 @@ namespace Group_choice_algos_fuzzy
 				}
 				set { _RankingsCharacteristics = value; }
 			}
+			public Matrix RelatedMatrix
+			{
+				get
+				{
+					return _RelatedMatrix;
+				}
+				set { _RelatedMatrix = value; }
+			}
 			public List<int> UndominatedAlternatives
 			{
 				get
@@ -989,6 +1025,7 @@ namespace Group_choice_algos_fuzzy
 			public void Clear()
 			{
 				Rankings = null;
+				RelatedMatrix = null;
 				UndominatedAlternatives = null;
 				Levels = null;
 				RankingsCharacteristics = null; //очищено в свойстве
@@ -1080,7 +1117,7 @@ namespace Group_choice_algos_fuzzy
 						UI_ControlsAndView.numericUpDown_m.Value = m;
 					}
 				}
-				public void UpdateModel_n_m()
+				public void UpdateModel_n_m_fromView()
 				{
 					if ((int)numericUpDown_n.Value > max_count_of_alternatives ||
 						(int)numericUpDown_m.Value > max_count_of_experts)
@@ -1112,7 +1149,7 @@ namespace Group_choice_algos_fuzzy
 							double.TryParse($"0.{Math.Truncate(Mij)}", out Mij);
 						}
 						SetDoubleCell(dd, i, j, Mij);//нужна, не удалять
-						Model.CheckAndSetMatrixElement(exp_index, i, j, Mij);
+						Model.CheckAndSetMatrixElement(exp_index, i, j, Mij, true);
 					}
 					catch (MyException ex) { ex.Info(); }
 				}
@@ -1312,16 +1349,21 @@ namespace Group_choice_algos_fuzzy
 						return;
 					_RList[matrix_index][i, j] = value;
 				}
-				private static void SetMatrix(int matrix_index, Matrix new_matrix)
+				private static void SetMatrix(int matrix_index, Matrix new_matrix, bool show_in_UI)
 				{
 					if (GetMatrix(matrix_index) is null)
 						return;
 					_RList[matrix_index] = new_matrix;
-					UI_ControlsAndView.UpdateTable(matrix_index);
-					UI_ControlsAndView.UpdateExpertGraphs();
+					if (show_in_UI)
+					{
+						UI_ControlsAndView.UpdateTable(matrix_index);
+						UI_ControlsAndView.UpdateExpertGraphs();
+					}
 				}
 				public static void SetMatrices(List<Matrix> new_matrices, bool show_in_UI)
 				{
+					m = new_matrices.Count;
+					n = new_matrices.First().n;
 					_RList = new_matrices;
 					if (show_in_UI)
 					{
@@ -1349,16 +1391,16 @@ namespace Group_choice_algos_fuzzy
 				/// <param name="j"></param>
 				/// <param name="value"></param>
 				/// <param name="form3"></param>
-				public static void CheckAndSetMatrixElement(int matrix_index, int i, int j, double value)
+				public static void CheckAndSetMatrixElement(int matrix_index, int i, int j, double value, bool show_in_UI)
 				{
 					SetMatrixElement(matrix_index, i, j, value);
-					CheckAndSetMatrix(matrix_index, _RList[matrix_index]);
+					CheckAndSetMatrix(matrix_index, _RList[matrix_index], show_in_UI);
 				}
-				public static void CheckAndSetMatrix(int matrix_index, Matrix matrix)
+				public static void CheckAndSetMatrix(int matrix_index, Matrix matrix, bool show_in_UI)
 				{
 					var ans = CheckMatrix(matrix, out var M);
 					if (matrix != M)
-						SetMatrix(matrix_index, M);
+						SetMatrix(matrix_index, M, show_in_UI);
 					try
 					{
 						if (!ans.is_norm)
@@ -1366,7 +1408,7 @@ namespace Group_choice_algos_fuzzy
 							throw new MyException(INF_matrix_was_normalized);
 						}
 					}
-					catch (MyException ex) { ex.Info(); }
+					catch (MyException ex) { ex.Info(show_in_UI); }
 					try
 					{
 						if (ans.has_cycle)
@@ -1374,7 +1416,7 @@ namespace Group_choice_algos_fuzzy
 							throw new MyException(EX_contains_cycle);
 						}
 					}
-					catch (MyException ex) { ex.Info(); }
+					catch (MyException ex) { ex.Info(show_in_UI); }
 				}
 				public static void CheckAndSetMatrices(List<Matrix> matrices, bool show_in_UI)
 				{
@@ -1498,7 +1540,7 @@ namespace Group_choice_algos_fuzzy
 					foreach (var r in GetRelations2Show())
 					{
 						tex += $"{CR_LF}{r.Key}:{CR_LF}";
-						tex += r.Value?.Matrix2String(true);
+						tex += r.Value?.Matrix2String(1, true);
 					}
 				}
 				return tex;
@@ -1526,41 +1568,52 @@ namespace Group_choice_algos_fuzzy
 					}
 				}
 			}
-			private static void PutMethodsResults2File(bool rewrite_file)
+			private static (string, XmlDocument) PutMethodsResults2XML()
 			{
-				OPS_File.WriteToFile($"<arbitrament>", OUT_FILE, rewrite_file ? false : true);
-				OPS_File.WriteToFile($"<info>{AggregatedMatrix.Info()}</info>{CR_LF}", OUT_FILE, true);
+				XmlDocument xmlDoc = new XmlDocument();
+				XmlNode one_arbitrament = xmlDoc.CreateElement("arbitrament");
+				xmlDoc.AppendChild(one_arbitrament);
+
+				XmlNode info = xmlDoc.CreateElement("info");
+				info.InnerText = AggregatedMatrix.Info();
+				one_arbitrament.AppendChild(info);
 				foreach (Method M in GetMethods())
 				{
+					XmlNode method = xmlDoc.CreateElement("method");
 					if (M.IsExecute)
 					{
-						OPS_File.WriteToFile($"<method>", OUT_FILE, true);
-						OPS_File.WriteToFile(
-							$"<name>{MethodName[M.ID]}</name>" +
-							$"<info>{M.Info()}</info>", OUT_FILE, true);
-						OPS_File.WriteToFile($"<relations>", OUT_FILE, true);
-						M.UI_Controls.WriteOutRelationsToFile(OUT_FILE);
-						OPS_File.WriteToFile($"</relations>", OUT_FILE, true);
-						OPS_File.WriteToFile($"<relations_as_rankings>", OUT_FILE, true);
-						M.UI_Controls.WriteOutRankingsToFile(OUT_FILE);
-						OPS_File.WriteToFile($"</relations_as_rankings>", OUT_FILE, true);
-						OPS_File.WriteToFile($"</method>", OUT_FILE, true);
+						XmlNode method_name = xmlDoc.CreateElement("name");
+						method_name.InnerText = MethodName[M.ID];
+						method.AppendChild(method_name);
+						XmlNode method_info = xmlDoc.CreateElement("info");
+						method_info.InnerText = M.Info();
+						method.AppendChild(method_info);
+						XmlNode method_rels = xmlDoc.CreateElement("relations");
+						method_rels.InnerText = M.UI_Controls.Relations2String(false);
+						method.AppendChild(method_rels);
+						XmlNode method_ranks = xmlDoc.CreateElement("relations_as_rankings");
+						method_ranks.InnerText = M.UI_Controls.Relations2String(true);
+						method.AppendChild(method_ranks);
 					}
+					one_arbitrament.AppendChild(method);
 				}
-				OPS_File.WriteToFile($"</arbitrament>", OUT_FILE, true);
+				return (xmlDoc.OuterXml, xmlDoc);
 			}
-			public static void UI_ShowMethods(bool show_in_UI, bool write_to_file, bool rewrite_file)
+			public static string ShowMethodsOutputView(bool show_in_UI,
+				bool write_to_file = true, string filename = OUT_FILE_TEMPORARY, bool rewrite_file = true)
 			{
+				string ans = PutMethodsResults2XML().Item1;
 				if (show_in_UI)
 				{
 					PutMethodsResults2UI();
 				}
 				if (write_to_file)
 				{
-					PutMethodsResults2File(rewrite_file);
+					OPS_File.WriteToFile(ans, filename, rewrite_file ? false : true);
 				}
+				return ans;
 			}
-			public static void UI_ClearMethods()
+			public static void ClearMethodsOutputView()
 			{
 				foreach (Method M in GetMethods())
 				{
@@ -1844,6 +1897,7 @@ namespace Group_choice_algos_fuzzy
 				Schulze_method.UndominatedAlternatives = Enumerable.Range(0, n).Where(i => winner[i] == true).ToList();//индексы победителей																								   
 				var pair_dominant_matrix = new Matrix(PD);
 				var is_ = Ranking.Matrix2RanksDemukron(pair_dominant_matrix, out var levels, out var ranks);
+				Schulze_method.RelatedMatrix = pair_dominant_matrix;
 				Schulze_method.Levels = levels;
 				if (is_)
 				{
@@ -1857,8 +1911,9 @@ namespace Group_choice_algos_fuzzy
 			public static void Set_Smerchinskaya_Yashina_method()
 			{
 				Smerchinskaya_Yashina_method.Clear();
-				Smerchinskaya_Yashina_method.UndominatedAlternatives = AggregatedMatrix.R.DestroyedCycles.TransClosured.UndominatedAlternatives().ToList();
-				var is_ = Ranking.Matrix2RanksDemukron(AggregatedMatrix.R.DestroyedCycles.TransClosured, out var levels, out var ranks);
+				Smerchinskaya_Yashina_method.RelatedMatrix = AggregatedMatrix.R.DestroyedCycles.TransClosured;
+				Smerchinskaya_Yashina_method.UndominatedAlternatives = Smerchinskaya_Yashina_method.RelatedMatrix.UndominatedAlternatives().ToList();
+				var is_ = Ranking.Matrix2RanksDemukron(Smerchinskaya_Yashina_method.RelatedMatrix, out var levels, out var ranks);
 				Smerchinskaya_Yashina_method.Levels = levels;
 				if (is_)
 				{

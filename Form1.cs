@@ -78,7 +78,7 @@ namespace Group_choice_algos_fuzzy
 			AggregatedMatrix.Clear();
 			if (clear_UI)
 			{
-				Methods.UI_ClearMethods();
+				Methods.ClearMethodsOutputView();
 				AggregatedMatrix.UI_Controls.UI_Clear();
 			}
 		}
@@ -167,11 +167,11 @@ namespace Group_choice_algos_fuzzy
 					throw new MyException(EX_n_too_big);
 				ExpertRelations.Model.CheckAndSetMatrices(ExpertRelations.Model.GetMatrices(), true);
 				AggregatedMatrix.UI_Controls.UI_Clear();
-				Methods.UI_ClearMethods();
+				Methods.ClearMethodsOutputView();
 				ExpertRelations.UI_ControlsAndView.UI_Deactivate();
 				Methods.ExecuteAlgorythms();
 				AggregatedMatrix.UI_Controls.UI_Show();
-				Methods.UI_ShowMethods(true, true, true);
+				Methods.ShowMethodsOutputView(true, true, OUT_FILE, true);
 				set_controls_size();
 			}
 			catch (MyException ex) { ex.Info(); }
@@ -187,7 +187,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (numericUpDown_n.Value != n || numericUpDown_m.Value != m)
 				{
-					ExpertRelations.UI_ControlsAndView.UpdateModel_n_m();
+					ExpertRelations.UI_ControlsAndView.UpdateModel_n_m_fromView();
 					ClearModelDerivatives(true);
 					var matrices = new List<Matrix>(m);
 					for (int k = 0; k < m; k++)
@@ -213,13 +213,11 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				if (!ReadFile(textBox_file.Text,
-					out var absolute_filename, out List<Matrix> matrices, out var _))
+					out var absolute_filename, out List<Matrix> matrices, out var _, out var _))
 					throw new FileNotFoundException();
 				textBox_file.Text = absolute_filename;
 				if (matrices is null || matrices.Count == 0)
 					throw new MyException(EX_bad_file);
-				m = matrices.Count;
-				n = matrices.First().n;
 				ClearModelDerivatives(true);
 				ExpertRelations.Model.SetMatrices(matrices, true);
 				ExpertRelations.UI_ControlsAndView.UI_Show();
@@ -239,48 +237,47 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (!ReadFile(textBox_file.Text, 
-					out var absolute_filename, out var _, out List<List<Matrix>> tests))
+				if (!ReadFile(textBox_file.Text,
+					out var absolute_filename, out var _, 
+					out List<List<Matrix>> tests, out List<string[]> rawtext_tests))
 					throw new FileNotFoundException();
 				textBox_file.Text = absolute_filename;
 				if (tests is null || tests.Count == 0)
-					throw new MyException(EX_bad_file);
+					throw new MyException(EX_bad_file + CR_LF + absolute_filename);
 				string out_filename = WriteToFile($"<root>{CR_LF}", OUT_FILE, false);
 				for (int t = 0; t < tests.Count; t++)
 				{
-					List<Matrix> matrices = tests[t];
+					string out_testtext = "";
 					try
 					{
-						if (matrices.Count > 0)
-						{
-							m = matrices.Count;
-							n = matrices.First().n;
-							ClearModelDerivatives(false);
-							if (cb_All_rankings.Checked && n > max_count_of_alternatives_2ALL_RANKS)
-								throw new MyException(EX_n_too_big);
-							ExpertRelations.Model.CheckAndSetMatrices(matrices, false);
-							Methods.ExecuteAlgorythms();
-							Methods.UI_ShowMethods(false, true, false);
-						}
-						else
-						{
-							throw new MyException(EX_bad_file);
-						}
+						List<Matrix> matrices = tests[t];
+						if (matrices is null || matrices.Count == 0)
+							throw new MyException(EX_bad_file +
+								CR_LF + absolute_filename + CR_LF + string.Join(CR_LF, rawtext_tests[t]));
+						ClearModelDerivatives(false);
+						ExpertRelations.Model.CheckAndSetMatrices(matrices, false);
+						Methods.ExecuteAlgorythms();
+						out_testtext += Methods.ShowMethodsOutputView(false, false);
 					}
 					catch (MyException ex)
 					{
-						WriteToFile($"<exception>{ex.Message}</exception>{CR_LF}", OUT_FILE, true);
+						out_testtext += ex.InfoTextXML() + CR_LF;
 					}
 					catch (Exception ex)
 					{
-						WriteToFile($"<exception>{ex.Message}</exception>{CR_LF}",OUT_FILE, true);
+						out_testtext += InfoTextXML(ex) + CR_LF;
+					}
+					finally
+					{
+						WriteToFile(out_testtext, out_filename, true);
 					}
 				}
-				WriteToFile($"{CR_LF}</root>", OUT_FILE, true);
+				WriteToFile($"{CR_LF}</root>", out_filename, true);
 				throw new MyException($"{INF_output_written_in_file} {out_filename}");
 			}
-			catch (FileNotFoundException ex) { MyException.Info(ex); }
+			catch (FileNotFoundException ex) { Info(ex); }
 			catch (MyException ex) { ex.Info(); }
+			catch (Exception ex) { Info(ex); }
 		}
 		/// <summary>
 		/// вывести рисунки графов на формах

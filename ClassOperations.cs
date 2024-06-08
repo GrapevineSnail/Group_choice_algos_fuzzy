@@ -8,7 +8,7 @@ using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
 using System.Xml;
-//using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 
 namespace Group_choice_algos_fuzzy
@@ -68,6 +68,42 @@ namespace Group_choice_algos_fuzzy
 				return Math.Round(A, DIGITS_PRECISION);
 			}
 		}
+		/// <summary>
+		/// операции со string, с regular expressions
+		/// </summary>
+		public static class OPS_String 
+		{
+			/// <summary>
+			/// удаляет последние cnt символов из строки
+			/// </summary>
+			/// <param name="s"></param>
+			/// <param name="cnt"></param>
+			/// <returns></returns>
+			public static string TrimEnd(string s, int cnt)
+			{
+				var start = s.Length - cnt;
+				if (start < 0)
+					return "";
+				return s.Remove(s.Length - cnt, cnt);
+			}
+			public static string TagedString(string XMLtagname, string data)
+			{
+				return $"<{XMLtagname}>{CR_LF}"+ data + $"{CR_LF}</{XMLtagname}>";
+			}
+			public static string RemoveRepeatingTabsAndCRLF(string str)
+			{
+				var ans = Regex.Replace(str, $"{TAB}{{2,}}", TAB);
+				ans = Regex.Replace(ans, $"{CR_LF}{{2,}}", CR_LF);
+				return ans;
+			}
+			public static string CleanStringBeginAndEnd(string str)
+			{
+				var ans = Regex.Replace(str, $"({TAB}| ){CR_LF}", CR_LF);
+				ans = Regex.Replace(ans, $"^({TAB}| )", "");
+				return ans;
+			}
+		}
+
 		/// <summary>
 		/// операции с файлами
 		/// </summary>
@@ -150,14 +186,16 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="several_tests">несколько групп матриц - несколько экспертных совещаний</param>
 			/// <returns></returns>
 			public static bool ReadFile(string filename, out string absolute_file_name,
-				out List<Matrix> one_test_matrices, out List<List<Matrix>> several_tests)
+				out List<Matrix> one_test_matrices, 
+				out List<List<Matrix>> several_tests, out List<string[]> raw_several_tests)
 			{
 				one_test_matrices = null;
 				several_tests = null;
+				raw_several_tests = null;
 				if (!FindFile(filename, out absolute_file_name))
 					return false;
 				ReadMatrices(File.ReadAllLines(absolute_file_name), out one_test_matrices);//ReadAllLines вызывает FileNotFoundException
-				ReadFileWithSeveralTests(absolute_file_name, out several_tests);
+				ReadFileWithSeveralTests(absolute_file_name, out several_tests, out raw_several_tests);
 				return true;
 			}
 			/// <summary>
@@ -166,9 +204,12 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="absolute_file_name"></param>
 			/// <param name="several_tests"></param>
 			/// <returns>если удалось распарсить файл по заданным правилам</returns>
-			public static bool ReadFileWithSeveralTests(string absolute_file_name, out List<List<Matrix>> several_tests)
+			public static bool ReadFileWithSeveralTests(
+				string absolute_file_name, 
+				out List<List<Matrix>> several_tests, out List<string[]> raw_several_tests)
 			{
 				several_tests = new List<List<Matrix>>();
+				raw_several_tests = new List<string[]>();
 				XmlDocument xDoc = new XmlDocument();
 				try
 				{ xDoc.Load(absolute_file_name); }
@@ -180,6 +221,7 @@ namespace Group_choice_algos_fuzzy
 				foreach (XmlNode childnode in xRoot.ChildNodes)
 				{
 					string[] lines = childnode.InnerText.Split('\n').ToArray();
+					raw_several_tests.Add(lines);
 					bool is_OK = ReadMatrices(lines, out List<Matrix> single_test_matrices);
 					is_test_correct.Add(is_OK);
 					several_tests.Add(single_test_matrices);
