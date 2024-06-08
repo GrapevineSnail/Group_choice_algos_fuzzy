@@ -283,8 +283,8 @@ namespace Group_choice_algos_fuzzy
 				}
 				str += CR_LF;
 			}
-			str = OPS_String.RemoveRepeatingTabsAndCRLF(str);
-			str = OPS_String.CleanStringBeginAndEnd(str);
+			str = OPS_String.Clean_RepeatingTabsAndCRLF(str);
+			str = OPS_String.Clean_StringBeginAndEnd(str);
 			return str;
 		}
 		public int GetLength(int dimension)
@@ -736,6 +736,11 @@ namespace Group_choice_algos_fuzzy
 					}
 			return ans;
 		}
+		/// <summary>
+		/// оставить ненулевыми элементы, соответствующие единицам маски
+		/// </summary>
+		/// <param name="Mask"></param>
+		/// <returns></returns>
 		public Matrix SelectByMask01(Matrix Mask)
 		{
 			if(!Mask.IsAdjacency())

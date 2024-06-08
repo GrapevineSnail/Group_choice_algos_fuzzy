@@ -212,19 +212,19 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (!ReadFile(textBox_file.Text,
-					out var absolute_filename, out List<Matrix> matrices, out var _, out var _))
+				if (!ReadFileOneTest(textBox_file.Text,	out var absolute_filename, 
+					out List<Matrix> matrices, out string bad_string))
 					throw new FileNotFoundException();
 				textBox_file.Text = absolute_filename;
 				if (matrices is null || matrices.Count == 0)
-					throw new MyException(EX_bad_file);
+					throw new MyException(EX_bad_file + CR_LF + bad_string);
 				ClearModelDerivatives(true);
 				ExpertRelations.Model.SetMatrices(matrices, true);
 				ExpertRelations.UI_ControlsAndView.UI_Show();
 				ExpertRelations.UI_ControlsAndView.UI_Activate();
 				set_controls_size();
 			}
-			catch (FileNotFoundException ex) { MyException.Info(ex); }
+			catch (FileNotFoundException ex) { Info(ex); }
 			catch (MyException ex) { ex.Info(); }
 		}
 
@@ -237,8 +237,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (!ReadFile(textBox_file.Text,
-					out var absolute_filename, out var _, 
+				if (!ReadFileSeveralTests(textBox_file.Text, out var absolute_filename,
 					out List<List<Matrix>> tests, out List<string[]> rawtext_tests))
 					throw new FileNotFoundException();
 				textBox_file.Text = absolute_filename;

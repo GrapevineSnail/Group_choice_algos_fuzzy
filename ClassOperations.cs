@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows.Forms;
 using static Group_choice_algos_fuzzy.Constants;
 using static Group_choice_algos_fuzzy.Constants.MyException;
+using static Group_choice_algos_fuzzy.ClassOperations.OPS_String;
 using System.Xml;
 using System.Text.RegularExpressions;
 
@@ -71,7 +72,7 @@ namespace Group_choice_algos_fuzzy
 		/// <summary>
 		/// операции со string, с regular expressions
 		/// </summary>
-		public static class OPS_String 
+		public static class OPS_String
 		{
 			/// <summary>
 			/// удаляет последние cnt символов из строки
@@ -86,21 +87,66 @@ namespace Group_choice_algos_fuzzy
 					return "";
 				return s.Remove(s.Length - cnt, cnt);
 			}
-			public static string TagedString(string XMLtagname, string data)
-			{
-				return $"<{XMLtagname}>{CR_LF}"+ data + $"{CR_LF}</{XMLtagname}>";
-			}
-			public static string RemoveRepeatingTabsAndCRLF(string str)
+			public static string Clean_RepeatingTabsAndCRLF(string str)
 			{
 				var ans = Regex.Replace(str, $"{TAB}{{2,}}", TAB);
 				ans = Regex.Replace(ans, $"{CR_LF}{{2,}}", CR_LF);
 				return ans;
 			}
-			public static string CleanStringBeginAndEnd(string str)
+			public static string Clean_StringBeginAndEnd(string str)
 			{
 				var ans = Regex.Replace(str, $"({TAB}| ){CR_LF}", CR_LF);
 				ans = Regex.Replace(ans, $"^({TAB}| )", "");
 				return ans;
+			}
+			public static string[] Clean_SpasyLines(string[] lines)
+			{
+				return lines.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+			}
+			public static string[] SplitWithowtEmptyEntries(string str, char[] delimiters)
+			{
+				return str.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+			}
+			public static bool TryParseRankingAlternatives(List<string> signs, out List<int> alters)
+			{
+				alters = new List<int>();
+				SetSymbolsForAlternatives(signs.Count);
+				for (int i = 0; i < signs.Count; i++)
+				{
+					var a = Clean_StringBeginAndEnd(signs[i]);
+					if (!sym2ind.ContainsKey(a))
+						return false;
+					alters.Add(sym2ind[a]);
+				}
+				return true;
+			}
+			public static bool TryParseDoubles(string[] str, out double[] numbers)
+			{
+				numbers = str.Select(x => double.TryParse(x, out double res) ? res : INF).ToArray();
+				if (numbers.Any(x => x == INF))
+					return false;
+				return true;
+			}
+			public static List<string> GetRankingAlternatives(string str)
+			{
+				MatchCollection matches = Reg_pattern_alternative.Matches(str);
+				var ans = new List<string>();
+				for (int i = 0; i < matches.Count; i++)
+				{
+					ans.Add(matches[i].Groups[Reg_SYM_GROUPNAME].Value);
+				}
+				return ans;
+			}
+			public static bool GetRankingAlternatives(string str, out List<int> alters)
+			{
+				return TryParseRankingAlternatives(GetRankingAlternatives(str), out alters);
+			}
+			public static bool GetWeights(string str, out double[] weights)
+			{
+				var str_without_alters = Reg_pattern_alternative
+					.Replace(str, SEP_IN_LINE_SPLIT[0].ToString());
+				return TryParseDoubles(
+					SplitWithowtEmptyEntries(str_without_alters, SEP_IN_LINE_SPLIT), out weights);
 			}
 		}
 
@@ -178,50 +224,56 @@ namespace Group_choice_algos_fuzzy
 				return absolute_file_name;
 			}
 			/// <summary>
-			/// читает файл и выдает матрицы или несколько групп матриц
+			/// читает файл и выдает матрицы
 			/// </summary>
 			/// <param name="filename"></param>
 			/// <param name="absolute_file_name">если файл найден, возвращает полный путь к файлу</param>
-			/// <param name="one_test_matrices">одна матрица - одно экспертное совещание</param>
-			/// <param name="several_tests">несколько групп матриц - несколько экспертных совещаний</param>
+			/// <param name="one_test_matrices">одна группа матриц - одно экспертное совещание</param>
 			/// <returns></returns>
-			public static bool ReadFile(string filename, out string absolute_file_name,
-				out List<Matrix> one_test_matrices, 
-				out List<List<Matrix>> several_tests, out List<string[]> raw_several_tests)
+			public static bool ReadFileOneTest(string filename, out string absolute_file_name,
+				out List<Matrix> one_test_matrices, out string bad_string)
 			{
 				one_test_matrices = null;
-				several_tests = null;
-				raw_several_tests = null;
+				bad_string = "";
 				if (!FindFile(filename, out absolute_file_name))
 					return false;
-				ReadMatrices(File.ReadAllLines(absolute_file_name), out one_test_matrices);//ReadAllLines вызывает FileNotFoundException
-				ReadFileWithSeveralTests(absolute_file_name, out several_tests, out raw_several_tests);
+				string[] lines = File.ReadAllLines(absolute_file_name);//ReadAllLines вызывает FileNotFoundException
+				if (ReadMatrices(lines, out one_test_matrices))
+					return true;
+				else if (ReadRankings(lines, out one_test_matrices, out bad_string))
+					return true;
 				return true;
 			}
 			/// <summary>
-			/// считывает группы матриц из файла
+			/// читает файл и выдает несколько групп матриц
 			/// </summary>
-			/// <param name="absolute_file_name"></param>
-			/// <param name="several_tests"></param>
-			/// <returns>если удалось распарсить файл по заданным правилам</returns>
-			public static bool ReadFileWithSeveralTests(
-				string absolute_file_name, 
+			/// <param name="filename"></param>
+			/// <param name="absolute_file_name">если файл найден, возвращает полный путь к файлу</param>
+			/// <param name="several_tests">несколько групп матриц - несколько экспертных совещаний</param>
+			/// <returns></returns>
+			public static bool ReadFileSeveralTests(string filename, out string absolute_file_name,
 				out List<List<Matrix>> several_tests, out List<string[]> raw_several_tests)
 			{
 				several_tests = new List<List<Matrix>>();
 				raw_several_tests = new List<string[]>();
+				if (!FindFile(filename, out absolute_file_name))
+					return false;
 				XmlDocument xDoc = new XmlDocument();
 				try
-				{ xDoc.Load(absolute_file_name); }
-				catch { }
+				{
+					xDoc.Load(absolute_file_name);
+				}
+				catch(Exception ex)
+				{
+					throw new MyException(EX_bad_file + CR_LF + ex.Message);
+				}
 				XmlElement xRoot = xDoc.DocumentElement;
 				if (xRoot is null)
 					return false;
 				List<bool> is_test_correct = new List<bool>();
 				foreach (XmlNode childnode in xRoot.ChildNodes)
 				{
-					string[] lines = childnode.InnerText.Split(CHARS_FOR_TEXT_SPLIT, 
-						StringSplitOptions.RemoveEmptyEntries).ToArray();
+					string[] lines = SplitWithowtEmptyEntries(childnode.InnerText, SEP_IN_TEXT_SPLIT);
 					raw_several_tests.Add(lines);
 					bool is_OK = ReadMatrices(lines, out List<Matrix> single_test_matrices);
 					is_test_correct.Add(is_OK);
@@ -230,34 +282,76 @@ namespace Group_choice_algos_fuzzy
 				return is_test_correct.Any();
 			}
 			/// <summary>
-			/// считывает матрицы из файла
+			/// считывает матрицы из строк
 			/// </summary>
 			/// <param name="absolute_file_name"></param>
 			/// <param name="matrices"></param>
 			/// <returns>возвращает - удалось ли считать набор матриц (1 тест)</returns>
-			public static bool ReadMatrices(string[] lines, out List<Matrix> matrices)
+			private static bool ReadMatrices(string[] lines, out List<Matrix> matrices)
 			{
 				matrices = new List<Matrix>();
-				lines = lines.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				lines = Clean_SpasyLines(lines);
 				if (lines.Count() == 0)
 					return false;
-				char[] delimiters = CHARS_FOR_LINE_SPLIT;
-				int read_n = lines.First().Split(delimiters, StringSplitOptions.RemoveEmptyEntries).Count();
-
+				int read_n = SplitWithowtEmptyEntries(lines.First(), SEP_IN_LINE_SPLIT).Count();
 				Matrix cur_matrix = new Matrix(read_n);
 				for (int l = 0; l < lines.Length; l++)
 				{
 					if (lines[l].Length > 0)
 					{
-						double[] numbers = lines[l].Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
-							.Select(x => double.TryParse(x, out double res) ? res : INF).ToArray();
-						if (numbers.Length != read_n || numbers.Any(x => x == INF))
+						bool success = TryParseDoubles(SplitWithowtEmptyEntries(lines[l], SEP_IN_LINE_SPLIT),
+							out double[] numbers);
+						if (numbers.Length != read_n || !success)
 							return false;
 						for (int j = 0; j < numbers.Length; j++)
 							cur_matrix[l % read_n, j] = numbers[j];
 					}
 					if (l % read_n == read_n - 1)
 						matrices.Add(new Matrix(cur_matrix));
+				}
+				if (matrices.Count == 0)
+					return false;
+				return true;
+			}
+			/// <summary>
+			/// считывает ранжирования экспертов из строк
+			/// </summary>
+			/// <param name="lines">строки формата "a0 1 a3 0.5 a1 0.99 a4 0 a2 ..."</param>
+			/// <param name="matrices"></param>
+			/// <returns></returns>
+			private static bool ReadRankings(string[] lines,
+				out List<Matrix> matrices, out string bad_string)
+			{
+				matrices = new List<Matrix>();
+				bad_string = "";
+				lines = Clean_SpasyLines(lines);
+				if (lines.Count() == 0)
+					return false;
+				int read_n = GetRankingAlternatives(lines.First()).Count();
+				for (int l = 0; l < lines.Length; l++)
+				{
+					Matrix cur_matrix = Matrix.Zeros(read_n, read_n);
+					if (lines[l].Length > 0)
+					{
+						if (!GetRankingAlternatives(lines[l], out var alters)
+							|| alters.Count != read_n
+							|| alters.Count != alters.Distinct().Count())
+						{
+							bad_string = lines[l];
+							return false;
+						}
+						if (!GetWeights(lines[l], out var weights)
+							|| weights.Count() != alters.Count - 1)
+						{
+							bad_string = lines[l];
+							return false;
+						}
+						for (int i = 0; i < alters.Count - 1; i++)
+						{
+							cur_matrix[alters[i], alters[i + 1]] = weights[i];
+						}
+						matrices.Add(new Matrix(cur_matrix));
+					}
 				}
 				if (matrices.Count == 0)
 					return false;

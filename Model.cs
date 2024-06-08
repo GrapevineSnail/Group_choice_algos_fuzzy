@@ -491,7 +491,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				get
 				{
-					return string.Join(SEP_FOR_RANK, _Path.Select(x => ind2letter[x]).ToList());
+					return string.Join(SEP_IN_RANK, _Path.Select(x => ind2letter[x]).ToList());
 				}
 			}
 			public int Count
@@ -710,12 +710,12 @@ namespace Group_choice_algos_fuzzy
 						if (parent_method.HasRankings)
 						{
 							text = string.Join(CR_LF, parent_method.Ranks2Strings)
-								.Replace(SEP_FOR_RANK, TAB);
+								.Replace(SEP_IN_RANK, TAB);
 						}
 						else if (parent_method.HasLevels)
 						{
 							text = string.Join(CR_LF, parent_method.Levels2Strings)
-								.Replace(SEP_FOR_RANK, TAB);
+								.Replace(SEP_IN_RANK, TAB);
 						}
 						else
 						{
