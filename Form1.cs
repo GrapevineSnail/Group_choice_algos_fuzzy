@@ -44,11 +44,11 @@ namespace Group_choice_algos_fuzzy
 			ClearModelDerivatives(true);
 			ColorUI(this);
 			UpdateControlsSize();
-			
+
 			Dictionary<Control, EventHandler> controls_n_handlers = new Dictionary<Control, EventHandler> {
 				{ flowLayoutPanel_input_tables  , flowLayoutPanel_input_tables_MouseEnter  },
 				{ flowLayoutPanel_output_info   , flowLayoutPanel_output_info_MouseEnter   },
-				{ flowLayoutPanel_output_tables , flowLayoutPanel_output_tables_MouseEnter }				
+				{ flowLayoutPanel_output_tables , flowLayoutPanel_output_tables_MouseEnter }
 			};
 			this.Activated += (object sender, EventArgs args) =>
 			{
@@ -242,8 +242,11 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				if (!ReadFileSeveralTests(textBox_file.Text, out var input_absolute_filename,
-					out List<List<Matrix>> tests, out List<string[]> rawtext_tests))
-					throw new FileNotFoundException();
+					out List<List<Matrix>> tests, out List<string[]> unparsed_text,
+					out string error_text))
+					throw new MyException("Возможные ошибки:" + CR_LF
+						+ new FileNotFoundException().Message + CR_LF
+						+ error_text);
 				textBox_file.Text = input_absolute_filename;
 				if (tests is null || tests.Count == 0)
 					throw new MyException(EX_bad_file + CR_LF + input_absolute_filename);
@@ -258,7 +261,7 @@ namespace Group_choice_algos_fuzzy
 						if (matrices is null || matrices.Count == 0)
 							throw new MyException(EX_bad_file + CR_LF
 								+ input_absolute_filename + CR_LF
-								+ string.Join(CR_LF, rawtext_tests[t]));
+								+ string.Join(CR_LF, unparsed_text[t]));
 						ClearModelDerivatives(false);
 						ExpertRelations.Model.CheckAndSetMatrices(matrices, false);
 						Methods.ExecuteAlgorythms();

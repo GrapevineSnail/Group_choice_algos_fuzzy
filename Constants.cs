@@ -78,11 +78,11 @@ namespace Group_choice_algos_fuzzy
 		public static char[] SEP_IN_LINE_SPLIT = new char[] { ' ', '\t' };
 		public static char[] SEP_IN_TEXT_SPLIT = new char[] { '\r','\n' };
 		public static string SEP_IN_RANK = ",";
-		public static string Reg_SEP_IN_RANK_WITH_WEIGHTS = "[^\\d\\w.,]";
-		public static string Reg_SYM = $"{MARK}\\d+";
-		public static string Reg_SYM_GROUPNAME = "symbol";
-		public static Regex Reg_pattern_alternative = new Regex(
-			$"({Reg_SEP_IN_RANK_WITH_WEIGHTS}+|^)(?<{Reg_SYM_GROUPNAME}>{Reg_SYM})({Reg_SEP_IN_RANK_WITH_WEIGHTS}+|$)"
+		public static string REG_SEP_IN_RANK_WITH_WEIGHTS = "[^\\d\\w.,]";
+		public static string REG_SYM = $"{MARK}\\d+";
+		public static string REG_SYM_GROUPNAME = "symbol";
+		public static Regex REG_pattern_alternative = new Regex(
+			$"({REG_SEP_IN_RANK_WITH_WEIGHTS}+|^)(?<{REG_SYM_GROUPNAME}>{REG_SYM})({REG_SEP_IN_RANK_WITH_WEIGHTS}+|$)"
 			, RegexOptions.IgnoreCase);
 		/// <summary>
 		/// символ альтернативы (a0,a1,a2,A,B,a,b...) в индекс 

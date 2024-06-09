@@ -99,7 +99,7 @@ namespace Group_choice_algos_fuzzy
 				ans = Regex.Replace(ans, $"^({TAB}| )", "");
 				return ans;
 			}
-			public static string[] Clean_SpasyLines(string[] lines)
+			public static string[] Clean_DeleteSpasyLines(string[] lines)
 			{
 				return lines.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 			}
@@ -140,11 +140,11 @@ namespace Group_choice_algos_fuzzy
 			}
 			public static List<string> GetRankingAlternatives(string str)
 			{
-				MatchCollection matches = Reg_pattern_alternative.Matches(str);
+				MatchCollection matches = REG_pattern_alternative.Matches(str);
 				var ans = new List<string>();
 				for (int i = 0; i < matches.Count; i++)
 				{
-					ans.Add(matches[i].Groups[Reg_SYM_GROUPNAME].Value);
+					ans.Add(matches[i].Groups[REG_SYM_GROUPNAME].Value);
 				}
 				return ans;
 			}
@@ -154,7 +154,7 @@ namespace Group_choice_algos_fuzzy
 			}
 			public static bool GetWeights(string str, out double[] weights)
 			{
-				var str_without_alters = Reg_pattern_alternative
+				var str_without_alters = REG_pattern_alternative
 					.Replace(str, SEP_IN_LINE_SPLIT[0].ToString());
 				return TryParseDoubles(
 					SplitWithowtEmptyEntries(str_without_alters, SEP_IN_LINE_SPLIT), out weights);
@@ -263,10 +263,12 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="several_tests">несколько групп матриц - несколько экспертных совещаний</param>
 			/// <returns></returns>
 			public static bool ReadFileSeveralTests(string filename, out string absolute_file_name,
-				out List<List<Matrix>> several_tests, out List<string[]> raw_several_tests)
+				out List<List<Matrix>> several_tests, out List<string[]> unparsedtext_several_tests, 
+				out string error_text)
 			{
 				several_tests = new List<List<Matrix>>();
-				raw_several_tests = new List<string[]>();
+				unparsedtext_several_tests = new List<string[]>();
+				error_text = "";
 				if (!FindFile(filename, out absolute_file_name))
 					return false;
 				XmlDocument xDoc = new XmlDocument();
@@ -276,7 +278,8 @@ namespace Group_choice_algos_fuzzy
 				}
 				catch(Exception ex)
 				{
-					throw new MyException(EX_bad_file + CR_LF + ex.Message);
+					error_text = EX_bad_file + CR_LF + ex.Message;
+					return false;
 				}
 				XmlElement xRoot = xDoc.DocumentElement;
 				if (xRoot is null)
@@ -285,7 +288,7 @@ namespace Group_choice_algos_fuzzy
 				foreach (XmlNode childnode in xRoot.ChildNodes)
 				{
 					string[] lines = SplitWithowtEmptyEntries(childnode.InnerText, SEP_IN_TEXT_SPLIT);
-					raw_several_tests.Add(lines);
+					unparsedtext_several_tests.Add(lines);
 					bool is_OK = ReadMatrices(lines, out List<Matrix> single_test_matrices);
 					is_test_correct.Add(is_OK);
 					several_tests.Add(single_test_matrices);
@@ -301,7 +304,7 @@ namespace Group_choice_algos_fuzzy
 			private static bool ReadMatrices(string[] lines, out List<Matrix> matrices)
 			{
 				matrices = new List<Matrix>();
-				lines = Clean_SpasyLines(lines);
+				lines = Clean_DeleteSpasyLines(lines);
 				if (lines.Count() == 0)
 					return false;
 				int read_n = SplitWithowtEmptyEntries(lines.First(), SEP_IN_LINE_SPLIT).Count();
@@ -335,7 +338,7 @@ namespace Group_choice_algos_fuzzy
 			{
 				matrices = new List<Matrix>();
 				bad_string = "";
-				lines = Clean_SpasyLines(lines);
+				lines = Clean_DeleteSpasyLines(lines);
 				if (lines.Count() == 0)
 					return false;
 				int read_n = GetRankingAlternatives(lines.First()).Count();
