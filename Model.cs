@@ -18,7 +18,6 @@ namespace Group_choice_algos_fuzzy
 		#region FIELDS
 		private static int _n;//количество альтернатив
 		private static int _m;//количество экспертов
-		public static Form1 form1;
 		#endregion FIELDS
 
 		#region PROPERTIES

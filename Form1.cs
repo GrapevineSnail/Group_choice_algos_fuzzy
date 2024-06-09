@@ -20,12 +20,11 @@ namespace Group_choice_algos_fuzzy
 			InitializeComponent();
 
 			//связывание модели с control-ами на форме
-			Model.form1 = this;
+			form1_mainform = this;
 
 			ExpertRelations.UI_ControlsAndView = new ExpertRelations.ConnectedControlsAndView(
 				cb_show_input_matrices, cb_do_transitive_closure,
 				numericUpDown_n, numericUpDown_m, flowLayoutPanel_input_tables);
-
 			AggregatedMatrix.UI_Controls = new AggregatedMatrix.ConnectedControls(
 				rb_dist_square, rb_dist_modulus, label_aggreg_matrix);
 			AggregatedMatrix.R_Changed += () =>
@@ -33,7 +32,6 @@ namespace Group_choice_algos_fuzzy
 				var rtd = AggregatedMatrix.GetRelations2Show();
 				UpdateOrgraphPics(form2_result_matrices, rtd);
 			};
-
 			Methods.All_Hamiltonian_paths.UI_Controls =
 				new Method.ConnectedControls(Methods.All_Hamiltonian_paths, cb_HP, dg_HP, null);
 			Methods.Schulze_method.UI_Controls =
@@ -44,34 +42,41 @@ namespace Group_choice_algos_fuzzy
 				new Method.ConnectedControls(Methods.Smerchinskaya_Yashina_method, cb_SY, dg_SY, null);
 
 			ClearModelDerivatives(true);
-
+			ColorUI(this);
+			UpdateControlsSize();
+			
+			Dictionary<Control, EventHandler> controls_n_handlers = new Dictionary<Control, EventHandler> {
+				{ flowLayoutPanel_input_tables  , flowLayoutPanel_input_tables_MouseEnter  },
+				{ flowLayoutPanel_output_info   , flowLayoutPanel_output_info_MouseEnter   },
+				{ flowLayoutPanel_output_tables , flowLayoutPanel_output_tables_MouseEnter }				
+			};
 			this.Activated += (object sender, EventArgs args) =>
 			{
-				set_focus_handlers_enter_mouse(flowLayoutPanel_input_tables,
-					flowLayoutPanel_input_tables_MouseEnter, true);
-				set_focus_handlers_enter_mouse(flowLayoutPanel_output_info,
-					flowLayoutPanel_output_info_MouseEnter, true);
-				set_focus_handlers_enter_mouse(flowLayoutPanel_output_tables,
-					flowLayoutPanel_output_tables_MouseEnter, true);
-
+				foreach (var key in controls_n_handlers.Keys)
+				{
+					SetFocusHandlersEnterMouse(key, controls_n_handlers[key], true);
+				}
 			};
 			this.Deactivate += (object sender, EventArgs args) =>
 			{
-				set_focus_handlers_enter_mouse(flowLayoutPanel_input_tables,
-					flowLayoutPanel_input_tables_MouseEnter, false);
-				set_focus_handlers_enter_mouse(flowLayoutPanel_output_info,
-					flowLayoutPanel_output_info_MouseEnter, false);
-				set_focus_handlers_enter_mouse(flowLayoutPanel_output_tables,
-					flowLayoutPanel_output_tables_MouseEnter, false);
+				foreach (var key in controls_n_handlers.Keys)
+				{
+					SetFocusHandlersEnterMouse(key, controls_n_handlers[key], false);
+				}
 			};
-
-			interface_coloring(this);
-			set_controls_size();
 		}
+
+		#region FIELDS
+		public static Form1 form1_mainform = null;
 		public static Form2 form2_result_matrices = null;
 		public static Form3 form3_input_expert_matrices = null;
+		#endregion FIELDS
 
-
+		#region AUXILIARY FUNCTIONS
+		/// <summary>
+		/// очистить производные объекты, оставшиеся после выполнения алгоритмов
+		/// </summary>
+		/// <param name="clear_UI"></param>
 		void ClearModelDerivatives(bool clear_UI)
 		{
 			Methods.Clear();
@@ -86,7 +91,7 @@ namespace Group_choice_algos_fuzzy
 		/// начальное расцвечивание формы
 		/// </summary>
 		/// <param name="main_control"></param>
-		public void interface_coloring(Control main_control)
+		void ColorUI(Control main_control)
 		{
 			try
 			{
@@ -99,7 +104,7 @@ namespace Group_choice_algos_fuzzy
 						b.FlatAppearance.BorderColor = button_bg_color;
 					}
 					else
-						interface_coloring(c);
+						ColorUI(c);
 				}
 			}
 			catch { }
@@ -109,7 +114,8 @@ namespace Group_choice_algos_fuzzy
 		/// </summary>
 		/// <param name="f"></param>
 		/// <param name="action"></param>
-		public void set_focus_handlers_enter_mouse(Control f, EventHandler action, bool set_action)
+		/// <param name="set_action">установаить (true), либо удалить обработчик</param>
+		void SetFocusHandlersEnterMouse(Control f, EventHandler action, bool set_action)
 		{
 			if (set_action)
 				f.MouseEnter += action;
@@ -117,14 +123,13 @@ namespace Group_choice_algos_fuzzy
 				f.MouseEnter -= action;
 			foreach (Control c in f.Controls)
 			{
-				set_focus_handlers_enter_mouse(c, action, set_action);
+				SetFocusHandlersEnterMouse(c, action, set_action);
 			}
-
 		}
 		/// <summary>
 		/// обновление размеров визуальных элементов после их изменения...
 		/// </summary>
-		void set_controls_size()
+		void UpdateControlsSize()
 		{
 			button_read_file.Height = textBox_file.Height + 2;
 			button_n_m.Height = textBox_file.Height + 2;
@@ -154,6 +159,7 @@ namespace Group_choice_algos_fuzzy
 				}
 			}
 		}
+		#endregion AUXILIARY FUNCTIONS
 
 		/// <summary>
 		/// чтение входных профилей и запуск работы программы на выбранных алгоритмах
@@ -173,11 +179,10 @@ namespace Group_choice_algos_fuzzy
 				Methods.ExecuteAlgorythms();
 				AggregatedMatrix.UI_Controls.UI_Show();
 				Methods.ShowMethodsOutputView(true, true, OUT_FILE, true);
-				set_controls_size();
+				UpdateControlsSize();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
-
 		/// <summary>
 		/// Считывает с формы переменные n и m (количество альтернатив и экспертов)
 		/// </summary>
@@ -199,13 +204,12 @@ namespace Group_choice_algos_fuzzy
 				}
 				ExpertRelations.UI_ControlsAndView.UI_Show();
 				ExpertRelations.UI_ControlsAndView.UI_Activate();
-				set_controls_size();
+				UpdateControlsSize();
 			}
 			catch (MyException ex) { ex.Info(); }
 		}
-
 		/// <summary>
-		/// считать профили экспертов из файла
+		/// считать матрицы экспертов из файла (один тест)
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
@@ -213,7 +217,7 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (!ReadFileOneTest(textBox_file.Text,	out var absolute_filename, 
+				if (!ReadFileOneTest(textBox_file.Text, out var absolute_filename,
 					out List<Matrix> matrices, out string bad_string))
 					throw new FileNotFoundException();
 				textBox_file.Text = absolute_filename;
@@ -223,14 +227,13 @@ namespace Group_choice_algos_fuzzy
 				ExpertRelations.Model.SetMatrices(matrices, true);
 				ExpertRelations.UI_ControlsAndView.UI_Show();
 				ExpertRelations.UI_ControlsAndView.UI_Activate();
-				set_controls_size();
+				UpdateControlsSize();
 			}
 			catch (FileNotFoundException ex) { Info(ex); }
 			catch (MyException ex) { ex.Info(); }
 		}
-
 		/// <summary>
-		/// прогнать несколько тестов
+		/// считать несколько групп экспертных матриц из файла (прогнать несколько тестов)
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
@@ -238,42 +241,38 @@ namespace Group_choice_algos_fuzzy
 		{
 			try
 			{
-				if (!ReadFileSeveralTests(textBox_file.Text, out var absolute_filename,
+				if (!ReadFileSeveralTests(textBox_file.Text, out var input_absolute_filename,
 					out List<List<Matrix>> tests, out List<string[]> rawtext_tests))
 					throw new FileNotFoundException();
-				textBox_file.Text = absolute_filename;
+				textBox_file.Text = input_absolute_filename;
 				if (tests is null || tests.Count == 0)
-					throw new MyException(EX_bad_file + CR_LF + absolute_filename);
-				string out_filename = WriteToFile($"<root>{CR_LF}", OUT_FILE, false);
+					throw new MyException(EX_bad_file + CR_LF + input_absolute_filename);
+				//всё в файл пишется сразу же, чтоб не оставить пустой файл после падения
+				string out_absolute_filename = WriteToFile($"<root>{CR_LF}", OUT_FILE, false);
 				for (int t = 0; t < tests.Count; t++)
 				{
-					string out_testtext = "";
+					string text = "";
 					try
 					{
 						List<Matrix> matrices = tests[t];
 						if (matrices is null || matrices.Count == 0)
-							throw new MyException(EX_bad_file +
-								CR_LF + absolute_filename + CR_LF + string.Join(CR_LF, rawtext_tests[t]));
+							throw new MyException(EX_bad_file + CR_LF
+								+ input_absolute_filename + CR_LF
+								+ string.Join(CR_LF, rawtext_tests[t]));
 						ClearModelDerivatives(false);
 						ExpertRelations.Model.CheckAndSetMatrices(matrices, false);
 						Methods.ExecuteAlgorythms();
-						out_testtext += Methods.ShowMethodsOutputView(false, false);
+						text += Methods.ShowMethodsOutputView(false, false);
 					}
-					catch (MyException ex)
-					{
-						out_testtext += ex.InfoTextXML() + CR_LF;
-					}
-					catch (Exception ex)
-					{
-						out_testtext += InfoTextXML(ex) + CR_LF;
-					}
+					catch (MyException ex) { text += ex.InfoTextXML() + CR_LF; }
+					catch (Exception ex) { text += InfoTextXML(ex) + CR_LF; }
 					finally
 					{
-						WriteToFile(out_testtext, out_filename, true);
+						WriteToFile(text, out_absolute_filename, true);
 					}
 				}
-				WriteToFile($"{CR_LF}</root>", out_filename, true);
-				throw new MyException($"{INF_output_written_in_file} {out_filename}");
+				WriteToFile($"{CR_LF}</root>", out_absolute_filename, true);
+				throw new MyException(INF_output_written_in_file + CR_LF + out_absolute_filename);//информационное сообщение об окончании работы
 			}
 			catch (FileNotFoundException ex) { Info(ex); }
 			catch (MyException ex) { ex.Info(); }
@@ -302,10 +301,6 @@ namespace Group_choice_algos_fuzzy
 				form3_input_expert_matrices.Show();
 			}
 		}
-		private void Form1_SizeChanged(object sender, EventArgs e)
-		{
-			set_controls_size();
-		}
 		/// <summary>
 		/// убрано из Form1.Designer
 		/// </summary>
@@ -326,6 +321,10 @@ namespace Group_choice_algos_fuzzy
 		private void flowLayoutPanel_output_tables_MouseEnter(object sender, EventArgs e)
 		{
 			flowLayoutPanel_output_tables.Focus();
+		}
+		private void Form1_SizeChanged(object sender, EventArgs e)
+		{
+			UpdateControlsSize();
 		}
 		private void dg_RowHeightChanged(object sender, DataGridViewRowEventArgs e)
 		{
