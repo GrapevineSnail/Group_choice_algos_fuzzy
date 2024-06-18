@@ -172,16 +172,20 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="directory_with_file"></param>
 			/// <param name="file_name"></param>
 			/// <returns></returns>
-			public static bool FindFile(string file_name, out string absolute_file_name)
+			public static bool FindFile(string file_name, 
+				out string absolute_file_name, out string error_text)
 			{
 				absolute_file_name = "";
+				error_text = "";
 				try
 				{
 					string directory_with_file = Path.GetDirectoryName(file_name);
 					bool emptydirname = new object[] { null, "" }.Contains(directory_with_file);
 					file_name = Path.GetFileName(file_name);
-					Console.WriteLine($"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}");
 					directory_with_file = Path.Combine(PROJECT_DIRECTORY, directory_with_file);
+					error_text += $"PROJECT_DIRECTORY = {PROJECT_DIRECTORY}{CR_LF}";
+					error_text += $"directory_with_file = {directory_with_file}{CR_LF}";
+					error_text += $"file_name = {file_name}{CR_LF}";
 					string[] allFoundFiles;
 					if (!emptydirname)
 					{
@@ -242,16 +246,16 @@ namespace Group_choice_algos_fuzzy
 			/// <param name="one_test_matrices">одна группа матриц - одно экспертное совещание</param>
 			/// <returns></returns>
 			public static bool ReadFileOneTest(string filename, out string absolute_file_name,
-				out List<Matrix> one_test_matrices, out string bad_string)
+				out List<Matrix> one_test_matrices, out string errtext_bad_string)
 			{
 				one_test_matrices = null;
-				bad_string = "";
-				if (!FindFile(filename, out absolute_file_name))
+				errtext_bad_string = "";
+				if (!FindFile(filename, out absolute_file_name, out errtext_bad_string))
 					return false;
 				string[] lines = File.ReadAllLines(absolute_file_name);//ReadAllLines вызывает FileNotFoundException
 				if (ReadMatrices(lines, out one_test_matrices))
 					return true;
-				else if (ReadRankings(lines, out one_test_matrices, out bad_string))
+				else if (ReadRankings(lines, out one_test_matrices, out errtext_bad_string))
 					return true;
 				return true;
 			}
@@ -269,7 +273,7 @@ namespace Group_choice_algos_fuzzy
 				several_tests = new List<List<Matrix>>();
 				unparsedtext_several_tests = new List<string[]>();
 				error_text = "";
-				if (!FindFile(filename, out absolute_file_name))
+				if (!FindFile(filename, out absolute_file_name, out error_text))
 					return false;
 				XmlDocument xDoc = new XmlDocument();
 				try

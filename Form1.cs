@@ -220,11 +220,12 @@ namespace Group_choice_algos_fuzzy
 			try
 			{
 				if (!ReadFileOneTest(textBox_file.Text, out var absolute_filename,
-					out List<Matrix> matrices, out string bad_string))
-					throw new FileNotFoundException();
+					out List<Matrix> matrices, out string errtext_bad_string))
+					throw new MyException(new FileNotFoundException().Message 
+						+ CR_LF + errtext_bad_string);
 				textBox_file.Text = absolute_filename;
-				if (matrices is null || matrices.Count == 0 || bad_string?.Length > 0)
-					throw new MyException(EX_bad_file + CR_LF + bad_string);
+				if (matrices is null || matrices.Count == 0 || errtext_bad_string?.Length > 0)
+					throw new MyException(EX_bad_file + CR_LF + errtext_bad_string);
 				ClearModelDerivatives(true);
 				ExpertRelations.Model.SetMatrices(matrices, true);
 				ExpertRelations.UI_ControlsAndView.UI_Show();
