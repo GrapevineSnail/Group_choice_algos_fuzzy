@@ -172,6 +172,8 @@ namespace Group_choice_algos_fuzzy
 			{
 				if (cb_All_rankings.Checked && n > max_count_of_alternatives_2ALL_RANKS)
 					throw new MyException(EX_n_too_big);
+				if (ExpertRelations.Model.GetMatrices().Count == 0)
+					throw new MyException(EX_bad_expert_profile);
 				ExpertRelations.Model.CheckAndSetMatrices(ExpertRelations.Model.GetMatrices(), true);
 				AggregatedMatrix.UI_Controls.UI_Clear();
 				Methods.ClearMethodsOutputView();

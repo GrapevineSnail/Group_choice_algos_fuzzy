@@ -1361,6 +1361,8 @@ namespace Group_choice_algos_fuzzy
 				}
 				public static void SetMatrices(List<Matrix> new_matrices, bool show_in_UI)
 				{
+					if (new_matrices is null)
+						return;
 					m = new_matrices.Count;
 					n = new_matrices.First().n;
 					_RList = new_matrices;
